@@ -346,6 +346,7 @@ export function useDuplicateInvoice() {
         const newItems = lineItems.map((li, i) => ({
           invoice_id: newInvoice.id,
           user_id: user!.id,
+          team_id: team.teamId,
           description: li.description,
           quantity: li.quantity,
           unit_price: li.unit_price,

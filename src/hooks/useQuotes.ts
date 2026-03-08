@@ -148,7 +148,7 @@ export function useDeleteQuote() {
 
 export function useSaveQuoteLineItems() {
   const qc = useQueryClient();
-  const { user } = useAuth();
+  const { user, team } = useAuth();
 
   return useMutation({
     mutationFn: async ({ quoteId, items }: { quoteId: string; items: Omit<QuoteLineItemInsert, "user_id" | "quote_id">[] }) => {
@@ -161,6 +161,7 @@ export function useSaveQuoteLineItems() {
         ...item,
         quote_id: quoteId,
         user_id: user!.id,
+        team_id: team.teamId,
         sort_order: i,
       }));
 

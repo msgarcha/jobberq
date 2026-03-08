@@ -38,13 +38,13 @@ export function useServices(filters?: { search?: string; status?: string }) {
 export function useCreateService() {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, team } = useAuth();
 
   return useMutation({
     mutationFn: async (data: Omit<ServiceInsert, "user_id">) => {
       const { data: result, error } = await supabase
         .from("services_catalog")
-        .insert({ ...data, user_id: user!.id })
+        .insert({ ...data, user_id: user!.id, team_id: team.teamId } as any)
         .select()
         .single();
       if (error) throw error;
