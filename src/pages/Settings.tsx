@@ -619,7 +619,7 @@ const Settings = () => {
             </Card>
 
             {/* Pricing Cards */}
-            <div className="grid gap-5 sm:grid-cols-3">
+            <div className="grid gap-5 grid-cols-1 sm:grid-cols-3">
               {(Object.entries(SUBSCRIPTION_TIERS) as [TierKey, typeof SUBSCRIPTION_TIERS[TierKey]][]).map(([key, tier]) => {
                 const isCurrentPlan = currentTier === key;
                 const isPopular = "popular" in tier && tier.popular;

@@ -119,7 +119,7 @@ export function MobileBottomNav() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-10 h-1 rounded-full bg-border mx-auto mb-4" />
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-3">
               {moreItems.map((item) => (
                 <button
                   key={item.label}
@@ -128,12 +128,12 @@ export function MobileBottomNav() {
                     navigate(item.path);
                   }}
                   className={cn(
-                    "flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl transition-colors",
+                    "flex flex-col items-center gap-2 py-4 px-2 rounded-2xl transition-colors",
                     isActive(item.path) ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"
                   )}
                 >
-                  <item.icon className="h-5 w-5" />
-                  <span className="text-[11px] font-medium">{item.label}</span>
+                  <item.icon className="h-6 w-6" />
+                  <span className="text-xs font-medium">{item.label}</span>
                 </button>
               ))}
               <button
@@ -141,10 +141,10 @@ export function MobileBottomNav() {
                   setMoreOpen(false);
                   signOut();
                 }}
-                className="flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl text-destructive hover:bg-destructive/10 transition-colors"
+                className="flex flex-col items-center gap-2 py-4 px-2 rounded-2xl text-destructive hover:bg-destructive/10 transition-colors"
               >
-                <LogOut className="h-5 w-5" />
-                <span className="text-[11px] font-medium">Sign Out</span>
+                <LogOut className="h-6 w-6" />
+                <span className="text-xs font-medium">Sign Out</span>
               </button>
             </div>
           </div>
