@@ -315,7 +315,13 @@ const InvoiceForm = () => {
 
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving} className="gap-1.5">
+          {!isEdit && (
+            <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              {saving ? "Saving…" : "Save & Create Another"}
+            </Button>
+          )}
+          <Button onClick={() => handleSave(false)} disabled={saving} className="gap-1.5">
             <Save className="h-4 w-4" />
             {saving ? "Saving…" : isEdit ? "Update Invoice" : "Create Invoice"}
           </Button>
