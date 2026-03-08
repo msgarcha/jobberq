@@ -90,8 +90,10 @@ export type Database = {
           email: string | null
           id: string
           invoice_prefix: string | null
+          job_prefix: string | null
           logo_url: string | null
           next_invoice_number: number | null
+          next_job_number: number | null
           next_quote_number: number | null
           phone: string | null
           quote_prefix: string | null
@@ -113,8 +115,10 @@ export type Database = {
           email?: string | null
           id?: string
           invoice_prefix?: string | null
+          job_prefix?: string | null
           logo_url?: string | null
           next_invoice_number?: number | null
+          next_job_number?: number | null
           next_quote_number?: number | null
           phone?: string | null
           quote_prefix?: string | null
@@ -136,8 +140,10 @@ export type Database = {
           email?: string | null
           id?: string
           invoice_prefix?: string | null
+          job_prefix?: string | null
           logo_url?: string | null
           next_invoice_number?: number | null
+          next_job_number?: number | null
           next_quote_number?: number | null
           phone?: string | null
           quote_prefix?: string | null
@@ -313,6 +319,85 @@ export type Database = {
           },
           {
             foreignKeyName: "invoices_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          address: string | null
+          client_id: string | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          internal_notes: string | null
+          job_number: string
+          property_id: string | null
+          quote_id: string | null
+          scheduled_end: string | null
+          scheduled_start: string | null
+          status: Database["public"]["Enums"]["job_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          internal_notes?: string | null
+          job_number: string
+          property_id?: string | null
+          quote_id?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          internal_notes?: string | null
+          job_number?: string
+          property_id?: string | null
+          quote_id?: string | null
+          scheduled_end?: string | null
+          scheduled_start?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_quote_id_fkey"
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "quotes"

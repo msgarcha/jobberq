@@ -16,6 +16,8 @@ import Invoices from "./pages/Invoices";
 import InvoiceForm from "./pages/InvoiceForm";
 import InvoiceDetail from "./pages/InvoiceDetail";
 import Jobs from "./pages/Jobs";
+import JobForm from "./pages/JobForm";
+import JobDetail from "./pages/JobDetail";
 import Schedule from "./pages/Schedule";
 import Reports from "./pages/Reports";
 import Services from "./pages/Services";
@@ -50,7 +52,9 @@ const App = () => (
             <Route path="/invoices/:id" element={<ProtectedRoute><InvoiceDetail /></ProtectedRoute>} />
             <Route path="/invoices/:id/edit" element={<ProtectedRoute><InvoiceForm /></ProtectedRoute>} />
             <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
-            <Route path="/jobs/new" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
+            <Route path="/jobs/new" element={<ProtectedRoute><JobForm /></ProtectedRoute>} />
+            <Route path="/jobs/:id" element={<ProtectedRoute><JobDetail /></ProtectedRoute>} />
+            <Route path="/jobs/:id/edit" element={<ProtectedRoute><JobForm /></ProtectedRoute>} />
             <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
