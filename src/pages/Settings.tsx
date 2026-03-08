@@ -16,8 +16,8 @@ import { useTeam, useTeamMembers, useTeamInvitations, useSendInvite, useUpdateMe
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SUBSCRIPTION_TIERS, type TierKey } from "@/lib/subscriptionTiers";
-import { Save, Building2, Upload, CreditCard, CheckCircle2, Crown, Zap, Users, Mail, Trash2, Copy, UserPlus, Star } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { Save, Building2, Upload, CreditCard, CheckCircle2, Crown, Zap, Users, Mail, Trash2, Copy, UserPlus, Star, FileSpreadsheet, ArrowRight } from "lucide-react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 
 const paymentTermOptions = [
@@ -33,6 +33,7 @@ const Settings = () => {
   const upsert = useUpsertCompanySettings();
   const { subscription, checkSubscription, user, team: authTeam } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "company";
 
@@ -196,6 +197,9 @@ const Settings = () => {
             </TabsTrigger>
             <TabsTrigger value="billing" className="gap-1.5">
               <CreditCard className="h-3.5 w-3.5" /> Billing
+            </TabsTrigger>
+            <TabsTrigger value="import" className="gap-1.5">
+              <FileSpreadsheet className="h-3.5 w-3.5" /> Import
             </TabsTrigger>
           </TabsList>
 
@@ -672,6 +676,40 @@ const Settings = () => {
                   </Card>
                 );
               })}
+            </div>
+          </TabsContent>
+
+          {/* Import Tab */}
+          <TabsContent value="import" className="space-y-5 mt-5">
+            <div>
+              <h2 className="text-base font-medium mb-1">Import Your Data</h2>
+              <p className="text-sm text-muted-foreground">Migrate clients, services, and jobs from another platform.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                { source: 'jobber', label: 'Jobber', desc: 'Import from Jobber CSV exports', color: 'hsl(var(--primary))' },
+                { source: 'quickbooks', label: 'QuickBooks', desc: 'Import from QuickBooks CSV', color: 'hsl(142 71% 45%)' },
+                { source: 'csv', label: 'Generic CSV', desc: 'Import from any CSV file', color: 'hsl(var(--muted-foreground))' },
+              ].map(s => (
+                <Card
+                  key={s.source}
+                  className="cursor-pointer hover:shadow-warm-md transition-all group border-2 border-transparent hover:border-primary/30"
+                  onClick={() => navigate(`/import?source=${s.source}`)}
+                >
+                  <CardContent className="p-5 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${s.color}15` }}>
+                        <FileSpreadsheet className="h-5 w-5" style={{ color: s.color }} />
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{s.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{s.desc}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </TabsContent>
         </Tabs>

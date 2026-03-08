@@ -84,13 +84,18 @@ const Clients = () => {
               <Users className="h-12 w-12 text-muted-foreground/30 mb-4" />
               <h3 className="font-display font-semibold text-lg mb-1">No clients yet</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {search ? "No clients match your search." : "Add your first client to get started."}
+                {search ? "No clients match your search." : "Add your first client or import from another platform."}
               </p>
               {!search && (
-                <Button onClick={() => navigate("/clients/new")} className="rounded-lg">
-                  <Plus className="h-4 w-4 mr-1.5" />
-                  Add Client
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2 items-center">
+                  <Button onClick={() => navigate("/clients/new")} className="rounded-lg">
+                    <Plus className="h-4 w-4 mr-1.5" />
+                    Add Client
+                  </Button>
+                  <Button variant="outline" onClick={() => navigate("/import?source=csv")} className="rounded-lg">
+                    Import from CSV
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
