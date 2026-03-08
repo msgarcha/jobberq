@@ -200,14 +200,14 @@ export function usePayments(invoiceId: string | undefined) {
 export function useRecordPayment() {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, team } = useAuth();
 
   return useMutation({
     mutationFn: async (data: Omit<PaymentInsert, "user_id">) => {
       // Insert payment
       const { data: payment, error } = await supabase
         .from("payments")
-        .insert({ ...data, user_id: user!.id })
+        .insert({ ...data, user_id: user!.id, team_id: team.teamId } as any)
         .select()
         .single();
       if (error) throw error;
