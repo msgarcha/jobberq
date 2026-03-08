@@ -124,6 +124,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const loadSuperAdmin = useCallback(async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('is_super_admin')
+        .eq('user_id', userId)
+        .single();
+      setIsSuperAdmin(data?.is_super_admin === true);
+    } catch {
+      setIsSuperAdmin(false);
+    }
+  }, []);
+
   useEffect(() => {
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
