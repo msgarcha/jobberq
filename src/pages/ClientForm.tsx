@@ -110,6 +110,7 @@ const ClientForm = () => {
       first_name: d.first_name!,
       last_name: d.last_name!,
       status: d.status,
+      default_payment_terms: d.default_payment_terms || "net_30",
       email: d.email || null,
       company_name: d.company_name || null,
       phone: d.phone || null,
