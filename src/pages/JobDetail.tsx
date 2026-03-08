@@ -204,6 +204,14 @@ const JobDetail = () => {
           </CardContent>
         </Card>
       </div>
+
+      <SendReviewDialog
+        open={reviewDialogOpen}
+        onOpenChange={setReviewDialogOpen}
+        clientId={job.client_id || undefined}
+        jobId={job.id}
+        clientName={client ? `${client.first_name} ${client.last_name}` : undefined}
+      />
     </DashboardLayout>
   );
 };
