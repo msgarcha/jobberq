@@ -358,7 +358,7 @@ const Settings = () => {
               </CardHeader>
               {authTeam.role === "admin" && (
                 <CardContent className="space-y-4">
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <div className="flex-1">
                       <Label className="text-xs">Email Address</Label>
                       <Input
@@ -368,18 +368,19 @@ const Settings = () => {
                         placeholder="colleague@company.com"
                       />
                     </div>
-                    <div className="w-32">
-                      <Label className="text-xs">Role</Label>
-                      <Select value={inviteRole} onValueChange={setInviteRole}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="manager">Manager</SelectItem>
-                          <SelectItem value="user">User</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-end">
+                    <div className="flex gap-3">
+                      <div className="w-32">
+                        <Label className="text-xs">Role</Label>
+                        <Select value={inviteRole} onValueChange={setInviteRole}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="manager">Manager</SelectItem>
+                            <SelectItem value="user">User</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-end">
                       <Button
                         onClick={async () => {
                           if (!inviteEmail || !teamId) return;
