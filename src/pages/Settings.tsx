@@ -321,6 +321,178 @@ const Settings = () => {
             </Card>
           </TabsContent>
 
+          {/* Team Tab */}
+          <TabsContent value="team" className="space-y-5 mt-5">
+            {/* Invite Member */}
+            <Card className="shadow-warm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <UserPlus className="h-4 w-4 text-muted-foreground" />
+                  Invite Team Member
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  {authTeam.role === "admin"
+                    ? "Send an email invite to add someone to your team."
+                    : "Only team admins can invite new members."}
+                </CardDescription>
+              </CardHeader>
+              {authTeam.role === "admin" && (
+                <CardContent className="space-y-4">
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <Label className="text-xs">Email Address</Label>
+                      <Input
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        placeholder="colleague@company.com"
+                      />
+                    </div>
+                    <div className="w-32">
+                      <Label className="text-xs">Role</Label>
+                      <Select value={inviteRole} onValueChange={setInviteRole}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="manager">Manager</SelectItem>
+                          <SelectItem value="user">User</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-end">
+                      <Button
+                        onClick={async () => {
+                          if (!inviteEmail || !teamId) return;
+                          sendInvite.mutate(
+                            { teamId, email: inviteEmail, role: inviteRole },
+                            {
+                              onSuccess: (data) => {
+                                setInviteEmail("");
+                                if (data?.inviteUrl) setLastInviteUrl(data.inviteUrl);
+                              },
+                            }
+                          );
+                        }}
+                        disabled={sendInvite.isPending || !inviteEmail}
+                        className="gap-1.5"
+                      >
+                        <Mail className="h-4 w-4" />
+                        {sendInvite.isPending ? "Sending…" : "Send Invite"}
+                      </Button>
+                    </div>
+                  </div>
+                  {lastInviteUrl && (
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/50 border border-border/50">
+                      <p className="text-xs text-muted-foreground flex-1 truncate">{lastInviteUrl}</p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(lastInviteUrl);
+                          toast({ title: "Invite link copied!" });
+                        }}
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              )}
+            </Card>
+
+            {/* Current Members */}
+            <Card className="shadow-warm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  Team Members ({members?.length || 0})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="divide-y divide-border/50">
+                  {members?.map((member) => (
+                    <div key={member.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                          {((member.profiles as any)?.display_name || "?")[0]?.toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{(member.profiles as any)?.display_name || "Unknown"}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{member.role}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {authTeam.role === "admin" && member.user_id !== user?.id && (
+                          <>
+                            <Select
+                              value={member.role}
+                              onValueChange={(val) =>
+                                updateRole.mutate({ memberId: member.id, role: val, teamId: teamId! })
+                              }
+                            >
+                              <SelectTrigger className="h-8 w-28 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="manager">Manager</SelectItem>
+                                <SelectItem value="user">User</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => removeMember.mutate({ memberId: member.id, teamId: teamId! })}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        )}
+                        {member.user_id === user?.id && (
+                          <Badge variant="secondary" className="text-xs">You</Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Pending Invitations */}
+            {invitations && invitations.length > 0 && (
+              <Card className="shadow-warm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-medium">Pending Invitations</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="divide-y divide-border/50">
+                    {invitations.map((inv) => (
+                      <div key={inv.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                        <div>
+                          <p className="text-sm font-medium">{inv.email}</p>
+                          <p className="text-xs text-muted-foreground capitalize">
+                            {inv.role} · Expires {format(new Date(inv.expires_at), "MMM d")}
+                          </p>
+                        </div>
+                        {authTeam.role === "admin" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => cancelInvite.mutate({ invitationId: inv.id, teamId: teamId! })}
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
           {/* Billing Tab */}
           <TabsContent value="billing" className="space-y-5 mt-5">
             {/* Current Plan Status */}
