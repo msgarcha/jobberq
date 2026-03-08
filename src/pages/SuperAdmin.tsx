@@ -128,11 +128,11 @@ export default function SuperAdmin() {
           <TabsContent value="pricing">
             <div className="grid md:grid-cols-3 gap-4">
               {Object.entries(SUBSCRIPTION_TIERS).map(([key, tier]) => (
-                <Card key={key} className={tier.popular ? "border-primary ring-1 ring-primary" : ""}>
+                <Card key={key} className={'popular' in tier && tier.popular ? "border-primary ring-1 ring-primary" : ""}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{tier.name}</CardTitle>
-                      {tier.popular && (
+                      {'popular' in tier && tier.popular && (
                         <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-medium">
                           Popular
                         </span>

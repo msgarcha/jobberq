@@ -184,6 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       subscription,
       team,
+      isSuperAdmin,
       checkSubscription,
       signOut,
     }}>
