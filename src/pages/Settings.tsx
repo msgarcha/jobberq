@@ -125,7 +125,10 @@ const Settings = () => {
       next_invoice_number: nextInvoiceNumber,
       default_tax_rate: defaultTaxRate,
       default_payment_terms: defaultPaymentTerms || null,
-    });
+      google_review_url: googleReviewUrl || null,
+      review_min_stars: reviewMinStars,
+      review_gating_enabled: reviewGatingEnabled,
+    } as any);
   };
 
   const handleCheckout = async (tierKey: TierKey) => {
