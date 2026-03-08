@@ -186,22 +186,24 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue={defaultTab}>
-          <TabsList>
-            <TabsTrigger value="company">Company</TabsTrigger>
-            <TabsTrigger value="invoicing">Invoicing</TabsTrigger>
-            <TabsTrigger value="team" className="gap-1.5">
-              <Users className="h-3.5 w-3.5" /> Team
-            </TabsTrigger>
-            <TabsTrigger value="reviews" className="gap-1.5">
-              <Star className="h-3.5 w-3.5" /> Reviews
-            </TabsTrigger>
-            <TabsTrigger value="billing" className="gap-1.5">
-              <CreditCard className="h-3.5 w-3.5" /> Billing
-            </TabsTrigger>
-            <TabsTrigger value="import" className="gap-1.5">
-              <FileSpreadsheet className="h-3.5 w-3.5" /> Import
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-1 px-1 scrollbar-hide">
+            <TabsList className="inline-flex w-auto min-w-full md:w-auto">
+              <TabsTrigger value="company">Company</TabsTrigger>
+              <TabsTrigger value="invoicing">Invoicing</TabsTrigger>
+              <TabsTrigger value="team" className="gap-1.5">
+                <Users className="h-3.5 w-3.5" /> Team
+              </TabsTrigger>
+              <TabsTrigger value="reviews" className="gap-1.5">
+                <Star className="h-3.5 w-3.5" /> Reviews
+              </TabsTrigger>
+              <TabsTrigger value="billing" className="gap-1.5">
+                <CreditCard className="h-3.5 w-3.5" /> Billing
+              </TabsTrigger>
+              <TabsTrigger value="import" className="gap-1.5">
+                <FileSpreadsheet className="h-3.5 w-3.5" /> Import
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Company Tab */}
           <TabsContent value="company" className="space-y-5 mt-5">
