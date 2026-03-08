@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Trash2, Play, CheckCircle, FileText, MapPin, Clock, User, Pause, RotateCcw } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Play, CheckCircle, FileText, MapPin, Clock, User, Pause, RotateCcw, Star } from "lucide-react";
 import { useJob, useUpdateJob, useDeleteJob } from "@/hooks/useJobs";
 import { useCreateInvoice, useNextInvoiceNumber, useIncrementInvoiceNumber } from "@/hooks/useInvoices";
+import { SendReviewDialog } from "@/components/review/SendReviewDialog";
 import { format } from "date-fns";
 
 const statusStyles: Record<string, string> = {
@@ -17,6 +19,7 @@ const statusStyles: Record<string, string> = {
 };
 
 const JobDetail = () => {
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: job, isLoading } = useJob(id);
@@ -142,9 +145,14 @@ const JobDetail = () => {
               </Button>
             )}
             {job.status === "complete" && (
-              <Button onClick={handleCreateInvoice} className="gap-1.5" disabled={createInvoice.isPending}>
-                <FileText className="h-4 w-4" /> Create Invoice
-              </Button>
+              <>
+                <Button onClick={handleCreateInvoice} className="gap-1.5" disabled={createInvoice.isPending}>
+                  <FileText className="h-4 w-4" /> Create Invoice
+                </Button>
+                <Button variant="outline" onClick={() => setReviewDialogOpen(true)} className="gap-1.5">
+                  <Star className="h-4 w-4" /> Request Review
+                </Button>
+              </>
             )}
             {job.status === "invoiced" && (
               <p className="text-sm text-muted-foreground py-2">This job has been invoiced.</p>
@@ -194,6 +202,14 @@ const JobDetail = () => {
           </CardContent>
         </Card>
       </div>
+
+      <SendReviewDialog
+        open={reviewDialogOpen}
+        onOpenChange={setReviewDialogOpen}
+        clientId={job.client_id || undefined}
+        jobId={job.id}
+        clientName={client ? `${client.first_name} ${client.last_name}` : undefined}
+      />
     </DashboardLayout>
   );
 };
