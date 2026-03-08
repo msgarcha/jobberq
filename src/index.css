@@ -132,6 +132,12 @@
   .shadow-warm-md {
     box-shadow: 0 4px 6px -1px hsl(40 20% 50% / 0.1), 0 2px 4px -2px hsl(40 20% 50% / 0.1);
   }
+  .shadow-warm-lg {
+    box-shadow: 0 10px 25px -5px hsl(40 20% 50% / 0.12), 0 8px 10px -6px hsl(40 20% 50% / 0.08);
+  }
+  .ticker-pause:hover {
+    animation-play-state: paused;
+  }
 }
 
 @media print {
