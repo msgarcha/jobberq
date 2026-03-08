@@ -32,6 +32,7 @@ import {
   Home,
   Plus,
   StickyNote,
+  Star,
 } from "lucide-react";
 import {
   useClient,
