@@ -221,26 +221,26 @@ const Settings = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-start gap-6">
-                  <div className="shrink-0">
+              <div className="flex flex-col md:flex-row items-start gap-6">
+                  <div className="shrink-0 w-full md:w-auto">
                     <Label className="text-xs mb-1.5 block">Logo</Label>
-                    <div className="flex flex-col items-center gap-2">
+                    <div className="flex flex-row md:flex-col items-center gap-3 md:gap-2">
                       {logoUrl ? (
                         <img src={logoUrl} alt="Company logo" className="h-16 w-16 rounded-xl object-cover border" />
                       ) : (
-                        <div className="h-16 w-16 rounded-xl bg-secondary flex items-center justify-center">
+                        <div className="h-16 w-16 rounded-xl bg-secondary flex items-center justify-center shrink-0">
                           <Upload className="h-5 w-5 text-muted-foreground" />
                         </div>
                       )}
-                      <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="Logo URL" className="text-xs h-8 w-40" />
+                      <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="Logo URL" className="text-xs h-8 w-full md:w-40" />
                     </div>
                   </div>
-                  <div className="flex-1 space-y-3">
+                  <div className="flex-1 space-y-3 w-full">
                     <div>
                       <Label className="text-xs">Company Name</Label>
                       <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Your Company Name" />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <Label className="text-xs">Email</Label>
                         <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@company.com" />
