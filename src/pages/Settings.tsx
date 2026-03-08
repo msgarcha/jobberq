@@ -507,6 +507,66 @@ const Settings = () => {
             )}
           </TabsContent>
 
+          {/* Reviews Tab */}
+          <TabsContent value="reviews" className="space-y-5 mt-5">
+            <div className="flex justify-end">
+              <Button onClick={handleSave} disabled={upsert.isPending} className="gap-1.5">
+                <Save className="h-4 w-4" />
+                {upsert.isPending ? "Saving…" : "Save Changes"}
+              </Button>
+            </div>
+            <Card className="shadow-warm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Star className="h-4 w-4 text-[hsl(36,80%,50%)]" />
+                  Reputation Shield
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Screen reviews before they reach Google. Low ratings stay private, great ratings get redirected to your Google Reviews page.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Enable Review Gating</Label>
+                    <p className="text-xs text-muted-foreground">When enabled, only reviews above the threshold are redirected to Google.</p>
+                  </div>
+                  <Switch checked={reviewGatingEnabled} onCheckedChange={setReviewGatingEnabled} />
+                </div>
+                <Separator />
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Google Review URL</Label>
+                  <Input
+                    value={googleReviewUrl}
+                    onChange={(e) => setGoogleReviewUrl(e.target.value)}
+                    placeholder="https://g.page/r/your-business/review"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Search your business on Google Maps → click "Write a review" → copy the URL from your browser.
+                  </p>
+                </div>
+                <Separator />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Minimum Stars for Google</Label>
+                    <Badge variant="secondary" className="font-mono text-sm">{reviewMinStars} ★</Badge>
+                  </div>
+                  <Slider
+                    min={1}
+                    max={5}
+                    step={1}
+                    value={[reviewMinStars]}
+                    onValueChange={(val) => setReviewMinStars(val[0])}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Reviews with {reviewMinStars}+ stars will be redirected to Google. Lower ratings stay in your dashboard for private follow-up.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Billing Tab */}
           <TabsContent value="billing" className="space-y-5 mt-5">
             {/* Current Plan Status */}
