@@ -21,6 +21,7 @@ const filters = [
   { label: "All", value: "all" },
   { label: "Pending", value: "pending" },
   { label: "In Progress", value: "in_progress" },
+  { label: "On Hold", value: "on_hold" },
   { label: "Complete", value: "complete" },
 ];
 

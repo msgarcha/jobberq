@@ -34,6 +34,8 @@ const mainNav = [
   { title: "Clients", url: "/clients", icon: Users },
   { title: "Quotes", url: "/quotes", icon: FileText },
   { title: "Jobs", url: "/jobs", icon: Briefcase },
+  { title: "Pipeline", url: "/pipeline", icon: Kanban },
+  { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Invoices", url: "/invoices", icon: Receipt },
   { title: "Schedule", url: "/schedule", icon: Calendar },
 ];

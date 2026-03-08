@@ -127,8 +127,18 @@ const JobDetail = () => {
               </Button>
             )}
             {job.status === "in_progress" && (
-              <Button onClick={handleComplete} className="gap-1.5" disabled={updateJob.isPending}>
-                <CheckCircle className="h-4 w-4" /> Mark Complete
+              <>
+                <Button onClick={handleComplete} className="gap-1.5" disabled={updateJob.isPending}>
+                  <CheckCircle className="h-4 w-4" /> Mark Complete
+                </Button>
+                <Button variant="outline" onClick={handlePause} className="gap-1.5" disabled={updateJob.isPending}>
+                  <Pause className="h-4 w-4" /> Put On Hold
+                </Button>
+              </>
+            )}
+            {job.status === "on_hold" && (
+              <Button onClick={handleResume} className="gap-1.5" disabled={updateJob.isPending}>
+                <RotateCcw className="h-4 w-4" /> Resume Job
               </Button>
             )}
             {job.status === "complete" && (
