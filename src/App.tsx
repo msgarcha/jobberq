@@ -32,6 +32,8 @@ import ResetPassword from "./pages/ResetPassword";
 import QuotePrint from "./pages/QuotePrint";
 import Onboarding from "./pages/Onboarding";
 import AcceptInvite from "./pages/AcceptInvite";
+import Reviews from "./pages/Reviews";
+import ReviewForm from "./pages/ReviewForm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
