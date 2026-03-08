@@ -16,6 +16,8 @@ import Invoices from "./pages/Invoices";
 import InvoiceForm from "./pages/InvoiceForm";
 import InvoiceDetail from "./pages/InvoiceDetail";
 import Jobs from "./pages/Jobs";
+import JobForm from "./pages/JobForm";
+import JobDetail from "./pages/JobDetail";
 import Schedule from "./pages/Schedule";
 import Reports from "./pages/Reports";
 import Services from "./pages/Services";

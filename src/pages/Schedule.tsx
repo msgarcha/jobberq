@@ -2,18 +2,9 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, List, Map, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
-
-const days = ["S", "M", "T", "W", "T", "F", "S"];
-const dates = [12, 13, 14, 15, 16, 17, 18];
-const today = 16;
-
-const timeSlots = [
-  { time: "9:00 AM", title: "Lawn Maintenance", client: "Green Valley HOA", duration: "2h" },
-  { time: "11:30 AM", title: "Site Assessment", client: "Smith Residence", duration: "1h" },
-  { time: "1:00 PM", title: "HVAC Inspection", client: "Acme Corp", duration: "2h" },
-  { time: "3:30 PM", title: "Window Cleaning", client: "Metro Properties", duration: "1.5h" },
-];
+import { useState, useMemo } from "react";
+import { useJobsByDate } from "@/hooks/useJobs";
+import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 
 const views = [
   { label: "Day", icon: Calendar },
@@ -23,6 +14,13 @@ const views = [
 
 const Schedule = () => {
   const [activeView, setActiveView] = useState("Day");
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 });
+  const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart.toISOString()]);
+
+  const dateStr = format(selectedDate, "yyyy-MM-dd");
+  const { data: jobs, isLoading } = useJobsByDate(dateStr);
 
   return (
     <DashboardLayout>
@@ -30,7 +28,7 @@ const Schedule = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-display font-bold tracking-tight">Schedule</h1>
-            <p className="text-muted-foreground text-sm mt-1">Thursday, January 16, 2024</p>
+            <p className="text-muted-foreground text-sm mt-1">{format(selectedDate, "EEEE, MMMM d, yyyy")}</p>
           </div>
           <div className="flex gap-1 bg-secondary rounded-lg p-1">
             {views.map((v) => (
@@ -52,26 +50,29 @@ const Schedule = () => {
         <Card className="shadow-warm">
           <CardContent className="p-3">
             <div className="flex items-center justify-between mb-2">
-              <Button variant="ghost" size="icon" className="h-7 w-7">
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedDate(addDays(selectedDate, -7))}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm font-medium">Jan 12 – 18, 2024</span>
-              <Button variant="ghost" size="icon" className="h-7 w-7">
+              <span className="text-sm font-medium">
+                {format(weekDays[0], "MMM d")} – {format(weekDays[6], "d, yyyy")}
+              </span>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedDate(addDays(selectedDate, 7))}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
             <div className="grid grid-cols-7 gap-1">
-              {days.map((day, i) => (
+              {weekDays.map((day) => (
                 <button
-                  key={i}
+                  key={day.toISOString()}
                   className={`flex flex-col items-center py-2 rounded-lg text-xs transition-colors ${
-                    dates[i] === today
+                    isSameDay(day, selectedDate)
                       ? "bg-primary text-primary-foreground"
                       : "hover:bg-secondary text-muted-foreground"
                   }`}
+                  onClick={() => setSelectedDate(day)}
                 >
-                  <span className="font-medium">{day}</span>
-                  <span className="text-base font-display font-bold mt-0.5">{dates[i]}</span>
+                  <span className="font-medium">{format(day, "EEEEE")}</span>
+                  <span className="text-base font-display font-bold mt-0.5">{format(day, "d")}</span>
                 </button>
               ))}
             </div>
@@ -80,21 +81,40 @@ const Schedule = () => {
 
         {/* Timeline */}
         <div className="space-y-2">
-          {timeSlots.map((slot, i) => (
-            <Card key={i} className="shadow-warm hover:shadow-warm-md transition-all cursor-pointer">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="text-right w-16 shrink-0">
-                  <p className="text-sm font-medium">{slot.time}</p>
-                  <p className="text-[10px] text-muted-foreground">{slot.duration}</p>
-                </div>
-                <div className="w-1 self-stretch rounded-full bg-primary" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{slot.title}</p>
-                  <p className="text-xs text-muted-foreground">{slot.client}</p>
-                </div>
+          {isLoading ? (
+            <div className="text-center py-12 text-muted-foreground">Loading…</div>
+          ) : !jobs?.length ? (
+            <Card className="shadow-warm">
+              <CardContent className="py-12 text-center text-muted-foreground">
+                <p>No jobs scheduled for this day</p>
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            jobs.map((job) => {
+              const client = (job as any).clients;
+              const clientName = client ? `${client.first_name} ${client.last_name}` : "";
+              const startTime = job.scheduled_start ? format(new Date(job.scheduled_start), "h:mm a") : "";
+              const duration = job.scheduled_start && job.scheduled_end
+                ? `${((new Date(job.scheduled_end).getTime() - new Date(job.scheduled_start).getTime()) / 3600000).toFixed(1)}h`
+                : "";
+
+              return (
+                <Card key={job.id} className="shadow-warm hover:shadow-warm-md transition-all cursor-pointer" onClick={() => window.location.href = `/jobs/${job.id}`}>
+                  <CardContent className="p-4 flex items-center gap-4">
+                    <div className="text-right w-16 shrink-0">
+                      <p className="text-sm font-medium">{startTime}</p>
+                      {duration && <p className="text-[10px] text-muted-foreground">{duration}</p>}
+                    </div>
+                    <div className="w-1 self-stretch rounded-full bg-primary" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{job.title}</p>
+                      <p className="text-xs text-muted-foreground">{clientName || job.job_number}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
         </div>
       </div>
     </DashboardLayout>
