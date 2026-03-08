@@ -1,0 +1,1 @@
+ALTER TABLE public.clients ADD COLUMN default_payment_terms text DEFAULT 'net_30';
