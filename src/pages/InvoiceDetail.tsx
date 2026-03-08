@@ -12,7 +12,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useInvoice, useInvoiceLineItems, useUpdateInvoice, useDeleteInvoice, usePayments, useRecordPayment, useDuplicateInvoice } from "@/hooks/useInvoices";
-import { ArrowLeft, Edit, Send, DollarSign, Trash2, Copy, RefreshCw, Download } from "lucide-react";
+import { ArrowLeft, Edit, Send, DollarSign, Trash2, Copy, RefreshCw, Download, Link, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { format } from "date-fns";
 
 const statusStyles: Record<string, string> = {
@@ -56,6 +58,7 @@ const InvoiceDetail = () => {
   const [payMethod, setPayMethod] = useState<string>("other");
   const [payRef, setPayRef] = useState("");
   const [payNotes, setPayNotes] = useState("");
+  const [generatingLink, setGeneratingLink] = useState(false);
 
   const handleSend = () => {
     updateInvoice.mutate({ id: id!, status: "sent", sent_at: new Date().toISOString() });
@@ -83,6 +86,24 @@ const InvoiceDetail = () => {
 
   const handleDelete = () => {
     deleteInvoice.mutate(id!, { onSuccess: () => navigate("/invoices") });
+  };
+
+  const handleGeneratePaymentLink = async () => {
+    setGeneratingLink(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-invoice-checkout", {
+        body: { invoice_id: id },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        await navigator.clipboard.writeText(data.url);
+        toast.success("Payment link copied to clipboard!");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to generate payment link");
+    } finally {
+      setGeneratingLink(false);
+    }
   };
 
   if (isLoading) {
@@ -146,9 +167,15 @@ const InvoiceDetail = () => {
               </>
             )}
             {invoice.status !== "paid" && invoice.status !== "draft" && (
-              <Button size="sm" className="gap-1.5" onClick={() => { setPayAmount(String(Number(invoice.balance_due))); setPayDialogOpen(true); }}>
-                <DollarSign className="h-3.5 w-3.5" /> Record Payment
-              </Button>
+              <>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={handleGeneratePaymentLink} disabled={generatingLink}>
+                  {generatingLink ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link className="h-3.5 w-3.5" />}
+                  Payment Link
+                </Button>
+                <Button size="sm" className="gap-1.5" onClick={() => { setPayAmount(String(Number(invoice.balance_due))); setPayDialogOpen(true); }}>
+                  <DollarSign className="h-3.5 w-3.5" /> Record Payment
+                </Button>
+              </>
             )}
             <AlertDialog>
               <AlertDialogTrigger asChild>
