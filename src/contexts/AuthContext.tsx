@@ -158,11 +158,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (session) {
       checkSubscription();
       loadTeam(session.user.id);
+      loadSuperAdmin(session.user.id);
     } else {
       setSubscription({ ...defaultSubscription, loading: false });
       setTeam({ ...defaultTeam, loading: false });
+      setIsSuperAdmin(false);
     }
-  }, [session, checkSubscription, loadTeam]);
+  }, [session, checkSubscription, loadTeam, loadSuperAdmin]);
 
   // Periodic refresh every 60s
   useEffect(() => {
