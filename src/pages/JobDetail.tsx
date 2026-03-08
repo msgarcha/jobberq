@@ -19,6 +19,7 @@ const statusStyles: Record<string, string> = {
 };
 
 const JobDetail = () => {
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: job, isLoading } = useJob(id);
