@@ -284,3 +284,173 @@ export function useIncrementInvoiceNumber() {
     },
   });
 }
+
+export function useDuplicateInvoice() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (sourceInvoiceId: string) => {
+      // Get next number
+      const { data: settings } = await supabase
+        .from("company_settings")
+        .select("invoice_prefix, next_invoice_number, id")
+        .maybeSingle();
+
+      const prefix = settings?.invoice_prefix || "INV-";
+      const num = settings?.next_invoice_number || 1001;
+      const newNumber = `${prefix}${num}`;
+
+      // Get source invoice
+      const { data: source, error: srcErr } = await supabase
+        .from("invoices")
+        .select("*")
+        .eq("id", sourceInvoiceId)
+        .single();
+      if (srcErr || !source) throw srcErr || new Error("Invoice not found");
+
+      // Create duplicate
+      const { data: newInvoice, error: insErr } = await supabase
+        .from("invoices")
+        .insert({
+          user_id: user!.id,
+          invoice_number: newNumber,
+          client_id: source.client_id,
+          title: source.title ? `${source.title} (copy)` : null,
+          payment_terms: source.payment_terms,
+          client_notes: source.client_notes,
+          internal_notes: source.internal_notes,
+          subtotal: source.subtotal,
+          tax_amount: source.tax_amount,
+          discount_amount: source.discount_amount,
+          total: source.total,
+          balance_due: source.total,
+          status: "draft" as const,
+          is_recurring: false,
+        })
+        .select()
+        .single();
+      if (insErr) throw insErr;
+
+      // Copy line items
+      const { data: lineItems } = await supabase
+        .from("invoice_line_items")
+        .select("*")
+        .eq("invoice_id", sourceInvoiceId)
+        .order("sort_order");
+
+      if (lineItems && lineItems.length > 0) {
+        const newItems = lineItems.map((li, i) => ({
+          invoice_id: newInvoice.id,
+          user_id: user!.id,
+          description: li.description,
+          quantity: li.quantity,
+          unit_price: li.unit_price,
+          tax_rate: li.tax_rate,
+          discount_percent: li.discount_percent,
+          line_total: li.line_total,
+          service_id: li.service_id,
+          sort_order: i,
+        }));
+        await supabase.from("invoice_line_items").insert(newItems);
+      }
+
+      // Increment number
+      if (settings) {
+        await supabase
+          .from("company_settings")
+          .update({ next_invoice_number: num + 1 })
+          .eq("id", settings.id);
+      }
+
+      return newInvoice;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["next-invoice-number"] });
+      toast({ title: "Invoice duplicated" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    },
+  });
+}
+
+export function useDashboardStats() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["dashboard-stats"],
+    queryFn: async () => {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      // Revenue MTD (paid invoices this month)
+      const { data: paidThisMonth } = await supabase
+        .from("invoices")
+        .select("total")
+        .eq("status", "paid" as any)
+        .gte("paid_at", monthStart);
+
+      const revenueMTD = (paidThisMonth || []).reduce((sum, inv) => sum + Number(inv.total), 0);
+
+      // Outstanding (unpaid invoices)
+      const { data: unpaid } = await supabase
+        .from("invoices")
+        .select("balance_due")
+        .neq("status", "paid" as any)
+        .neq("status", "draft" as any);
+
+      const outstanding = (unpaid || []).reduce((sum, inv) => sum + Number(inv.balance_due), 0);
+      const unpaidCount = unpaid?.length || 0;
+
+      // Overdue
+      const today = now.toISOString().split("T")[0];
+      const { data: overdue } = await supabase
+        .from("invoices")
+        .select("balance_due")
+        .eq("status", "overdue" as any);
+
+      const overdueTotal = (overdue || []).reduce((sum, inv) => sum + Number(inv.balance_due), 0);
+      const overdueCount = overdue?.length || 0;
+
+      // Active quotes
+      const { data: activeQuotes } = await supabase
+        .from("quotes")
+        .select("total")
+        .in("status", ["draft", "sent"] as any);
+
+      const quotesValue = (activeQuotes || []).reduce((sum, q) => sum + Number(q.total), 0);
+      const quotesCount = activeQuotes?.length || 0;
+
+      return { revenueMTD, outstanding, unpaidCount, overdueTotal, overdueCount, quotesValue, quotesCount };
+    },
+    enabled: !!user,
+  });
+}
+
+export function useRecentActivity() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["recent-activity"],
+    queryFn: async () => {
+      const { data: recentInvoices } = await supabase
+        .from("invoices")
+        .select("id, invoice_number, status, total, updated_at, clients(first_name, last_name)")
+        .order("updated_at", { ascending: false })
+        .limit(10);
+
+      return (recentInvoices || []).map((inv: any) => ({
+        id: inv.id,
+        type: "invoice" as const,
+        text: `Invoice ${inv.invoice_number} ${inv.status}`,
+        detail: inv.clients ? `${inv.clients.first_name} ${inv.clients.last_name} · $${Number(inv.total).toLocaleString()}` : `$${Number(inv.total).toLocaleString()}`,
+        status: inv.status,
+        time: inv.updated_at,
+      }));
+    },
+    enabled: !!user,
+  });
+}

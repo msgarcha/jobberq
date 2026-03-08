@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Receipt, ChevronRight } from "lucide-react";
+import { Plus, Search, Receipt, ChevronRight, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useInvoices } from "@/hooks/useInvoices";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -17,18 +17,30 @@ const statusStyles: Record<string, string> = {
   overdue: "bg-status-danger text-status-danger-foreground",
 };
 
-const filters = ["All", "Draft", "Sent", "Paid", "Overdue"];
+const filters = ["Active", "Draft", "Sent", "Overdue", "Paid", "All"];
 
 const Invoices = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [activeFilter, setActiveFilter] = useState("All");
+  const [activeFilter, setActiveFilter] = useState("Active");
   const debouncedSearch = useDebouncedValue(search, 300);
+
+  // "Active" means all non-paid, non-draft
+  const statusFilter = activeFilter === "All"
+    ? undefined
+    : activeFilter === "Active"
+      ? undefined // we'll filter client-side
+      : activeFilter.toLowerCase();
 
   const { data: invoices, isLoading } = useInvoices({
     search: debouncedSearch,
-    status: activeFilter === "All" ? undefined : activeFilter.toLowerCase(),
+    status: statusFilter,
   });
+
+  // Client-side filter for "Active" = exclude paid
+  const filteredInvoices = activeFilter === "Active"
+    ? invoices?.filter((inv: any) => inv.status !== "paid")
+    : invoices;
 
   return (
     <DashboardLayout>
@@ -36,7 +48,7 @@ const Invoices = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-display font-bold tracking-tight">Invoices</h1>
-            <p className="text-muted-foreground text-sm mt-1">{invoices?.length ?? 0} invoices</p>
+            <p className="text-muted-foreground text-sm mt-1">{filteredInvoices?.length ?? 0} invoices</p>
           </div>
           <Button className="gap-1.5 rounded-lg shadow-warm" onClick={() => navigate("/invoices/new")}>
             <Plus className="h-4 w-4" />
@@ -54,7 +66,7 @@ const Invoices = () => {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 flex-wrap">
             {filters.map((f) => (
               <Button
                 key={f}
@@ -71,14 +83,14 @@ const Invoices = () => {
 
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground">Loading…</div>
-        ) : !invoices || invoices.length === 0 ? (
+        ) : !filteredInvoices || filteredInvoices.length === 0 ? (
           <div className="text-center py-12">
             <Receipt className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
             <p className="text-muted-foreground">No invoices found</p>
           </div>
         ) : (
           <div className="space-y-2">
-            {invoices.map((inv: any) => {
+            {filteredInvoices.map((inv: any) => {
               const clientName = inv.clients
                 ? `${inv.clients.first_name} ${inv.clients.last_name}${inv.clients.company_name ? ` · ${inv.clients.company_name}` : ""}`
                 : "No client";
@@ -98,13 +110,21 @@ const Invoices = () => {
                         <Badge className={`${statusStyles[inv.status]} text-[10px] px-1.5 py-0`} variant="secondary">
                           {inv.status}
                         </Badge>
+                        {inv.is_recurring && (
+                          <RefreshCw className="h-3 w-3 text-muted-foreground" />
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">
                         {clientName} {inv.due_date && `· Due ${inv.due_date}`}
                       </p>
                     </div>
                     <div className="text-right shrink-0 flex items-center gap-3">
-                      <span className="text-sm font-medium">${Number(inv.total).toLocaleString()}</span>
+                      <div>
+                        <span className="text-sm font-medium">${Number(inv.total).toLocaleString()}</span>
+                        {inv.status !== "paid" && Number(inv.balance_due) !== Number(inv.total) && (
+                          <p className="text-[10px] text-muted-foreground">Due: ${Number(inv.balance_due).toLocaleString()}</p>
+                        )}
+                      </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
                     </div>
                   </CardContent>
