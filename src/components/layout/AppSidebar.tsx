@@ -38,6 +38,7 @@ const mainNav = [
   { title: "Pipeline", url: "/pipeline", icon: Kanban },
   { title: "Projects", url: "/projects", icon: FolderOpen },
   { title: "Invoices", url: "/invoices", icon: Receipt },
+  { title: "Reviews", url: "/reviews", icon: Star },
   { title: "Schedule", url: "/schedule", icon: Calendar },
 ];
 
