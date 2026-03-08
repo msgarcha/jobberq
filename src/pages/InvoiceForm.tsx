@@ -54,27 +54,18 @@ const InvoiceForm = () => {
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [saving, setSaving] = useState(false);
 
-  // Recurring fields
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringFrequency, setRecurringFrequency] = useState("monthly");
   const [recurringStart, setRecurringStart] = useState("");
   const [recurringEnd, setRecurringEnd] = useState("");
 
-  // Helper: compute due date from payment terms
   const computeDueDate = (terms: string): string => {
-    const daysMap: Record<string, number> = {
-      due_on_receipt: 0,
-      net_15: 15,
-      net_30: 30,
-      net_45: 45,
-      net_60: 60,
-    };
+    const daysMap: Record<string, number> = { due_on_receipt: 0, net_15: 15, net_30: 30, net_45: 45, net_60: 60 };
     const days = daysMap[terms];
     if (days === undefined) return "";
     return format(addDays(new Date(), days), "yyyy-MM-dd");
   };
 
-  // Auto-fill payment terms & due date when client changes (new invoices only)
   useEffect(() => {
     if (!isEdit && selectedClient && (selectedClient as any).default_payment_terms) {
       const terms = (selectedClient as any).default_payment_terms;
@@ -83,7 +74,6 @@ const InvoiceForm = () => {
     }
   }, [selectedClient, isEdit]);
 
-  // Auto-update due date when payment terms change (new invoices only)
   useEffect(() => {
     if (!isEdit && paymentTerms) {
       setDueDate(computeDueDate(paymentTerms));
@@ -138,9 +128,7 @@ const InvoiceForm = () => {
         recurring_start: isRecurring && recurringStart ? recurringStart : null,
         recurring_end: isRecurring && recurringEnd ? recurringEnd : null,
         ...totals,
-        balance_due: isEdit
-          ? totals.total - Number(existingInvoice?.amount_paid || 0)
-          : totals.total,
+        balance_due: isEdit ? totals.total - Number(existingInvoice?.amount_paid || 0) : totals.total,
       };
 
       let invoiceId: string;
@@ -150,53 +138,30 @@ const InvoiceForm = () => {
         invoiceId = id;
       } else {
         const invoiceNumber = nextNumber?.formatted || `INV-${Date.now()}`;
-        const result = await createInvoice.mutateAsync({
-          ...invoiceData,
-          invoice_number: invoiceNumber,
-        });
+        const result = await createInvoice.mutateAsync({ ...invoiceData, invoice_number: invoiceNumber });
         invoiceId = result.id;
         incrementNumber.mutate();
       }
 
-      await saveLineItems.mutateAsync({
-        invoiceId,
-        items: lineItems.map(({ id: _, ...rest }) => rest),
-      });
+      await saveLineItems.mutateAsync({ invoiceId, items: lineItems.map(({ id: _, ...rest }) => rest) });
 
       if (createAnother && !isEdit) {
-        // Reset form for new invoice
-        setClientId(null);
-        setTitle("");
-        setDueDate("");
-        setPaymentTerms("net_30");
-        setClientNotes("");
-        setInternalNotes("");
-        setLineItems([]);
-        setIsRecurring(false);
-        setRecurringFrequency("monthly");
-        setRecurringStart("");
-        setRecurringEnd("");
+        setClientId(null); setTitle(""); setDueDate(""); setPaymentTerms("net_30");
+        setClientNotes(""); setInternalNotes(""); setLineItems([]);
+        setIsRecurring(false); setRecurringFrequency("monthly"); setRecurringStart(""); setRecurringEnd("");
       } else {
         navigate(`/invoices/${invoiceId}`);
       }
-    } catch {
-      // error handled by hooks
-    } finally {
-      setSaving(false);
-    }
+    } catch { /* handled by hooks */ } finally { setSaving(false); }
   };
 
   if (isEdit && isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center py-20 text-muted-foreground">Loading…</div>
-      </DashboardLayout>
-    );
+    return (<DashboardLayout><div className="flex items-center justify-center py-20 text-muted-foreground">Loading…</div></DashboardLayout>);
   }
 
   return (
     <DashboardLayout>
-      <div className="space-y-5 animate-fade-in max-w-4xl">
+      <div className="space-y-5 animate-fade-in max-w-4xl mx-auto md:mx-0">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4" />
@@ -211,26 +176,20 @@ const InvoiceForm = () => {
           </div>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-5 grid-cols-1 md:grid-cols-2">
           <Card className="shadow-warm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Client</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ClientSelector value={clientId} onChange={setClientId} />
-            </CardContent>
+            <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Client</CardTitle></CardHeader>
+            <CardContent><ClientSelector value={clientId} onChange={setClientId} /></CardContent>
           </Card>
 
           <Card className="shadow-warm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Details</CardTitle>
-            </CardHeader>
+            <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Details</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div>
                 <Label className="text-xs">Title</Label>
                 <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Invoice title (optional)" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs">Due Date</Label>
                   <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
@@ -239,11 +198,7 @@ const InvoiceForm = () => {
                   <Label className="text-xs">Payment Terms</Label>
                   <Select value={paymentTerms} onValueChange={setPaymentTerms}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {paymentTermOptions.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectContent>{paymentTermOptions.map((o) => (<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>))}</SelectContent>
                   </Select>
                 </div>
               </div>
@@ -251,12 +206,10 @@ const InvoiceForm = () => {
           </Card>
         </div>
 
-        {/* Recurring Billing */}
         <Card className="shadow-warm">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <RefreshCw className="h-4 w-4" />
-              Recurring Billing
+              <RefreshCw className="h-4 w-4" /> Recurring Billing
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -268,16 +221,12 @@ const InvoiceForm = () => {
               <Switch checked={isRecurring} onCheckedChange={setIsRecurring} />
             </div>
             {isRecurring && (
-              <div className="grid grid-cols-3 gap-3 pt-2 border-t">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t">
                 <div>
                   <Label className="text-xs">Frequency</Label>
                   <Select value={recurringFrequency} onValueChange={setRecurringFrequency}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {frequencyOptions.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectContent>{frequencyOptions.map((o) => (<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>))}</SelectContent>
                   </Select>
                 </div>
                 <div>
@@ -294,15 +243,11 @@ const InvoiceForm = () => {
         </Card>
 
         <Card className="shadow-warm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Line Items</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <LineItemsEditor items={lineItems} onChange={setLineItems} />
-          </CardContent>
+          <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Line Items</CardTitle></CardHeader>
+          <CardContent><LineItemsEditor items={lineItems} onChange={setLineItems} /></CardContent>
         </Card>
 
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-5 grid-cols-1 md:grid-cols-2">
           <div>
             <Label className="text-xs">Client Notes</Label>
             <Textarea value={clientNotes} onChange={(e) => setClientNotes(e.target.value)} placeholder="Notes visible to client…" rows={3} />
@@ -313,15 +258,15 @@ const InvoiceForm = () => {
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-2">
-          <Button variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
+        <div className="flex flex-col md:flex-row justify-end gap-3 pt-2 sticky bottom-20 md:static md:bottom-auto bg-background/95 backdrop-blur-sm py-3 md:py-0 -mx-4 px-4 md:mx-0 md:px-0 border-t md:border-0">
+          <Button variant="outline" onClick={() => navigate(-1)} className="md:w-auto">Cancel</Button>
           {!isEdit && (
-            <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-1.5">
+            <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-1.5 md:w-auto">
               <Plus className="h-4 w-4" />
               {saving ? "Saving…" : "Save & Create Another"}
             </Button>
           )}
-          <Button onClick={() => handleSave(false)} disabled={saving} className="gap-1.5">
+          <Button onClick={() => handleSave(false)} disabled={saving} className="gap-1.5 md:w-auto">
             <Save className="h-4 w-4" />
             {saving ? "Saving…" : isEdit ? "Update Invoice" : "Create Invoice"}
           </Button>
