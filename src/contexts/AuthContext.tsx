@@ -25,6 +25,7 @@ interface AuthContextType {
   loading: boolean;
   subscription: SubscriptionState;
   team: TeamState;
+  isSuperAdmin: boolean;
   checkSubscription: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -51,6 +52,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   subscription: defaultSubscription,
   team: defaultTeam,
+  isSuperAdmin: false,
   checkSubscription: async () => {},
   signOut: async () => {},
 });
@@ -62,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionState>(defaultSubscription);
   const [team, setTeam] = useState<TeamState>(defaultTeam);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const checkSubscription = useCallback(async () => {
     try {
@@ -121,6 +124,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const loadSuperAdmin = useCallback(async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('is_super_admin')
+        .eq('user_id', userId)
+        .single();
+      setIsSuperAdmin(data?.is_super_admin === true);
+    } catch {
+      setIsSuperAdmin(false);
+    }
+  }, []);
+
   useEffect(() => {
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
@@ -142,11 +158,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (session) {
       checkSubscription();
       loadTeam(session.user.id);
+      loadSuperAdmin(session.user.id);
     } else {
       setSubscription({ ...defaultSubscription, loading: false });
       setTeam({ ...defaultTeam, loading: false });
+      setIsSuperAdmin(false);
     }
-  }, [session, checkSubscription, loadTeam]);
+  }, [session, checkSubscription, loadTeam, loadSuperAdmin]);
 
   // Periodic refresh every 60s
   useEffect(() => {
@@ -166,6 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       subscription,
       team,
+      isSuperAdmin,
       checkSubscription,
       signOut,
     }}>

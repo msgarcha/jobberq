@@ -12,6 +12,7 @@ import {
   Kanban,
   FolderOpen,
   Star,
+  Shield,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -52,7 +53,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isSuperAdmin } = useAuth();
   const isActive = (path: string) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
@@ -122,6 +123,22 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-3 border-t border-sidebar-border">
+        {isSuperAdmin && (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={isActive("/super-admin")}>
+                <NavLink
+                  to="/super-admin"
+                  className="hover:bg-sidebar-accent/60 transition-colors rounded-lg text-amber-600"
+                  activeClassName="bg-sidebar-accent text-amber-600 font-medium"
+                >
+                  <Shield className="mr-2.5 h-4 w-4" />
+                  {!collapsed && <span>Super Admin</span>}
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-primary/20 text-sidebar-primary text-xs font-semibold">
             {initials}

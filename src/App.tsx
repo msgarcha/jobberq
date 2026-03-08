@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { PublicRoute } from "@/components/PublicRoute";
+import { SuperAdminRoute } from "@/components/SuperAdminRoute";
 import Landing from "./pages/Landing";
 import Index from "./pages/Index";
 import Clients from "./pages/Clients";
@@ -35,6 +36,7 @@ import AcceptInvite from "./pages/AcceptInvite";
 import Reviews from "./pages/Reviews";
 import ReviewForm from "./pages/ReviewForm";
 import ImportData from "./pages/ImportData";
+import SuperAdmin from "./pages/SuperAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -85,6 +87,7 @@ const App = () => (
             <Route path="/reviews" element={<ProtectedRoute><Reviews /></ProtectedRoute>} />
             <Route path="/import" element={<ProtectedRoute><ImportData /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/super-admin" element={<SuperAdminRoute><SuperAdmin /></SuperAdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
