@@ -76,6 +76,7 @@ const ClientForm = () => {
         email: existingClient.email || "",
         phone: existingClient.phone || "",
         status: existingClient.status,
+        default_payment_terms: (existingClient as any).default_payment_terms || "net_30",
         address_line1: existingClient.address_line1 || "",
         address_line2: existingClient.address_line2 || "",
         city: existingClient.city || "",
