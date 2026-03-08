@@ -26,6 +26,7 @@ const clientSchema = z.object({
   email: z.string().trim().email("Invalid email").max(255).optional().or(z.literal("")),
   phone: z.string().trim().max(30).optional(),
   status: z.enum(["lead", "active", "archived"]),
+  default_payment_terms: z.string().optional(),
   address_line1: z.string().trim().max(200).optional(),
   address_line2: z.string().trim().max(200).optional(),
   city: z.string().trim().max(100).optional(),

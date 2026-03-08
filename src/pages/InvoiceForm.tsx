@@ -11,7 +11,9 @@ import { Switch } from "@/components/ui/switch";
 import { ClientSelector } from "@/components/ClientSelector";
 import { LineItemsEditor, LineItem, computeTotals } from "@/components/LineItemsEditor";
 import { useInvoice, useInvoiceLineItems, useCreateInvoice, useUpdateInvoice, useSaveInvoiceLineItems, useNextInvoiceNumber, useIncrementInvoiceNumber } from "@/hooks/useInvoices";
-import { ArrowLeft, Save, RefreshCw } from "lucide-react";
+import { useClient } from "@/hooks/useClients";
+import { ArrowLeft, Save, RefreshCw, Plus } from "lucide-react";
+import { addDays, format } from "date-fns";
 
 const paymentTermOptions = [
   { value: "due_on_receipt", label: "Due on Receipt" },
