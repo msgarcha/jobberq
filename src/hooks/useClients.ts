@@ -116,9 +116,7 @@ export function useClientInvoices(clientId: string | undefined) {
 export function useCreateClient() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { user } = useAuth();
-
-  const { team } = useAuth();
+  const { user, team } = useAuth();
 
   return useMutation({
     mutationFn: async (data: Omit<ClientInsert, "user_id">) => {
@@ -169,9 +167,7 @@ export function useUpdateClient() {
 export function useCreateProperty() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { user } = useAuth();
-
-  const { team } = useAuth();
+  const { user, team } = useAuth();
 
   return useMutation({
     mutationFn: async (data: { client_id: string; name: string; address_line1?: string; address_line2?: string; city?: string; state?: string; zip?: string; notes?: string }) => {

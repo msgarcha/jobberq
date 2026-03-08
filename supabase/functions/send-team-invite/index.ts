@@ -1,38 +1,37 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     // Auth check
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Not authenticated");
 
-    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false },
     });
-    const { data: { user }, error: authErr } = await supabaseAuth.auth.getUser();
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authErr } = await supabaseAdmin.auth.getUser(token);
     if (authErr || !user) throw new Error("Not authenticated");
 
     const { teamId, email, role } = await req.json();
     if (!teamId || !email || !role) throw new Error("Missing teamId, email, or role");
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
     // Verify caller is admin of this team
-    const { data: membership } = await supabase
+    const { data: membership } = await supabaseAdmin
       .from("team_members")
       .select("role")
       .eq("team_id", teamId)
@@ -43,47 +42,43 @@ serve(async (req) => {
       throw new Error("Only team admins can send invitations");
     }
 
-    // Check team member count vs subscription limits
-    const { count: memberCount } = await supabase
+    // Check team member + pending invite count
+    const { count: memberCount } = await supabaseAdmin
       .from("team_members")
       .select("*", { count: "exact", head: true })
       .eq("team_id", teamId);
 
-    const { count: pendingCount } = await supabase
+    const { count: pendingCount } = await supabaseAdmin
       .from("team_invitations")
       .select("*", { count: "exact", head: true })
       .eq("team_id", teamId)
       .is("accepted_at", null);
 
-    // Get team owner's subscription to check limits
-    const { data: team } = await supabase
-      .from("teams")
-      .select("owner_id")
-      .eq("id", teamId)
-      .single();
-
-    // For now, allow up to 50 total (actual limit enforcement can be stricter with tier checks)
     const totalMembers = (memberCount || 0) + (pendingCount || 0);
     if (totalMembers >= 50) {
       throw new Error("Team member limit reached");
     }
 
-    // Check if user already a member
-    const { data: existingMember } = await supabase
-      .from("team_members")
-      .select("id")
-      .eq("team_id", teamId)
-      .eq("user_id", (await supabase.from("profiles").select("user_id").eq("user_id", 
-        (await supabase.auth.admin.listUsers()).data.users.find(u => u.email === email)?.id || ''
-      ).maybeSingle()).data?.user_id || '')
-      .maybeSingle();
+    // Check if email is already a team member
+    const { data: users } = await supabaseAdmin.auth.admin.listUsers();
+    const existingUser = users?.users?.find((u) => u.email?.toLowerCase() === email.toLowerCase().trim());
 
-    if (existingMember) {
-      throw new Error("This user is already a team member");
+    if (existingUser) {
+      const { data: existingMember } = await supabaseAdmin
+        .from("team_members")
+        .select("id")
+        .eq("team_id", teamId)
+        .eq("user_id", existingUser.id)
+        .maybeSingle();
+
+      if (existingMember) {
+        throw new Error("This user is already a team member");
+      }
     }
 
-    // Upsert invitation (update if exists for same team+email)
-    const { data: invitation, error: invErr } = await supabase
+    // Upsert invitation
+    const newToken = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+    const { data: invitation, error: invErr } = await supabaseAdmin
       .from("team_invitations")
       .upsert(
         {
@@ -91,7 +86,7 @@ serve(async (req) => {
           email: email.toLowerCase().trim(),
           role,
           invited_by: user.id,
-          token: crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, ''),
+          token: newToken,
           expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
           accepted_at: null,
         },
@@ -102,9 +97,8 @@ serve(async (req) => {
 
     if (invErr) throw invErr;
 
-    // Note: In production, you'd send an email here with the invite link
-    // For now, return the token so it can be shared
-    const inviteUrl = `${req.headers.get("origin") || supabaseUrl.replace('.supabase.co', '')}/accept-invite?token=${invitation.token}`;
+    const origin = req.headers.get("origin") || "http://localhost:5173";
+    const inviteUrl = `${origin}/accept-invite?token=${invitation.token}`;
 
     return new Response(
       JSON.stringify({ success: true, inviteUrl }),

@@ -947,6 +947,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_team_invitation: {
+        Args: { _token: string; _user_id: string }
+        Returns: Json
+      }
       get_user_team_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
