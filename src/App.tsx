@@ -7,6 +7,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Clients from "./pages/Clients";
+import ClientDetail from "./pages/ClientDetail";
+import ClientForm from "./pages/ClientForm";
 import Quotes from "./pages/Quotes";
 import Invoices from "./pages/Invoices";
 import Jobs from "./pages/Jobs";
@@ -32,8 +34,9 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
-            <Route path="/clients/:id" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
-            <Route path="/clients/new" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+            <Route path="/clients/new" element={<ProtectedRoute><ClientForm /></ProtectedRoute>} />
+            <Route path="/clients/:id" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
+            <Route path="/clients/:id/edit" element={<ProtectedRoute><ClientForm /></ProtectedRoute>} />
             <Route path="/quotes" element={<ProtectedRoute><Quotes /></ProtectedRoute>} />
             <Route path="/quotes/new" element={<ProtectedRoute><Quotes /></ProtectedRoute>} />
             <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
