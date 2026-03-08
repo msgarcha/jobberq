@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_saved_cards: {
+        Row: {
+          card_brand: string | null
+          card_exp_month: number | null
+          card_exp_year: number | null
+          card_last4: string | null
+          client_id: string
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          stripe_customer_id: string
+          stripe_payment_method_id: string
+          team_id: string | null
+          user_id: string
+        }
+        Insert: {
+          card_brand?: string | null
+          card_exp_month?: number | null
+          card_exp_year?: number | null
+          card_last4?: string | null
+          client_id: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          stripe_customer_id: string
+          stripe_payment_method_id: string
+          team_id?: string | null
+          user_id: string
+        }
+        Update: {
+          card_brand?: string | null
+          card_exp_month?: number | null
+          card_exp_year?: number | null
+          card_last4?: string | null
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          stripe_customer_id?: string
+          stripe_payment_method_id?: string
+          team_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_saved_cards_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_saved_cards_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address_line1: string | null

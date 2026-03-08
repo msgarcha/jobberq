@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ const TOTAL_STEPS = 3;
 export default function Onboarding() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const qc = useQueryClient();
   const upsert = useUpsertCompanySettings();
   const [step, setStep] = useState(1);
 
@@ -63,7 +65,10 @@ export default function Onboarding() {
         quote_prefix: quotePrefix,
       },
       {
-        onSuccess: () => navigate("/"),
+        onSuccess: async () => {
+          await qc.invalidateQueries({ queryKey: ["company-settings"] });
+          navigate("/");
+        },
       }
     );
   };
