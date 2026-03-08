@@ -83,16 +83,17 @@ const Services = () => {
   };
 
   const onSubmit = async (values: ServiceFormValues) => {
-    const payload = {
-      ...values,
+    const shared = {
       description: values.description || null,
       category: values.category || null,
       tax_rate: values.tax_rate ?? null,
+      default_price: values.default_price,
+      is_active: values.is_active,
     };
     if (editing) {
-      await updateService.mutateAsync({ id: editing.id, ...payload });
+      await updateService.mutateAsync({ id: editing.id, name: values.name, ...shared });
     } else {
-      await createService.mutateAsync(payload);
+      await createService.mutateAsync({ name: values.name, ...shared });
     }
     setDialogOpen(false);
   };
