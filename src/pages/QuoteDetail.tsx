@@ -113,6 +113,9 @@ const QuoteDetail = () => {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.open(`/quotes/${id}/print`, '_blank')}>
+              <Download className="h-3.5 w-3.5" /> PDF
+            </Button>
             {quote.status === "draft" && (
               <>
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/quotes/${id}/edit`)}>

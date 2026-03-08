@@ -49,6 +49,7 @@ const App = () => (
             <Route path="/quotes/new" element={<ProtectedRoute><QuoteForm /></ProtectedRoute>} />
             <Route path="/quotes/:id" element={<ProtectedRoute><QuoteDetail /></ProtectedRoute>} />
             <Route path="/quotes/:id/edit" element={<ProtectedRoute><QuoteForm /></ProtectedRoute>} />
+            <Route path="/quotes/:id/print" element={<ProtectedRoute><QuotePrint /></ProtectedRoute>} />
             <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
             <Route path="/invoices/new" element={<ProtectedRoute><InvoiceForm /></ProtectedRoute>} />
             <Route path="/invoices/:id" element={<ProtectedRoute><InvoiceDetail /></ProtectedRoute>} />
