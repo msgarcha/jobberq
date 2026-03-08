@@ -10,10 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCompanySettings, useUpsertCompanySettings } from "@/hooks/useCompanySettings";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTeam, useTeamMembers, useTeamInvitations, useSendInvite, useUpdateMemberRole, useRemoveMember, useCancelInvitation } from "@/hooks/useTeam";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SUBSCRIPTION_TIERS, type TierKey } from "@/lib/subscriptionTiers";
-import { Save, Building2, Upload, CreditCard, CheckCircle2, Crown, Zap } from "lucide-react";
+import { Save, Building2, Upload, CreditCard, CheckCircle2, Crown, Zap, Users, Mail, Trash2, Copy, UserPlus } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 
