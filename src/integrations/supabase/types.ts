@@ -32,6 +32,7 @@ export type Database = {
           state: string | null
           status: Database["public"]["Enums"]["client_status"]
           tags: string[] | null
+          team_id: string | null
           updated_at: string
           user_id: string
           zip: string | null
@@ -53,6 +54,7 @@ export type Database = {
           state?: string | null
           status?: Database["public"]["Enums"]["client_status"]
           tags?: string[] | null
+          team_id?: string | null
           updated_at?: string
           user_id: string
           zip?: string | null
@@ -74,11 +76,20 @@ export type Database = {
           state?: string | null
           status?: Database["public"]["Enums"]["client_status"]
           tags?: string[] | null
+          team_id?: string | null
           updated_at?: string
           user_id?: string
           zip?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_settings: {
         Row: {
@@ -101,6 +112,7 @@ export type Database = {
           phone: string | null
           quote_prefix: string | null
           state: string | null
+          team_id: string | null
           updated_at: string
           user_id: string
           website: string | null
@@ -126,6 +138,7 @@ export type Database = {
           phone?: string | null
           quote_prefix?: string | null
           state?: string | null
+          team_id?: string | null
           updated_at?: string
           user_id: string
           website?: string | null
@@ -151,12 +164,21 @@ export type Database = {
           phone?: string | null
           quote_prefix?: string | null
           state?: string | null
+          team_id?: string | null
           updated_at?: string
           user_id?: string
           website?: string | null
           zip?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "company_settings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoice_line_items: {
         Row: {
@@ -170,6 +192,7 @@ export type Database = {
           service_id: string | null
           sort_order: number
           tax_rate: number
+          team_id: string | null
           unit_price: number
           user_id: string
         }
@@ -184,6 +207,7 @@ export type Database = {
           service_id?: string | null
           sort_order?: number
           tax_rate?: number
+          team_id?: string | null
           unit_price?: number
           user_id: string
         }
@@ -198,6 +222,7 @@ export type Database = {
           service_id?: string | null
           sort_order?: number
           tax_rate?: number
+          team_id?: string | null
           unit_price?: number
           user_id?: string
         }
@@ -214,6 +239,13 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_line_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -244,6 +276,7 @@ export type Database = {
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal: number
           tax_amount: number
+          team_id: string | null
           title: string | null
           total: number
           updated_at: string
@@ -275,6 +308,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           tax_amount?: number
+          team_id?: string | null
           title?: string | null
           total?: number
           updated_at?: string
@@ -306,6 +340,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
           tax_amount?: number
+          team_id?: string | null
           title?: string | null
           total?: number
           updated_at?: string
@@ -327,6 +362,13 @@ export type Database = {
             referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "invoices_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
         ]
       }
       jobs: {
@@ -344,6 +386,7 @@ export type Database = {
           scheduled_end: string | null
           scheduled_start: string | null
           status: Database["public"]["Enums"]["job_status"]
+          team_id: string | null
           title: string
           updated_at: string
           user_id: string
@@ -362,6 +405,7 @@ export type Database = {
           scheduled_end?: string | null
           scheduled_start?: string | null
           status?: Database["public"]["Enums"]["job_status"]
+          team_id?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -380,6 +424,7 @@ export type Database = {
           scheduled_end?: string | null
           scheduled_start?: string | null
           status?: Database["public"]["Enums"]["job_status"]
+          team_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -406,6 +451,13 @@ export type Database = {
             referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "jobs_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
         ]
       }
       payments: {
@@ -419,6 +471,7 @@ export type Database = {
           payment_method: Database["public"]["Enums"]["payment_method"]
           reference_number: string | null
           stripe_payment_id: string | null
+          team_id: string | null
           user_id: string
         }
         Insert: {
@@ -431,6 +484,7 @@ export type Database = {
           payment_method?: Database["public"]["Enums"]["payment_method"]
           reference_number?: string | null
           stripe_payment_id?: string | null
+          team_id?: string | null
           user_id: string
         }
         Update: {
@@ -443,6 +497,7 @@ export type Database = {
           payment_method?: Database["public"]["Enums"]["payment_method"]
           reference_number?: string | null
           stripe_payment_id?: string | null
+          team_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -451,6 +506,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -497,6 +559,7 @@ export type Database = {
           name: string
           notes: string | null
           state: string | null
+          team_id: string | null
           updated_at: string
           user_id: string
           zip: string | null
@@ -512,6 +575,7 @@ export type Database = {
           name?: string
           notes?: string | null
           state?: string | null
+          team_id?: string | null
           updated_at?: string
           user_id: string
           zip?: string | null
@@ -527,6 +591,7 @@ export type Database = {
           name?: string
           notes?: string | null
           state?: string | null
+          team_id?: string | null
           updated_at?: string
           user_id?: string
           zip?: string | null
@@ -537,6 +602,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "properties_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -553,6 +625,7 @@ export type Database = {
           service_id: string | null
           sort_order: number
           tax_rate: number
+          team_id: string | null
           unit_price: number
           user_id: string
         }
@@ -567,6 +640,7 @@ export type Database = {
           service_id?: string | null
           sort_order?: number
           tax_rate?: number
+          team_id?: string | null
           unit_price?: number
           user_id: string
         }
@@ -581,6 +655,7 @@ export type Database = {
           service_id?: string | null
           sort_order?: number
           tax_rate?: number
+          team_id?: string | null
           unit_price?: number
           user_id?: string
         }
@@ -597,6 +672,13 @@ export type Database = {
             columns: ["service_id"]
             isOneToOne: false
             referencedRelation: "services_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_line_items_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -616,6 +698,7 @@ export type Database = {
           status: Database["public"]["Enums"]["quote_status"]
           subtotal: number
           tax_amount: number
+          team_id: string | null
           title: string | null
           total: number
           updated_at: string
@@ -636,6 +719,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number
           tax_amount?: number
+          team_id?: string | null
           title?: string | null
           total?: number
           updated_at?: string
@@ -656,6 +740,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number
           tax_amount?: number
+          team_id?: string | null
           title?: string | null
           total?: number
           updated_at?: string
@@ -677,6 +762,13 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "quotes_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
         ]
       }
       services_catalog: {
@@ -689,6 +781,7 @@ export type Database = {
           is_active: boolean
           name: string
           tax_rate: number | null
+          team_id: string | null
           updated_at: string
           user_id: string
         }
@@ -701,6 +794,7 @@ export type Database = {
           is_active?: boolean
           name: string
           tax_rate?: number | null
+          team_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -713,8 +807,117 @@ export type Database = {
           is_active?: boolean
           name?: string
           tax_rate?: number | null
+          team_id?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_catalog_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["app_role"]
+          team_id: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          role?: Database["public"]["Enums"]["app_role"]
+          team_id: string
+          token?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          team_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_invitations_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -744,11 +947,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_team_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      has_team_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _team_id: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_team_member: {
+        Args: { _team_id: string; _user_id: string }
         Returns: boolean
       }
     }

@@ -79,13 +79,13 @@ export function useInvoiceLineItems(invoiceId: string | undefined) {
 export function useCreateInvoice() {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, team } = useAuth();
 
   return useMutation({
     mutationFn: async (data: Omit<InvoiceInsert, "user_id">) => {
       const { data: result, error } = await supabase
         .from("invoices")
-        .insert({ ...data, user_id: user!.id })
+        .insert({ ...data, user_id: user!.id, team_id: team.teamId } as any)
         .select()
         .single();
       if (error) throw error;
@@ -150,7 +150,7 @@ export function useDeleteInvoice() {
 
 export function useSaveInvoiceLineItems() {
   const qc = useQueryClient();
-  const { user } = useAuth();
+  const { user, team } = useAuth();
 
   return useMutation({
     mutationFn: async ({ invoiceId, items }: { invoiceId: string; items: Omit<InvoiceLineItemInsert, "user_id" | "invoice_id">[] }) => {
@@ -162,6 +162,7 @@ export function useSaveInvoiceLineItems() {
         ...item,
         invoice_id: invoiceId,
         user_id: user!.id,
+        team_id: team.teamId,
         sort_order: i,
       }));
 
@@ -199,14 +200,14 @@ export function usePayments(invoiceId: string | undefined) {
 export function useRecordPayment() {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, team } = useAuth();
 
   return useMutation({
     mutationFn: async (data: Omit<PaymentInsert, "user_id">) => {
       // Insert payment
       const { data: payment, error } = await supabase
         .from("payments")
-        .insert({ ...data, user_id: user!.id })
+        .insert({ ...data, user_id: user!.id, team_id: team.teamId } as any)
         .select()
         .single();
       if (error) throw error;
@@ -288,7 +289,7 @@ export function useIncrementInvoiceNumber() {
 export function useDuplicateInvoice() {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, team } = useAuth();
 
   return useMutation({
     mutationFn: async (sourceInvoiceId: string) => {
@@ -315,6 +316,7 @@ export function useDuplicateInvoice() {
         .from("invoices")
         .insert({
           user_id: user!.id,
+          team_id: team.teamId,
           invoice_number: newNumber,
           client_id: source.client_id,
           title: source.title ? `${source.title} (copy)` : null,
@@ -344,6 +346,7 @@ export function useDuplicateInvoice() {
         const newItems = lineItems.map((li, i) => ({
           invoice_id: newInvoice.id,
           user_id: user!.id,
+          team_id: team.teamId,
           description: li.description,
           quantity: li.quantity,
           unit_price: li.unit_price,

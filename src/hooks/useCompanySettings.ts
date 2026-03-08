@@ -47,9 +47,16 @@ export function useUpsertCompanySettings() {
         if (error) throw error;
         return result;
       } else {
+        // Get team_id
+        const { data: membership } = await supabase
+          .from("team_members")
+          .select("team_id")
+          .eq("user_id", user!.id)
+          .maybeSingle();
+
         const { data: result, error } = await supabase
           .from("company_settings")
-          .insert({ ...data, user_id: user!.id } as any)
+          .insert({ ...data, user_id: user!.id, team_id: membership?.team_id } as any)
           .select()
           .single();
         if (error) throw error;

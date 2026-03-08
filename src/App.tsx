@@ -29,6 +29,7 @@ import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
 import QuotePrint from "./pages/QuotePrint";
 import Onboarding from "./pages/Onboarding";
+import AcceptInvite from "./pages/AcceptInvite";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/landing" element={<Landing />} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/accept-invite" element={<AcceptInvite />} />
 
             {/* Onboarding (auth required, no company_settings check) */}
             <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
