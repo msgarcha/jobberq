@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Trash2, Play, CheckCircle, FileText, MapPin, Clock, User, Pause, RotateCcw } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Play, CheckCircle, FileText, MapPin, Clock, User, Pause, RotateCcw, Star } from "lucide-react";
 import { useJob, useUpdateJob, useDeleteJob } from "@/hooks/useJobs";
 import { useCreateInvoice, useNextInvoiceNumber, useIncrementInvoiceNumber } from "@/hooks/useInvoices";
+import { SendReviewDialog } from "@/components/review/SendReviewDialog";
 import { format } from "date-fns";
 
 const statusStyles: Record<string, string> = {
