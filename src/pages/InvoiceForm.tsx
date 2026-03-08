@@ -45,6 +45,7 @@ const InvoiceForm = () => {
   const incrementNumber = useIncrementInvoiceNumber();
 
   const [clientId, setClientId] = useState<string | null>(null);
+  const { data: selectedClient } = useClient(clientId || undefined);
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("net_30");
