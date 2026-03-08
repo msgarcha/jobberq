@@ -60,13 +60,13 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* Right – Photo mosaic */}
-          <div className="hidden lg:grid grid-cols-3 grid-rows-2 gap-3 h-[420px]">
+          {/* Right – Photo mosaic (mobile: horizontal scroll strip, desktop: 3x2 grid) */}
+          <div className="flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory lg:grid lg:grid-cols-3 lg:grid-rows-2 lg:overflow-visible lg:pb-0 lg:h-[420px]">
             {heroImages.map((img, i) => (
               <div
                 key={i}
-                className="relative rounded-2xl overflow-hidden group"
-                style={{ transform: i % 2 === 0 ? "translateY(8px)" : "translateY(-8px)" }}
+                className="relative flex-shrink-0 w-[160px] h-[200px] sm:w-[180px] sm:h-[220px] lg:w-auto lg:h-auto rounded-2xl overflow-hidden group snap-center"
+                style={{ transform: i % 2 === 0 ? "translateY(0px)" : "translateY(0px)", ...(typeof window !== "undefined" && window.innerWidth >= 1024 ? { transform: i % 2 === 0 ? "translateY(8px)" : "translateY(-8px)" } : {}) }}
               >
                 <img
                   src={img.src}

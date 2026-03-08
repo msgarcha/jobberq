@@ -3,6 +3,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const testimonials = [
   {
@@ -10,24 +11,28 @@ const testimonials = [
     name: "Marcus Thompson",
     trade: "Thompson Landscaping",
     stars: 5,
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=faces",
   },
   {
     quote: "My cash flow completely changed. I invoice on the spot and clients pay the same day. No more chasing payments for weeks.",
     name: "Sarah Kim",
     trade: "Kim's Plumbing Solutions",
     stars: 5,
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=faces",
   },
   {
     quote: "I was skeptical, but the scheduling alone is worth it. No more double-bookings, no more missed appointments. Game changer.",
     name: "James Rodriguez",
     trade: "Bright Spark Electrical",
     stars: 5,
+    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=faces",
   },
   {
     quote: "We went from losing leads to closing 80% of quotes. The professional look builds instant trust with homeowners.",
     name: "Amy Chen",
     trade: "Fresh Start Cleaning Co.",
     stars: 5,
+    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=faces",
   },
 ];
 
@@ -81,9 +86,15 @@ export default function TestimonialsSection() {
                       ))}
                     </div>
                     <p className="text-sm leading-relaxed text-foreground/90">"{t.quote}"</p>
-                    <div>
-                      <p className="text-sm font-semibold font-display">{t.name}</p>
-                      <p className="text-xs text-muted-foreground">{t.trade}</p>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={t.avatar} alt={t.name} />
+                        <AvatarFallback className="text-xs">{t.name.split(" ").map(n => n[0]).join("")}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="text-sm font-semibold font-display">{t.name}</p>
+                        <p className="text-xs text-muted-foreground">{t.trade}</p>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

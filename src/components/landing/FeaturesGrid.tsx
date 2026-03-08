@@ -26,6 +26,31 @@ export default function FeaturesGrid() {
             From first client contact to final payment — ServicePro handles the entire workflow.
           </p>
         </div>
+
+        {/* App mockup */}
+        <div className={`mb-14 transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+          <div className="relative mx-auto max-w-4xl rounded-2xl overflow-hidden shadow-warm-lg border border-border/50">
+            {/* Browser chrome */}
+            <div className="bg-muted/80 px-4 py-2.5 flex items-center gap-2 border-b border-border/50">
+              <div className="flex gap-1.5">
+                <div className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
+                <div className="h-2.5 w-2.5 rounded-full bg-warm-gold/60" />
+                <div className="h-2.5 w-2.5 rounded-full bg-status-success/60" />
+              </div>
+              <div className="flex-1 mx-8">
+                <div className="bg-background/60 rounded-md px-3 py-1 text-[10px] text-muted-foreground text-center">app.servicepro.com/dashboard</div>
+              </div>
+            </div>
+            {/* Screenshot */}
+            <img
+              src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=900&h=500&fit=crop"
+              alt="ServicePro dashboard overview"
+              className="w-full h-auto"
+              loading="lazy"
+            />
+          </div>
+        </div>
+
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f, i) => (
             <Card

@@ -13,7 +13,7 @@ const stories = [
     statLabel: "quote turnaround",
     quote: "We went from losing half our leads to closing 80%. The speed alone changed everything.",
     author: "Mike R., Landscaping",
-    gradient: "from-primary/20 to-primary/5",
+    image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop",
   },
   {
     value: "work",
@@ -25,7 +25,7 @@ const stories = [
     statLabel: "saved per week",
     quote: "I used to spend Sunday nights scheduling. Now it takes 10 minutes.",
     author: "Jennifer L., Cleaning Services",
-    gradient: "from-status-success/20 to-status-success/5",
+    image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=400&fit=crop",
   },
   {
     value: "paid",
@@ -37,7 +37,7 @@ const stories = [
     statLabel: "payment collection",
     quote: "Our average days-to-pay dropped from 30 to 3. That's life-changing for a small business.",
     author: "Carlos M., Electrical",
-    gradient: "from-warm-gold/20 to-warm-gold/5",
+    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop",
   },
   {
     value: "grow",
@@ -49,7 +49,7 @@ const stories = [
     statLabel: "avg. revenue growth",
     quote: "For the first time, I actually understand my numbers. We doubled revenue in 8 months.",
     author: "David & Amy T., Painting",
-    gradient: "from-chart-4/20 to-chart-4/5",
+    image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&h=400&fit=crop",
   },
 ];
 
@@ -83,15 +83,22 @@ export default function StorytellingTabs() {
           {stories.map((s) => (
             <TabsContent key={s.value} value={s.value}>
               <div className="grid md:grid-cols-2 gap-10 items-center">
-                {/* Visual */}
-                <div className={`rounded-2xl bg-gradient-to-br ${s.gradient} p-10 sm:p-14 flex items-center justify-center min-h-[280px]`}>
-                  <div className="text-center space-y-4">
-                    <div className="mx-auto h-20 w-20 rounded-2xl bg-background/80 backdrop-blur flex items-center justify-center shadow-warm-md animate-float">
-                      <s.icon className="h-10 w-10 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-4xl sm:text-5xl font-bold font-display text-foreground">{s.stat}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{s.statLabel}</p>
+                {/* Visual – Real photo with stat overlay */}
+                <div className="relative rounded-2xl overflow-hidden min-h-[280px] sm:min-h-[340px]">
+                  <img
+                    src={s.image}
+                    alt={s.headline}
+                    className="w-full h-full object-cover absolute inset-0"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                  <div className="absolute bottom-6 left-6 right-6">
+                    <div className="inline-flex items-center gap-3 bg-background/90 backdrop-blur-sm rounded-xl px-5 py-3 shadow-warm-md">
+                      <s.icon className="h-6 w-6 text-primary" />
+                      <div>
+                        <p className="text-2xl sm:text-3xl font-bold font-display text-foreground">{s.stat}</p>
+                        <p className="text-xs text-muted-foreground">{s.statLabel}</p>
+                      </div>
                     </div>
                   </div>
                 </div>

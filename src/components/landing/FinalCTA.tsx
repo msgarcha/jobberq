@@ -6,7 +6,16 @@ export default function FinalCTA() {
   const navigate = useNavigate();
 
   return (
-    <section className="relative overflow-hidden py-20 sm:py-28 px-4 sm:px-6" style={{ background: "hsl(195 55% 10%)" }}>
+    <section className="relative overflow-hidden py-20 sm:py-28 px-4 sm:px-6">
+      {/* Background image */}
+      <img
+        src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=1400&h=600&fit=crop&crop=faces"
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover"
+        loading="lazy"
+      />
+      {/* Dark overlay */}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, hsl(195 55% 10% / 0.88), hsl(195 55% 10% / 0.95))" }} />
       <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: "radial-gradient(hsl(170 50% 55%) 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
 
       <div className="relative max-w-3xl mx-auto text-center space-y-6">
