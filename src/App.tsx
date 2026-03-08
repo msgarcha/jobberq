@@ -21,6 +21,8 @@ import InvoicePrint from "./pages/InvoicePrint";
 import Jobs from "./pages/Jobs";
 import JobForm from "./pages/JobForm";
 import JobDetail from "./pages/JobDetail";
+import Pipeline from "./pages/Pipeline";
+import Projects from "./pages/Projects";
 import Schedule from "./pages/Schedule";
 import Reports from "./pages/Reports";
 import Services from "./pages/Services";
