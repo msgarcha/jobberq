@@ -60,6 +60,36 @@ const InvoiceForm = () => {
   const [recurringStart, setRecurringStart] = useState("");
   const [recurringEnd, setRecurringEnd] = useState("");
 
+  // Helper: compute due date from payment terms
+  const computeDueDate = (terms: string): string => {
+    const daysMap: Record<string, number> = {
+      due_on_receipt: 0,
+      net_15: 15,
+      net_30: 30,
+      net_45: 45,
+      net_60: 60,
+    };
+    const days = daysMap[terms];
+    if (days === undefined) return "";
+    return format(addDays(new Date(), days), "yyyy-MM-dd");
+  };
+
+  // Auto-fill payment terms & due date when client changes (new invoices only)
+  useEffect(() => {
+    if (!isEdit && selectedClient && (selectedClient as any).default_payment_terms) {
+      const terms = (selectedClient as any).default_payment_terms;
+      setPaymentTerms(terms);
+      setDueDate(computeDueDate(terms));
+    }
+  }, [selectedClient, isEdit]);
+
+  // Auto-update due date when payment terms change (new invoices only)
+  useEffect(() => {
+    if (!isEdit && paymentTerms) {
+      setDueDate(computeDueDate(paymentTerms));
+    }
+  }, [paymentTerms, isEdit]);
+
   useEffect(() => {
     if (existingInvoice) {
       setClientId(existingInvoice.client_id);
