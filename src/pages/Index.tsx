@@ -3,52 +3,47 @@ import {
   DollarSign,
   Clock,
   AlertTriangle,
-  TrendingUp,
   FileText,
   Receipt,
   Users,
   ArrowUpRight,
   ArrowDownRight,
+  Briefcase,
+  Calendar,
+  ChevronRight,
+  CheckCircle2,
+  MapPin,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
+import { useAuth } from "@/contexts/AuthContext";
 
-const revenueData = [
-  { month: "Jan", revenue: 12400 },
-  { month: "Feb", revenue: 15800 },
-  { month: "Mar", revenue: 14200 },
-  { month: "Apr", revenue: 18600 },
-  { month: "May", revenue: 21300 },
-  { month: "Jun", revenue: 19800 },
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+};
+
+const todaySchedule = [
+  { id: 1, title: "Lawn Maintenance", client: "Green Valley HOA", time: "9:00 AM", address: "123 Oak Dr" },
+  { id: 2, title: "HVAC Inspection", client: "Acme Corp", time: "1:00 PM", address: "500 Business Blvd" },
 ];
 
-const invoiceAging = [
-  { name: "Current", value: 45200, color: "hsl(152, 69%, 41%)" },
-  { name: "1-30 days", value: 12800, color: "hsl(38, 92%, 50%)" },
-  { name: "31-60 days", value: 5400, color: "hsl(25, 95%, 53%)" },
-  { name: "60+ days", value: 3200, color: "hsl(0, 72%, 51%)" },
+const todoItems = [
+  { id: 1, label: "Convert approved quote Q-286 for Smith Residence", type: "quote", action: "Convert to Job" },
+  { id: 2, label: "Follow up on overdue invoice INV-1041", type: "invoice", action: "Send Reminder" },
+  { id: 3, label: "Schedule site visit for Green Valley HOA", type: "job", action: "Schedule" },
 ];
 
 const recentActivity = [
-  { id: 1, type: "invoice", text: "Invoice #1042 paid by Acme Corp", time: "2 hours ago", status: "paid" },
-  { id: 2, type: "quote", text: "Quote #287 sent to Johnson Landscaping", time: "4 hours ago", status: "sent" },
-  { id: 3, type: "quote", text: "Quote #286 approved by Smith Residence", time: "Yesterday", status: "approved" },
-  { id: 4, type: "invoice", text: "Invoice #1041 overdue - Metro Properties", time: "Yesterday", status: "overdue" },
-  { id: 5, type: "client", text: "New client added: Green Valley HOA", time: "2 days ago", status: "new" },
+  { id: 1, icon: Receipt, text: "Invoice #1042 paid", detail: "Acme Corp · $4,200", time: "2h ago", status: "paid" },
+  { id: 2, icon: FileText, text: "Quote #287 sent", detail: "Johnson Landscaping · $3,200", time: "4h ago", status: "sent" },
+  { id: 3, icon: FileText, text: "Quote #286 approved", detail: "Smith Residence · $1,850", time: "Yesterday", status: "approved" },
+  { id: 4, icon: Receipt, text: "Invoice #1041 overdue", detail: "Metro Properties · $8,600", time: "Yesterday", status: "overdue" },
+  { id: 5, icon: Users, text: "New client added", detail: "Green Valley HOA", time: "2 days ago", status: "new" },
 ];
 
 const statusColors: Record<string, string> = {
@@ -61,226 +56,142 @@ const statusColors: Record<string, string> = {
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const firstName = (user?.user_metadata?.display_name || user?.email?.split("@")[0] || "there").split(" ")[0];
 
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
-        {/* Page header */}
+        {/* Greeting */}
         <div>
-          <h1 className="text-2xl font-display font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground text-sm mt-1">Welcome back. Here's your business overview.</p>
+          <h1 className="text-2xl font-display font-bold tracking-tight">
+            {getGreeting()}, {firstName} 👋
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">Here's what's happening today.</p>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Revenue (MTD)</p>
-                  <p className="text-2xl font-display font-bold mt-1">$19,800</p>
-                  <div className="flex items-center gap-1 mt-1 text-xs text-status-success">
-                    <ArrowUpRight className="h-3 w-3" />
-                    <span>12% vs last month</span>
+        {/* KPI Row */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: "Revenue (MTD)", value: "$19,800", change: "+12%", up: true, icon: DollarSign, color: "text-primary" },
+            { label: "Outstanding", value: "$66,600", sub: "18 unpaid", icon: Clock, color: "text-status-warning" },
+            { label: "Overdue", value: "$8,600", change: "4 invoices", up: false, icon: AlertTriangle, color: "text-status-danger" },
+            { label: "Active Quotes", value: "12", sub: "$34,500 value", icon: FileText, color: "text-primary" },
+          ].map((kpi) => (
+            <Card key={kpi.label} className="shadow-warm hover:shadow-warm-md transition-shadow">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{kpi.label}</p>
+                    <p className="text-2xl font-display font-bold">{kpi.value}</p>
+                    {kpi.change && (
+                      <div className={`flex items-center gap-1 text-xs ${kpi.up ? "text-status-success" : "text-status-danger"}`}>
+                        {kpi.up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                        <span>{kpi.change}</span>
+                      </div>
+                    )}
+                    {kpi.sub && <p className="text-xs text-muted-foreground">{kpi.sub}</p>}
+                  </div>
+                  <div className={`h-10 w-10 rounded-xl bg-secondary flex items-center justify-center ${kpi.color}`}>
+                    <kpi.icon className="h-5 w-5" />
                   </div>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Outstanding</p>
-                  <p className="text-2xl font-display font-bold mt-1">$66,600</p>
-                  <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    <span>18 unpaid invoices</span>
-                  </div>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-status-warning/10 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-status-warning" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Overdue</p>
-                  <p className="text-2xl font-display font-bold mt-1">$8,600</p>
-                  <div className="flex items-center gap-1 mt-1 text-xs text-status-danger">
-                    <ArrowDownRight className="h-3 w-3" />
-                    <span>4 invoices overdue</span>
-                  </div>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-status-danger/10 flex items-center justify-center">
-                  <AlertTriangle className="h-5 w-5 text-status-danger" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Active Quotes</p>
-                  <p className="text-2xl font-display font-bold mt-1">12</p>
-                  <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                    <FileText className="h-3 w-3" />
-                    <span>$34,500 total value</span>
-                  </div>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
-        {/* Charts Row */}
-        <div className="grid gap-4 lg:grid-cols-5">
-          <Card className="lg:col-span-3">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-display">Revenue Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={revenueData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
-                  <Tooltip
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, "Revenue"]}
-                    contentStyle={{
-                      background: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "var(--radius)",
-                      fontSize: 12,
-                    }}
-                  />
-                  <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          <Card className="lg:col-span-2">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-display">Invoice Aging</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie
-                    data={invoiceAging}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {invoiceAging.map((entry, index) => (
-                      <Cell key={index} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value: number) => [`$${value.toLocaleString()}`]}
-                    contentStyle={{
-                      background: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "var(--radius)",
-                      fontSize: 12,
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                {invoiceAging.map((item) => (
-                  <div key={item.name} className="flex items-center gap-2 text-xs">
-                    <div className="h-2.5 w-2.5 rounded-full" style={{ background: item.color }} />
-                    <span className="text-muted-foreground">{item.name}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Bottom Row */}
-        <div className="grid gap-4 lg:grid-cols-5">
-          {/* Recent Activity */}
-          <Card className="lg:col-span-3">
+        {/* Main Content Grid */}
+        <div className="grid gap-5 lg:grid-cols-5">
+          {/* Today's Schedule */}
+          <Card className="lg:col-span-2 shadow-warm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-display">Recent Activity</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-display font-semibold flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  Today's Schedule
+                </CardTitle>
+                <Button variant="ghost" size="sm" className="text-xs gap-1 text-muted-foreground" onClick={() => navigate("/schedule")}>
+                  View all <ChevronRight className="h-3 w-3" />
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {recentActivity.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between gap-3 py-1.5">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">{item.text}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{item.time}</p>
+            <CardContent className="space-y-3">
+              {todaySchedule.map((item) => (
+                <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Briefcase className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.client}</p>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{item.time}</span>
+                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{item.address}</span>
                     </div>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* To-Do */}
+          <Card className="lg:col-span-3 shadow-warm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-display font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-status-warning" />
+                  To-Do
+                </CardTitle>
+                <Badge variant="secondary" className="text-xs">{todoItems.length} items</Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {todoItems.map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="h-2 w-2 rounded-full bg-status-warning shrink-0" />
+                    <p className="text-sm truncate">{item.label}</p>
+                  </div>
+                  <Button size="sm" variant="outline" className="shrink-0 text-xs h-7 rounded-md">
+                    {item.action}
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Activity */}
+        <Card className="shadow-warm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-display font-semibold">Recently Active</CardTitle>
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">View all</Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="divide-y">
+              {recentActivity.map((item) => (
+                <div key={item.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
+                    <item.icon className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{item.text}</p>
+                    <p className="text-xs text-muted-foreground">{item.detail}</p>
+                  </div>
+                  <div className="text-right shrink-0">
                     <Badge className={statusColors[item.status]} variant="secondary">
                       {item.status}
                     </Badge>
+                    <p className="text-[10px] text-muted-foreground mt-1">{item.time}</p>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
-          <Card className="lg:col-span-2">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-display">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button
-                className="w-full justify-start gap-2"
-                variant="outline"
-                onClick={() => navigate("/quotes/new")}
-              >
-                <FileText className="h-4 w-4" />
-                Create New Quote
-              </Button>
-              <Button
-                className="w-full justify-start gap-2"
-                variant="outline"
-                onClick={() => navigate("/invoices/new")}
-              >
-                <Receipt className="h-4 w-4" />
-                Create New Invoice
-              </Button>
-              <Button
-                className="w-full justify-start gap-2"
-                variant="outline"
-                onClick={() => navigate("/clients/new")}
-              >
-                <Users className="h-4 w-4" />
-                Add New Client
-              </Button>
-              <Button
-                className="w-full justify-start gap-2"
-                variant="outline"
-                onClick={() => navigate("/reports")}
-              >
-                <TrendingUp className="h-4 w-4" />
-                View Reports
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
