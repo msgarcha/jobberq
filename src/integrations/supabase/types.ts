@@ -162,6 +162,7 @@ export type Database = {
           default_payment_terms: string | null
           default_tax_rate: number | null
           email: string | null
+          google_review_url: string | null
           id: string
           invoice_prefix: string | null
           job_prefix: string | null
@@ -171,6 +172,8 @@ export type Database = {
           next_quote_number: number | null
           phone: string | null
           quote_prefix: string | null
+          review_gating_enabled: boolean
+          review_min_stars: number
           state: string | null
           team_id: string | null
           updated_at: string
@@ -188,6 +191,7 @@ export type Database = {
           default_payment_terms?: string | null
           default_tax_rate?: number | null
           email?: string | null
+          google_review_url?: string | null
           id?: string
           invoice_prefix?: string | null
           job_prefix?: string | null
@@ -197,6 +201,8 @@ export type Database = {
           next_quote_number?: number | null
           phone?: string | null
           quote_prefix?: string | null
+          review_gating_enabled?: boolean
+          review_min_stars?: number
           state?: string | null
           team_id?: string | null
           updated_at?: string
@@ -214,6 +220,7 @@ export type Database = {
           default_payment_terms?: string | null
           default_tax_rate?: number | null
           email?: string | null
+          google_review_url?: string | null
           id?: string
           invoice_prefix?: string | null
           job_prefix?: string | null
@@ -223,6 +230,8 @@ export type Database = {
           next_quote_number?: number | null
           phone?: string | null
           quote_prefix?: string | null
+          review_gating_enabled?: boolean
+          review_min_stars?: number
           state?: string | null
           team_id?: string | null
           updated_at?: string
@@ -824,6 +833,76 @@ export type Database = {
           },
           {
             foreignKeyName: "quotes_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_requests: {
+        Row: {
+          client_id: string
+          created_at: string
+          expires_at: string
+          feedback: string | null
+          id: string
+          job_id: string | null
+          rating: number | null
+          redirected_to_google: boolean
+          status: string
+          submitted_at: string | null
+          team_id: string | null
+          token: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          expires_at?: string
+          feedback?: string | null
+          id?: string
+          job_id?: string | null
+          rating?: number | null
+          redirected_to_google?: boolean
+          status?: string
+          submitted_at?: string | null
+          team_id?: string | null
+          token?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          expires_at?: string
+          feedback?: string | null
+          id?: string
+          job_id?: string | null
+          rating?: number | null
+          redirected_to_google?: boolean
+          status?: string
+          submitted_at?: string | null
+          team_id?: string | null
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_requests_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_requests_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
