@@ -79,9 +79,7 @@ export function useJob(id: string | undefined) {
 export function useCreateJob() {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { user } = useAuth();
-
-  const { team } = useAuth();
+  const { user, team } = useAuth();
 
   return useMutation({
     mutationFn: async (data: Omit<JobInsert, "user_id">) => {
