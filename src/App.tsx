@@ -15,6 +15,7 @@ import QuoteDetail from "./pages/QuoteDetail";
 import Invoices from "./pages/Invoices";
 import InvoiceForm from "./pages/InvoiceForm";
 import InvoiceDetail from "./pages/InvoiceDetail";
+import InvoicePrint from "./pages/InvoicePrint";
 import Jobs from "./pages/Jobs";
 import JobForm from "./pages/JobForm";
 import JobDetail from "./pages/JobDetail";
