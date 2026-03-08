@@ -678,6 +678,40 @@ const Settings = () => {
               })}
             </div>
           </TabsContent>
+
+          {/* Import Tab */}
+          <TabsContent value="import" className="space-y-5 mt-5">
+            <div>
+              <h2 className="text-base font-medium mb-1">Import Your Data</h2>
+              <p className="text-sm text-muted-foreground">Migrate clients, services, and jobs from another platform.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                { source: 'jobber', label: 'Jobber', desc: 'Import from Jobber CSV exports', color: 'hsl(var(--primary))' },
+                { source: 'quickbooks', label: 'QuickBooks', desc: 'Import from QuickBooks CSV', color: 'hsl(142 71% 45%)' },
+                { source: 'csv', label: 'Generic CSV', desc: 'Import from any CSV file', color: 'hsl(var(--muted-foreground))' },
+              ].map(s => (
+                <Card
+                  key={s.source}
+                  className="cursor-pointer hover:shadow-warm-md transition-all group border-2 border-transparent hover:border-primary/30"
+                  onClick={() => navigate(`/import?source=${s.source}`)}
+                >
+                  <CardContent className="p-5 flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${s.color}15` }}>
+                        <FileSpreadsheet className="h-5 w-5" style={{ color: s.color }} />
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{s.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{s.desc}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
     </DashboardLayout>
