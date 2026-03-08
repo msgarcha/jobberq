@@ -434,6 +434,13 @@ const ClientDetail = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      <SendReviewDialog
+        open={reviewDialogOpen}
+        onOpenChange={setReviewDialogOpen}
+        clientId={client.id}
+        clientName={fullName}
+      />
     </DashboardLayout>
   );
 };
