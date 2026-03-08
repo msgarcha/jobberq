@@ -267,7 +267,7 @@ const Settings = () => {
                     <Label className="text-xs">Address Line 2</Label>
                     <Input value={addressLine2} onChange={(e) => setAddressLine2(e.target.value)} placeholder="Suite 100" />
                   </div>
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="col-span-2">
                       <Label className="text-xs">City</Label>
                       <Input value={city} onChange={(e) => setCity(e.target.value)} />
