@@ -67,18 +67,16 @@ function CardForm({ invoiceId, clientId, amount, onSuccess, onCancel }: ManualCa
               ? paymentIntent.payment_method
               : paymentIntent.payment_method.id;
             
-            // Get payment method details from Stripe
-            const pm = await stripe.retrievePaymentMethod(pmId);
-            if (pm.paymentMethod?.card) {
-              await saveCardMutation.mutateAsync({
-                client_id: clientId,
-                stripe_customer_id: data.customer_id,
-                stripe_payment_method_id: pmId,
-                card_brand: pm.paymentMethod.card.brand || "unknown",
-                card_last4: pm.paymentMethod.card.last4 || "****",
-                card_exp_month: pm.paymentMethod.card.exp_month || 0,
-                card_exp_year: pm.paymentMethod.card.exp_year || 0,
-              });
+            // We'll save with basic info - the edge function can fetch full details if needed
+            await saveCardMutation.mutateAsync({
+              client_id: clientId,
+              stripe_customer_id: data.customer_id,
+              stripe_payment_method_id: pmId,
+              card_brand: "card",
+              card_last4: "****",
+              card_exp_month: 0,
+              card_exp_year: 0,
+            });
             }
           } catch {
             // Non-critical, card save failed but payment succeeded
