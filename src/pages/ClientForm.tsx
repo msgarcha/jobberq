@@ -102,18 +102,21 @@ const ClientForm = () => {
       return;
     }
 
+    const d = result.data;
     const cleanData = {
-      ...result.data,
-      email: result.data.email || null,
-      company_name: result.data.company_name || null,
-      phone: result.data.phone || null,
-      address_line1: result.data.address_line1 || null,
-      address_line2: result.data.address_line2 || null,
-      city: result.data.city || null,
-      state: result.data.state || null,
-      zip: result.data.zip || null,
-      country: result.data.country || null,
-      notes: result.data.notes || null,
+      first_name: d.first_name!,
+      last_name: d.last_name!,
+      status: d.status,
+      email: d.email || null,
+      company_name: d.company_name || null,
+      phone: d.phone || null,
+      address_line1: d.address_line1 || null,
+      address_line2: d.address_line2 || null,
+      city: d.city || null,
+      state: d.state || null,
+      zip: d.zip || null,
+      country: d.country || null,
+      notes: d.notes || null,
     };
 
     try {
