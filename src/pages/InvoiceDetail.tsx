@@ -88,6 +88,24 @@ const InvoiceDetail = () => {
     deleteInvoice.mutate(id!, { onSuccess: () => navigate("/invoices") });
   };
 
+  const handleGeneratePaymentLink = async () => {
+    setGeneratingLink(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-invoice-checkout", {
+        body: { invoice_id: id },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        await navigator.clipboard.writeText(data.url);
+        toast.success("Payment link copied to clipboard!");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to generate payment link");
+    } finally {
+      setGeneratingLink(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <DashboardLayout>
