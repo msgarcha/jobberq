@@ -150,7 +150,7 @@ export function useDeleteInvoice() {
 
 export function useSaveInvoiceLineItems() {
   const qc = useQueryClient();
-  const { user } = useAuth();
+  const { user, team } = useAuth();
 
   return useMutation({
     mutationFn: async ({ invoiceId, items }: { invoiceId: string; items: Omit<InvoiceLineItemInsert, "user_id" | "invoice_id">[] }) => {
@@ -162,6 +162,7 @@ export function useSaveInvoiceLineItems() {
         ...item,
         invoice_id: invoiceId,
         user_id: user!.id,
+        team_id: team.teamId,
         sort_order: i,
       }));
 
