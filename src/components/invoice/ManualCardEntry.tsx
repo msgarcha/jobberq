@@ -80,8 +80,6 @@ function CardForm({ invoiceId, clientId, amount, onSuccess, onCancel }: ManualCa
           } catch {
             // Non-critical, card save failed but payment succeeded
           }
-            // Non-critical, card save failed but payment succeeded
-          }
         }
 
         toast.success("Payment successful!");
