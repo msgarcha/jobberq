@@ -44,7 +44,7 @@ export function TopBar() {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <DropdownMenu>
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger asChild>
             <Button size="sm" className="gap-1.5 rounded-lg shadow-warm">
               <Plus className="h-4 w-4" />
