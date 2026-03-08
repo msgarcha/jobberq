@@ -59,7 +59,7 @@ const QuoteForm = () => {
     }
   }, [existingLineItems]);
 
-  const handleSave = async () => {
+  const handleSave = async (createAnother = false) => {
     setSaving(true);
     try {
       const totals = computeTotals(lineItems);
@@ -92,7 +92,16 @@ const QuoteForm = () => {
         items: lineItems.map(({ id: _, ...rest }) => rest),
       });
 
-      navigate(`/quotes/${quoteId}`);
+      if (createAnother && !isEdit) {
+        setClientId(null);
+        setTitle("");
+        setValidUntil("");
+        setClientNotes("");
+        setInternalNotes("");
+        setLineItems([]);
+      } else {
+        navigate(`/quotes/${quoteId}`);
+      }
     } catch {
       // error handled by hooks
     } finally {
