@@ -45,6 +45,7 @@ const emptyForm: FormData = {
   email: "",
   phone: "",
   status: "lead",
+  default_payment_terms: "net_30",
   address_line1: "",
   address_line2: "",
   city: "",
