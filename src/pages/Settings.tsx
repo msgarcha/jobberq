@@ -198,6 +198,9 @@ const Settings = () => {
             <TabsTrigger value="billing" className="gap-1.5">
               <CreditCard className="h-3.5 w-3.5" /> Billing
             </TabsTrigger>
+            <TabsTrigger value="import" className="gap-1.5">
+              <FileSpreadsheet className="h-3.5 w-3.5" /> Import
+            </TabsTrigger>
           </TabsList>
 
           {/* Company Tab */}
