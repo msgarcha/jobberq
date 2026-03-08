@@ -316,6 +316,7 @@ export function useDuplicateInvoice() {
         .from("invoices")
         .insert({
           user_id: user!.id,
+          team_id: team.teamId,
           invoice_number: newNumber,
           client_id: source.client_id,
           title: source.title ? `${source.title} (copy)` : null,
