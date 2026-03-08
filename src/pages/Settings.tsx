@@ -29,10 +29,24 @@ const paymentTermOptions = [
 const Settings = () => {
   const { data: settings, isLoading } = useCompanySettings();
   const upsert = useUpsertCompanySettings();
-  const { subscription, checkSubscription } = useAuth();
+  const { subscription, checkSubscription, user, team: authTeam } = useAuth();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "company";
+
+  // Team hooks
+  const { data: teamData } = useTeam();
+  const teamId = authTeam.teamId;
+  const { data: members } = useTeamMembers(teamId || undefined);
+  const { data: invitations } = useTeamInvitations(teamId || undefined);
+  const sendInvite = useSendInvite();
+  const updateRole = useUpdateMemberRole();
+  const removeMember = useRemoveMember();
+  const cancelInvite = useCancelInvitation();
+
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("user");
+  const [lastInviteUrl, setLastInviteUrl] = useState("");
 
   const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
