@@ -64,7 +64,7 @@ const Index = () => {
         </div>
 
         {/* KPI Row */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
           {kpis.map((kpi) => (
             <Card key={kpi.label} className="shadow-warm hover:shadow-warm-md transition-shadow">
               <CardContent className="p-5">
