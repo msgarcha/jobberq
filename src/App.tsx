@@ -21,6 +21,8 @@ import InvoicePrint from "./pages/InvoicePrint";
 import Jobs from "./pages/Jobs";
 import JobForm from "./pages/JobForm";
 import JobDetail from "./pages/JobDetail";
+import Pipeline from "./pages/Pipeline";
+import Projects from "./pages/Projects";
 import Schedule from "./pages/Schedule";
 import Reports from "./pages/Reports";
 import Services from "./pages/Services";
@@ -71,6 +73,8 @@ const App = () => (
             <Route path="/jobs/new" element={<ProtectedRoute><JobForm /></ProtectedRoute>} />
             <Route path="/jobs/:id" element={<ProtectedRoute><JobDetail /></ProtectedRoute>} />
             <Route path="/jobs/:id/edit" element={<ProtectedRoute><JobForm /></ProtectedRoute>} />
+            <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
+            <Route path="/projects" element={<ProtectedRoute><Projects /></ProtectedRoute>} />
             <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />

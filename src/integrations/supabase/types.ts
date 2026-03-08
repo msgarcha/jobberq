@@ -976,7 +976,12 @@ export type Database = {
       app_role: "admin" | "manager" | "user"
       client_status: "lead" | "active" | "archived"
       invoice_status: "draft" | "sent" | "viewed" | "paid" | "overdue"
-      job_status: "pending" | "in_progress" | "complete" | "invoiced"
+      job_status:
+        | "pending"
+        | "in_progress"
+        | "complete"
+        | "invoiced"
+        | "on_hold"
       payment_method:
         | "cash"
         | "check"
@@ -1121,7 +1126,7 @@ export const Constants = {
       app_role: ["admin", "manager", "user"],
       client_status: ["lead", "active", "archived"],
       invoice_status: ["draft", "sent", "viewed", "paid", "overdue"],
-      job_status: ["pending", "in_progress", "complete", "invoiced"],
+      job_status: ["pending", "in_progress", "complete", "invoiced", "on_hold"],
       payment_method: [
         "cash",
         "check",

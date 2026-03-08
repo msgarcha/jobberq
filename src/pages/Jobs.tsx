@@ -12,6 +12,7 @@ import { format } from "date-fns";
 const statusStyles: Record<string, string> = {
   pending: "bg-status-warning text-status-warning-foreground",
   in_progress: "bg-status-info text-status-info-foreground",
+  on_hold: "bg-[hsl(30,70%,55%)] text-white",
   complete: "bg-status-success text-status-success-foreground",
   invoiced: "bg-primary text-primary-foreground",
 };
@@ -20,6 +21,7 @@ const filters = [
   { label: "All", value: "all" },
   { label: "Pending", value: "pending" },
   { label: "In Progress", value: "in_progress" },
+  { label: "On Hold", value: "on_hold" },
   { label: "Complete", value: "complete" },
 ];
 

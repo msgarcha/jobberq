@@ -3,7 +3,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Trash2, Play, CheckCircle, FileText, MapPin, Clock, User } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Play, CheckCircle, FileText, MapPin, Clock, User, Pause, RotateCcw } from "lucide-react";
 import { useJob, useUpdateJob, useDeleteJob } from "@/hooks/useJobs";
 import { useCreateInvoice, useNextInvoiceNumber, useIncrementInvoiceNumber } from "@/hooks/useInvoices";
 import { format } from "date-fns";
@@ -11,6 +11,7 @@ import { format } from "date-fns";
 const statusStyles: Record<string, string> = {
   pending: "bg-status-warning text-status-warning-foreground",
   in_progress: "bg-status-info text-status-info-foreground",
+  on_hold: "bg-[hsl(30,70%,55%)] text-white",
   complete: "bg-status-success text-status-success-foreground",
   invoiced: "bg-primary text-primary-foreground",
 };
@@ -60,6 +61,14 @@ const JobDetail = () => {
       status: "complete",
       completed_at: new Date().toISOString(),
     });
+  };
+
+  const handlePause = async () => {
+    await updateJob.mutateAsync({ id: job.id, status: "on_hold" as any });
+  };
+
+  const handleResume = async () => {
+    await updateJob.mutateAsync({ id: job.id, status: "in_progress" as any });
   };
 
   const handleCreateInvoice = async () => {
@@ -118,8 +127,18 @@ const JobDetail = () => {
               </Button>
             )}
             {job.status === "in_progress" && (
-              <Button onClick={handleComplete} className="gap-1.5" disabled={updateJob.isPending}>
-                <CheckCircle className="h-4 w-4" /> Mark Complete
+              <>
+                <Button onClick={handleComplete} className="gap-1.5" disabled={updateJob.isPending}>
+                  <CheckCircle className="h-4 w-4" /> Mark Complete
+                </Button>
+                <Button variant="outline" onClick={handlePause} className="gap-1.5" disabled={updateJob.isPending}>
+                  <Pause className="h-4 w-4" /> Put On Hold
+                </Button>
+              </>
+            )}
+            {job.status === "on_hold" && (
+              <Button onClick={handleResume} className="gap-1.5" disabled={updateJob.isPending}>
+                <RotateCcw className="h-4 w-4" /> Resume Job
               </Button>
             )}
             {job.status === "complete" && (
