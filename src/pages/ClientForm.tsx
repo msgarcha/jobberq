@@ -239,6 +239,21 @@ const ClientForm = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-1.5">
+                <Label>Default Payment Terms</Label>
+                <Select value={form.default_payment_terms || "net_30"} onValueChange={(v) => setField("default_payment_terms", v)}>
+                  <SelectTrigger className="rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="due_on_receipt">Due on Receipt</SelectItem>
+                    <SelectItem value="net_15">Net 15</SelectItem>
+                    <SelectItem value="net_30">Net 30</SelectItem>
+                    <SelectItem value="net_45">Net 45</SelectItem>
+                    <SelectItem value="net_60">Net 60</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 
