@@ -154,8 +154,6 @@ const JobDetail = () => {
                 </Button>
               </>
             )}
-              </Button>
-            )}
             {job.status === "invoiced" && (
               <p className="text-sm text-muted-foreground py-2">This job has been invoiced.</p>
             )}
