@@ -191,6 +191,9 @@ const Settings = () => {
             <TabsTrigger value="team" className="gap-1.5">
               <Users className="h-3.5 w-3.5" /> Team
             </TabsTrigger>
+            <TabsTrigger value="reviews" className="gap-1.5">
+              <Star className="h-3.5 w-3.5" /> Reviews
+            </TabsTrigger>
             <TabsTrigger value="billing" className="gap-1.5">
               <CreditCard className="h-3.5 w-3.5" /> Billing
             </TabsTrigger>
