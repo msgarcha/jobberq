@@ -167,9 +167,15 @@ const InvoiceDetail = () => {
               </>
             )}
             {invoice.status !== "paid" && invoice.status !== "draft" && (
-              <Button size="sm" className="gap-1.5" onClick={() => { setPayAmount(String(Number(invoice.balance_due))); setPayDialogOpen(true); }}>
-                <DollarSign className="h-3.5 w-3.5" /> Record Payment
-              </Button>
+              <>
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={handleGeneratePaymentLink} disabled={generatingLink}>
+                  {generatingLink ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link className="h-3.5 w-3.5" />}
+                  Payment Link
+                </Button>
+                <Button size="sm" className="gap-1.5" onClick={() => { setPayAmount(String(Number(invoice.balance_due))); setPayDialogOpen(true); }}>
+                  <DollarSign className="h-3.5 w-3.5" /> Record Payment
+                </Button>
+              </>
             )}
             <AlertDialog>
               <AlertDialogTrigger asChild>
