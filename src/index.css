@@ -115,6 +115,11 @@
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'DM Sans', system-ui, sans-serif;
@@ -138,6 +143,51 @@
   .ticker-pause:hover {
     animation-play-state: paused;
   }
+
+  /* Safe area for notched devices */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* Mobile touch targets */
+@media (max-width: 767px) {
+  input, select, textarea, button {
+    min-height: 44px;
+  }
+  
+  /* Fix for select triggers inside tables/compact areas */
+  [data-compact] input,
+  [data-compact] select,
+  [data-compact] button {
+    min-height: unset;
+  }
+}
+
+/* FAB stagger animation */
+@keyframes fab-stagger {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Slide up animation for more panel */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
 }
 
 @media print {

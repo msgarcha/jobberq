@@ -43,14 +43,14 @@ const Clients = () => {
               {clients?.length ?? 0} {statusFilter === "all" ? "total" : statusFilter} clients
             </p>
           </div>
-          <Button className="gap-1.5 rounded-lg shadow-warm" onClick={() => navigate("/clients/new")}>
+          <Button className="gap-1.5 rounded-lg shadow-warm hidden md:inline-flex" onClick={() => navigate("/clients/new")}>
             <Plus className="h-4 w-4" />
             New Client
           </Button>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1 sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search clients…"
@@ -59,13 +59,13 @@ const Clients = () => {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-none">
             {filters.map((f) => (
               <Button
                 key={f.value}
                 variant={statusFilter === f.value ? "default" : "outline"}
                 size="sm"
-                className="rounded-full text-xs px-4"
+                className="rounded-full text-xs px-4 shrink-0"
                 onClick={() => setStatusFilter(f.value)}
               >
                 {f.label}

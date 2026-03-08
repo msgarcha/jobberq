@@ -83,7 +83,7 @@ const JobForm = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-5 animate-fade-in max-w-2xl">
+      <div className="space-y-5 animate-fade-in max-w-2xl mx-auto md:mx-0">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate(isEdit ? `/jobs/${id}` : "/jobs")}>
             <ArrowLeft className="h-4 w-4" />
@@ -105,7 +105,7 @@ const JobForm = () => {
           <CardContent className="space-y-4">
             <div>
               <Label>Title *</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Weekly Lawn Maintenance" />
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Weekly Lawn Maintenance" className="md:h-10" />
             </div>
             <div>
               <Label>Client</Label>
@@ -117,7 +117,7 @@ const JobForm = () => {
             </div>
             <div>
               <Label>Address</Label>
-              <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Job site address" />
+              <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Job site address" className="md:h-10" />
             </div>
           </CardContent>
         </Card>
@@ -127,14 +127,14 @@ const JobForm = () => {
             <CardTitle className="text-base">Scheduling</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label>Start</Label>
-                <Input type="datetime-local" value={scheduledStart} onChange={(e) => setScheduledStart(e.target.value)} />
+                <Input type="datetime-local" value={scheduledStart} onChange={(e) => setScheduledStart(e.target.value)} className="md:h-10" />
               </div>
               <div>
                 <Label>End</Label>
-                <Input type="datetime-local" value={scheduledEnd} onChange={(e) => setScheduledEnd(e.target.value)} />
+                <Input type="datetime-local" value={scheduledEnd} onChange={(e) => setScheduledEnd(e.target.value)} className="md:h-10" />
               </div>
             </div>
           </CardContent>
@@ -149,9 +149,10 @@ const JobForm = () => {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => navigate(isEdit ? `/jobs/${id}` : "/jobs")}>Cancel</Button>
-          <Button onClick={handleSave} disabled={!title.trim() || createJob.isPending || updateJob.isPending} className="gap-1.5">
+        {/* Sticky save on mobile */}
+        <div className="flex flex-col md:flex-row justify-end gap-2 sticky bottom-20 md:static md:bottom-auto bg-background/95 backdrop-blur-sm py-3 md:py-0 -mx-4 px-4 md:mx-0 md:px-0 border-t md:border-0">
+          <Button variant="outline" onClick={() => navigate(isEdit ? `/jobs/${id}` : "/jobs")} className="md:w-auto">Cancel</Button>
+          <Button onClick={handleSave} disabled={!title.trim() || createJob.isPending || updateJob.isPending} className="gap-1.5 md:w-auto">
             <Save className="h-4 w-4" />
             {isEdit ? "Update Job" : "Create Job"}
           </Button>

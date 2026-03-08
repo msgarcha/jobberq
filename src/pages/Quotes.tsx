@@ -38,14 +38,14 @@ const Quotes = () => {
             <h1 className="text-2xl font-display font-bold tracking-tight">Quotes</h1>
             <p className="text-muted-foreground text-sm mt-1">{quotes?.length ?? 0} quotes</p>
           </div>
-          <Button className="gap-1.5 rounded-lg shadow-warm" onClick={() => navigate("/quotes/new")}>
+          <Button className="gap-1.5 rounded-lg shadow-warm hidden md:inline-flex" onClick={() => navigate("/quotes/new")}>
             <Plus className="h-4 w-4" />
             New Quote
           </Button>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1 sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search quotes…"
@@ -54,13 +54,13 @@ const Quotes = () => {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-none">
             {filters.map((f) => (
               <Button
                 key={f}
                 variant={activeFilter === f ? "default" : "outline"}
                 size="sm"
-                className="rounded-full text-xs px-4"
+                className="rounded-full text-xs px-4 shrink-0"
                 onClick={() => setActiveFilter(f)}
               >
                 {f}
