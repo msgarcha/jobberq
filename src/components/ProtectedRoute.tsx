@@ -1,10 +1,18 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useCompanySettings } from '@/hooks/useCompanySettings';
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  skipOnboardingCheck?: boolean;
+}
+
+export function ProtectedRoute({ children, skipOnboardingCheck }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
+  const location = useLocation();
+  const { data: settings, isLoading: settingsLoading } = useCompanySettings();
 
-  if (loading) {
+  if (loading || (user && !skipOnboardingCheck && settingsLoading)) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -13,7 +21,12 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/landing" replace />;
+  }
+
+  // Redirect first-time users to onboarding
+  if (!skipOnboardingCheck && !settings && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return <>{children}</>;
