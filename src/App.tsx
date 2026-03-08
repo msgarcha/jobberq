@@ -36,6 +36,7 @@ import AcceptInvite from "./pages/AcceptInvite";
 import Reviews from "./pages/Reviews";
 import ReviewForm from "./pages/ReviewForm";
 import ImportData from "./pages/ImportData";
+import SuperAdmin from "./pages/SuperAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
