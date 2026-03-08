@@ -63,6 +63,14 @@ const JobDetail = () => {
     });
   };
 
+  const handlePause = async () => {
+    await updateJob.mutateAsync({ id: job.id, status: "on_hold" as any });
+  };
+
+  const handleResume = async () => {
+    await updateJob.mutateAsync({ id: job.id, status: "in_progress" as any });
+  };
+
   const handleCreateInvoice = async () => {
     const invoiceNumber = nextInvNum?.formatted || `INV-${Date.now()}`;
     const result = await createInvoice.mutateAsync({
