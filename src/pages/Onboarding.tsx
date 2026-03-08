@@ -65,7 +65,10 @@ export default function Onboarding() {
         quote_prefix: quotePrefix,
       },
       {
-        onSuccess: () => navigate("/"),
+        onSuccess: async () => {
+          await qc.invalidateQueries({ queryKey: ["company-settings"] });
+          navigate("/");
+        },
       }
     );
   };
