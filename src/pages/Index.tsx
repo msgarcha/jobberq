@@ -67,15 +67,15 @@ const Index = () => {
         <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
           {kpis.map((kpi) => (
             <Card key={kpi.label} className="shadow-warm hover:shadow-warm-md transition-shadow">
-              <CardContent className="p-5">
+              <CardContent className="p-4 md:p-5">
                 <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{kpi.label}</p>
-                    <p className="text-2xl font-display font-bold">{kpi.value}</p>
-                    {kpi.sub && <p className="text-xs text-muted-foreground">{kpi.sub}</p>}
+                  <div className="space-y-1 min-w-0">
+                    <p className="text-[10px] md:text-xs text-muted-foreground font-medium uppercase tracking-wide truncate">{kpi.label}</p>
+                    <p className="text-xl md:text-2xl font-display font-bold">{kpi.value}</p>
+                    {kpi.sub && <p className="text-[10px] md:text-xs text-muted-foreground">{kpi.sub}</p>}
                   </div>
-                  <div className={`h-10 w-10 rounded-xl bg-secondary flex items-center justify-center ${kpi.color}`}>
-                    <kpi.icon className="h-5 w-5" />
+                  <div className={`h-8 w-8 md:h-10 md:w-10 rounded-xl bg-secondary flex items-center justify-center shrink-0 ${kpi.color}`}>
+                    <kpi.icon className="h-4 w-4 md:h-5 md:w-5" />
                   </div>
                 </div>
               </CardContent>
