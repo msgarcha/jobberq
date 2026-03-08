@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { useInvoice, useInvoiceLineItems, useUpdateInvoice, useDeleteInvoice, usePayments, useRecordPayment } from "@/hooks/useInvoices";
-import { ArrowLeft, Edit, Send, DollarSign, Trash2 } from "lucide-react";
+import { useInvoice, useInvoiceLineItems, useUpdateInvoice, useDeleteInvoice, usePayments, useRecordPayment, useDuplicateInvoice } from "@/hooks/useInvoices";
+import { ArrowLeft, Edit, Send, DollarSign, Trash2, Copy, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 
 const statusStyles: Record<string, string> = {
@@ -21,6 +21,14 @@ const statusStyles: Record<string, string> = {
   viewed: "bg-status-warning text-status-warning-foreground",
   paid: "bg-status-success text-status-success-foreground",
   overdue: "bg-status-danger text-status-danger-foreground",
+};
+
+const frequencyLabels: Record<string, string> = {
+  weekly: "Weekly",
+  biweekly: "Bi-weekly",
+  monthly: "Monthly",
+  quarterly: "Quarterly",
+  yearly: "Yearly",
 };
 
 const paymentMethods = [
@@ -41,6 +49,7 @@ const InvoiceDetail = () => {
   const updateInvoice = useUpdateInvoice();
   const deleteInvoice = useDeleteInvoice();
   const recordPayment = useRecordPayment();
+  const duplicateInvoice = useDuplicateInvoice();
 
   const [payDialogOpen, setPayDialogOpen] = useState(false);
   const [payAmount, setPayAmount] = useState("");
@@ -50,6 +59,12 @@ const InvoiceDetail = () => {
 
   const handleSend = () => {
     updateInvoice.mutate({ id: id!, status: "sent", sent_at: new Date().toISOString() });
+  };
+
+  const handleDuplicate = () => {
+    duplicateInvoice.mutate(id!, {
+      onSuccess: (newInvoice) => navigate(`/invoices/${newInvoice.id}`),
+    });
   };
 
   const handleRecordPayment = async () => {
@@ -103,11 +118,20 @@ const InvoiceDetail = () => {
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-display font-bold tracking-tight">{invoice.invoice_number}</h1>
                 <Badge className={`${statusStyles[invoice.status]} text-xs`}>{invoice.status}</Badge>
+                {invoice.is_recurring && (
+                  <Badge variant="outline" className="text-xs gap-1">
+                    <RefreshCw className="h-3 w-3" />
+                    {frequencyLabels[invoice.recurring_frequency || ""] || "Recurring"}
+                  </Badge>
+                )}
               </div>
               {invoice.title && <p className="text-sm text-muted-foreground">{invoice.title}</p>}
             </div>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDuplicate} disabled={duplicateInvoice.isPending}>
+              <Copy className="h-3.5 w-3.5" /> Duplicate
+            </Button>
             {invoice.status === "draft" && (
               <>
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/invoices/${id}/edit`)}>
@@ -166,6 +190,13 @@ const InvoiceDetail = () => {
               {invoice.due_date && <div className="flex justify-between"><span className="text-muted-foreground">Due</span><span>{format(new Date(invoice.due_date), "MMM d, yyyy")}</span></div>}
               {invoice.sent_at && <div className="flex justify-between"><span className="text-muted-foreground">Sent</span><span>{format(new Date(invoice.sent_at), "MMM d, yyyy")}</span></div>}
               {invoice.paid_at && <div className="flex justify-between"><span className="text-muted-foreground">Paid</span><span>{format(new Date(invoice.paid_at), "MMM d, yyyy")}</span></div>}
+              {invoice.is_recurring && (
+                <>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Frequency</span><span>{frequencyLabels[invoice.recurring_frequency || ""] || "—"}</span></div>
+                  {invoice.recurring_start && <div className="flex justify-between"><span className="text-muted-foreground">Starts</span><span>{format(new Date(invoice.recurring_start), "MMM d, yyyy")}</span></div>}
+                  {invoice.recurring_end && <div className="flex justify-between"><span className="text-muted-foreground">Ends</span><span>{format(new Date(invoice.recurring_end), "MMM d, yyyy")}</span></div>}
+                </>
+              )}
             </CardContent>
           </Card>
 

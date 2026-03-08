@@ -5,13 +5,10 @@ import {
   AlertTriangle,
   FileText,
   Receipt,
-  Users,
   ArrowUpRight,
-  ArrowDownRight,
   Briefcase,
   Calendar,
   ChevronRight,
-  CheckCircle2,
   MapPin,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +16,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDashboardStats, useRecentActivity } from "@/hooks/useInvoices";
+import { useJobsByDate } from "@/hooks/useJobs";
+import { format } from "date-fns";
 
 const getGreeting = () => {
   const h = new Date().getHours();
@@ -27,31 +27,13 @@ const getGreeting = () => {
   return "Good evening";
 };
 
-const todaySchedule = [
-  { id: 1, title: "Lawn Maintenance", client: "Green Valley HOA", time: "9:00 AM", address: "123 Oak Dr" },
-  { id: 2, title: "HVAC Inspection", client: "Acme Corp", time: "1:00 PM", address: "500 Business Blvd" },
-];
-
-const todoItems = [
-  { id: 1, label: "Convert approved quote Q-286 for Smith Residence", type: "quote", action: "Convert to Job" },
-  { id: 2, label: "Follow up on overdue invoice INV-1041", type: "invoice", action: "Send Reminder" },
-  { id: 3, label: "Schedule site visit for Green Valley HOA", type: "job", action: "Schedule" },
-];
-
-const recentActivity = [
-  { id: 1, icon: Receipt, text: "Invoice #1042 paid", detail: "Acme Corp · $4,200", time: "2h ago", status: "paid" },
-  { id: 2, icon: FileText, text: "Quote #287 sent", detail: "Johnson Landscaping · $3,200", time: "4h ago", status: "sent" },
-  { id: 3, icon: FileText, text: "Quote #286 approved", detail: "Smith Residence · $1,850", time: "Yesterday", status: "approved" },
-  { id: 4, icon: Receipt, text: "Invoice #1041 overdue", detail: "Metro Properties · $8,600", time: "Yesterday", status: "overdue" },
-  { id: 5, icon: Users, text: "New client added", detail: "Green Valley HOA", time: "2 days ago", status: "new" },
-];
-
 const statusColors: Record<string, string> = {
+  draft: "bg-status-neutral text-status-neutral-foreground",
   paid: "bg-status-success text-status-success-foreground",
   sent: "bg-status-info text-status-info-foreground",
   approved: "bg-status-success text-status-success-foreground",
   overdue: "bg-status-danger text-status-danger-foreground",
-  new: "bg-status-neutral text-status-neutral-foreground",
+  viewed: "bg-status-warning text-status-warning-foreground",
 };
 
 const Index = () => {
@@ -59,10 +41,21 @@ const Index = () => {
   const { user } = useAuth();
   const firstName = (user?.user_metadata?.display_name || user?.email?.split("@")[0] || "there").split(" ")[0];
 
+  const { data: stats } = useDashboardStats();
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const { data: todayJobs } = useJobsByDate(todayStr);
+  const { data: activity } = useRecentActivity();
+
+  const kpis = [
+    { label: "Revenue (MTD)", value: `$${(stats?.revenueMTD || 0).toLocaleString()}`, icon: DollarSign, color: "text-primary" },
+    { label: "Outstanding", value: `$${(stats?.outstanding || 0).toLocaleString()}`, sub: `${stats?.unpaidCount || 0} unpaid`, icon: Clock, color: "text-status-warning" },
+    { label: "Overdue", value: `$${(stats?.overdueTotal || 0).toLocaleString()}`, sub: `${stats?.overdueCount || 0} invoices`, icon: AlertTriangle, color: "text-status-danger" },
+    { label: "Active Quotes", value: `${stats?.quotesCount || 0}`, sub: `$${(stats?.quotesValue || 0).toLocaleString()} value`, icon: FileText, color: "text-primary" },
+  ];
+
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
-        {/* Greeting */}
         <div>
           <h1 className="text-2xl font-display font-bold tracking-tight">
             {getGreeting()}, {firstName} 👋
@@ -72,24 +65,13 @@ const Index = () => {
 
         {/* KPI Row */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-          {[
-            { label: "Revenue (MTD)", value: "$19,800", change: "+12%", up: true, icon: DollarSign, color: "text-primary" },
-            { label: "Outstanding", value: "$66,600", sub: "18 unpaid", icon: Clock, color: "text-status-warning" },
-            { label: "Overdue", value: "$8,600", change: "4 invoices", up: false, icon: AlertTriangle, color: "text-status-danger" },
-            { label: "Active Quotes", value: "12", sub: "$34,500 value", icon: FileText, color: "text-primary" },
-          ].map((kpi) => (
+          {kpis.map((kpi) => (
             <Card key={kpi.label} className="shadow-warm hover:shadow-warm-md transition-shadow">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{kpi.label}</p>
                     <p className="text-2xl font-display font-bold">{kpi.value}</p>
-                    {kpi.change && (
-                      <div className={`flex items-center gap-1 text-xs ${kpi.up ? "text-status-success" : "text-status-danger"}`}>
-                        {kpi.up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                        <span>{kpi.change}</span>
-                      </div>
-                    )}
                     {kpi.sub && <p className="text-xs text-muted-foreground">{kpi.sub}</p>}
                   </div>
                   <div className={`h-10 w-10 rounded-xl bg-secondary flex items-center justify-center ${kpi.color}`}>
@@ -117,81 +99,70 @@ const Index = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {todaySchedule.map((item) => (
-                <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Briefcase className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{item.title}</p>
-                    <p className="text-xs text-muted-foreground">{item.client}</p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{item.time}</span>
-                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{item.address}</span>
+              {!todayJobs?.length ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No jobs scheduled today</p>
+              ) : (
+                todayJobs.slice(0, 4).map((job: any) => {
+                  const client = job.clients;
+                  const clientName = client ? `${client.first_name} ${client.last_name}` : "";
+                  const startTime = job.scheduled_start ? format(new Date(job.scheduled_start), "h:mm a") : "";
+                  return (
+                    <div key={job.id} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer" onClick={() => navigate(`/jobs/${job.id}`)}>
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <Briefcase className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{job.title}</p>
+                        <p className="text-xs text-muted-foreground">{clientName}</p>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                          {startTime && <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{startTime}</span>}
+                          {job.address && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{job.address}</span>}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })
+              )}
             </CardContent>
           </Card>
 
-          {/* To-Do */}
+          {/* Recent Activity */}
           <Card className="lg:col-span-3 shadow-warm">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-display font-semibold flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-status-warning" />
-                  To-Do
-                </CardTitle>
-                <Badge variant="secondary" className="text-xs">{todoItems.length} items</Badge>
+                <CardTitle className="text-sm font-display font-semibold">Recent Activity</CardTitle>
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1" onClick={() => navigate("/invoices")}>
+                  View all <ChevronRight className="h-3 w-3" />
+                </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2">
-              {todoItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="h-2 w-2 rounded-full bg-status-warning shrink-0" />
-                    <p className="text-sm truncate">{item.label}</p>
-                  </div>
-                  <Button size="sm" variant="outline" className="shrink-0 text-xs h-7 rounded-md">
-                    {item.action}
-                  </Button>
+            <CardContent>
+              {!activity?.length ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No recent activity</p>
+              ) : (
+                <div className="divide-y">
+                  {activity.slice(0, 8).map((item) => (
+                    <div key={item.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 cursor-pointer hover:bg-secondary/30 -mx-2 px-2 rounded" onClick={() => navigate(`/invoices/${item.id}`)}>
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
+                        <Receipt className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{item.text}</p>
+                        <p className="text-xs text-muted-foreground">{item.detail}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <Badge className={statusColors[item.status] || "bg-status-neutral text-status-neutral-foreground"} variant="secondary">
+                          {item.status}
+                        </Badge>
+                        <p className="text-[10px] text-muted-foreground mt-1">{format(new Date(item.time), "MMM d")}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </CardContent>
           </Card>
         </div>
-
-        {/* Recent Activity */}
-        <Card className="shadow-warm">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-display font-semibold">Recently Active</CardTitle>
-              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">View all</Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="divide-y">
-              {recentActivity.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
-                    <item.icon className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{item.text}</p>
-                    <p className="text-xs text-muted-foreground">{item.detail}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <Badge className={statusColors[item.status]} variant="secondary">
-                      {item.status}
-                    </Badge>
-                    <p className="text-[10px] text-muted-foreground mt-1">{item.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   );
