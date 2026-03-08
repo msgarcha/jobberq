@@ -289,7 +289,7 @@ export function useIncrementInvoiceNumber() {
 export function useDuplicateInvoice() {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, team } = useAuth();
 
   return useMutation({
     mutationFn: async (sourceInvoiceId: string) => {
