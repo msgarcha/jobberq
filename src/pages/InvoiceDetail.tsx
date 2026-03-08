@@ -12,7 +12,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useInvoice, useInvoiceLineItems, useUpdateInvoice, useDeleteInvoice, usePayments, useRecordPayment, useDuplicateInvoice } from "@/hooks/useInvoices";
-import { ArrowLeft, Edit, Send, DollarSign, Trash2, Copy, RefreshCw, Download } from "lucide-react";
+import { ArrowLeft, Edit, Send, DollarSign, Trash2, Copy, RefreshCw, Download, Link, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { format } from "date-fns";
 
 const statusStyles: Record<string, string> = {
