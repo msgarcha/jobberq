@@ -153,6 +153,9 @@ const ClientDetail = () => {
                 <><Archive className="h-3.5 w-3.5" /> Archive</>
               )}
             </Button>
+            <Button variant="outline" size="sm" className="gap-1.5 rounded-lg" onClick={() => setReviewDialogOpen(true)}>
+              <Star className="h-3.5 w-3.5" /> Request Review
+            </Button>
             <Button size="sm" className="gap-1.5 rounded-lg shadow-warm" onClick={() => navigate(`/clients/${id}/edit`)}>
               <Edit className="h-3.5 w-3.5" /> Edit
             </Button>
