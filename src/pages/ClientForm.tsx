@@ -26,6 +26,7 @@ const clientSchema = z.object({
   email: z.string().trim().email("Invalid email").max(255).optional().or(z.literal("")),
   phone: z.string().trim().max(30).optional(),
   status: z.enum(["lead", "active", "archived"]),
+  default_payment_terms: z.string().optional(),
   address_line1: z.string().trim().max(200).optional(),
   address_line2: z.string().trim().max(200).optional(),
   city: z.string().trim().max(100).optional(),
@@ -44,6 +45,7 @@ const emptyForm: FormData = {
   email: "",
   phone: "",
   status: "lead",
+  default_payment_terms: "net_30",
   address_line1: "",
   address_line2: "",
   city: "",
@@ -74,6 +76,7 @@ const ClientForm = () => {
         email: existingClient.email || "",
         phone: existingClient.phone || "",
         status: existingClient.status,
+        default_payment_terms: (existingClient as any).default_payment_terms || "net_30",
         address_line1: existingClient.address_line1 || "",
         address_line2: existingClient.address_line2 || "",
         city: existingClient.city || "",
@@ -107,6 +110,7 @@ const ClientForm = () => {
       first_name: d.first_name!,
       last_name: d.last_name!,
       status: d.status,
+      default_payment_terms: d.default_payment_terms || "net_30",
       email: d.email || null,
       company_name: d.company_name || null,
       phone: d.phone || null,
@@ -232,6 +236,21 @@ const ClientForm = () => {
                     <SelectItem value="lead">Lead</SelectItem>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="archived">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Default Payment Terms</Label>
+                <Select value={form.default_payment_terms || "net_30"} onValueChange={(v) => setField("default_payment_terms", v)}>
+                  <SelectTrigger className="rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="due_on_receipt">Due on Receipt</SelectItem>
+                    <SelectItem value="net_15">Net 15</SelectItem>
+                    <SelectItem value="net_30">Net 30</SelectItem>
+                    <SelectItem value="net_45">Net 45</SelectItem>
+                    <SelectItem value="net_60">Net 60</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

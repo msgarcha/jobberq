@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Bell, Plus, Search, Users, FileText, Receipt, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,19 @@ import { useAuth } from "@/contexts/AuthContext";
 export function TopBar() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Keyboard shortcut: Ctrl/Cmd + N to open Create menu
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "n") {
+        e.preventDefault();
+        setMenuOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
   const displayName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "U";
   const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
 
@@ -30,7 +44,7 @@ export function TopBar() {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <DropdownMenu>
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger asChild>
             <Button size="sm" className="gap-1.5 rounded-lg shadow-warm">
               <Plus className="h-4 w-4" />

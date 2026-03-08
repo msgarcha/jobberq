@@ -11,7 +11,9 @@ import { Switch } from "@/components/ui/switch";
 import { ClientSelector } from "@/components/ClientSelector";
 import { LineItemsEditor, LineItem, computeTotals } from "@/components/LineItemsEditor";
 import { useInvoice, useInvoiceLineItems, useCreateInvoice, useUpdateInvoice, useSaveInvoiceLineItems, useNextInvoiceNumber, useIncrementInvoiceNumber } from "@/hooks/useInvoices";
-import { ArrowLeft, Save, RefreshCw } from "lucide-react";
+import { useClient } from "@/hooks/useClients";
+import { ArrowLeft, Save, RefreshCw, Plus } from "lucide-react";
+import { addDays, format } from "date-fns";
 
 const paymentTermOptions = [
   { value: "due_on_receipt", label: "Due on Receipt" },
@@ -43,6 +45,7 @@ const InvoiceForm = () => {
   const incrementNumber = useIncrementInvoiceNumber();
 
   const [clientId, setClientId] = useState<string | null>(null);
+  const { data: selectedClient } = useClient(clientId || undefined);
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("net_30");
@@ -56,6 +59,36 @@ const InvoiceForm = () => {
   const [recurringFrequency, setRecurringFrequency] = useState("monthly");
   const [recurringStart, setRecurringStart] = useState("");
   const [recurringEnd, setRecurringEnd] = useState("");
+
+  // Helper: compute due date from payment terms
+  const computeDueDate = (terms: string): string => {
+    const daysMap: Record<string, number> = {
+      due_on_receipt: 0,
+      net_15: 15,
+      net_30: 30,
+      net_45: 45,
+      net_60: 60,
+    };
+    const days = daysMap[terms];
+    if (days === undefined) return "";
+    return format(addDays(new Date(), days), "yyyy-MM-dd");
+  };
+
+  // Auto-fill payment terms & due date when client changes (new invoices only)
+  useEffect(() => {
+    if (!isEdit && selectedClient && (selectedClient as any).default_payment_terms) {
+      const terms = (selectedClient as any).default_payment_terms;
+      setPaymentTerms(terms);
+      setDueDate(computeDueDate(terms));
+    }
+  }, [selectedClient, isEdit]);
+
+  // Auto-update due date when payment terms change (new invoices only)
+  useEffect(() => {
+    if (!isEdit && paymentTerms) {
+      setDueDate(computeDueDate(paymentTerms));
+    }
+  }, [paymentTerms, isEdit]);
 
   useEffect(() => {
     if (existingInvoice) {
@@ -89,7 +122,7 @@ const InvoiceForm = () => {
     }
   }, [existingLineItems]);
 
-  const handleSave = async () => {
+  const handleSave = async (createAnother = false) => {
     setSaving(true);
     try {
       const totals = computeTotals(lineItems);
@@ -130,7 +163,22 @@ const InvoiceForm = () => {
         items: lineItems.map(({ id: _, ...rest }) => rest),
       });
 
-      navigate(`/invoices/${invoiceId}`);
+      if (createAnother && !isEdit) {
+        // Reset form for new invoice
+        setClientId(null);
+        setTitle("");
+        setDueDate("");
+        setPaymentTerms("net_30");
+        setClientNotes("");
+        setInternalNotes("");
+        setLineItems([]);
+        setIsRecurring(false);
+        setRecurringFrequency("monthly");
+        setRecurringStart("");
+        setRecurringEnd("");
+      } else {
+        navigate(`/invoices/${invoiceId}`);
+      }
     } catch {
       // error handled by hooks
     } finally {
@@ -267,7 +315,13 @@ const InvoiceForm = () => {
 
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving} className="gap-1.5">
+          {!isEdit && (
+            <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              {saving ? "Saving…" : "Save & Create Another"}
+            </Button>
+          )}
+          <Button onClick={() => handleSave(false)} disabled={saving} className="gap-1.5">
             <Save className="h-4 w-4" />
             {saving ? "Saving…" : isEdit ? "Update Invoice" : "Create Invoice"}
           </Button>

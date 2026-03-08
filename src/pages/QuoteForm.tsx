@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClientSelector } from "@/components/ClientSelector";
 import { LineItemsEditor, LineItem, computeTotals } from "@/components/LineItemsEditor";
 import { useQuote, useQuoteLineItems, useCreateQuote, useUpdateQuote, useSaveQuoteLineItems, useNextQuoteNumber, useIncrementQuoteNumber } from "@/hooks/useQuotes";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Plus } from "lucide-react";
 
 const QuoteForm = () => {
   const { id } = useParams();
@@ -59,7 +59,7 @@ const QuoteForm = () => {
     }
   }, [existingLineItems]);
 
-  const handleSave = async () => {
+  const handleSave = async (createAnother = false) => {
     setSaving(true);
     try {
       const totals = computeTotals(lineItems);
@@ -92,7 +92,16 @@ const QuoteForm = () => {
         items: lineItems.map(({ id: _, ...rest }) => rest),
       });
 
-      navigate(`/quotes/${quoteId}`);
+      if (createAnother && !isEdit) {
+        setClientId(null);
+        setTitle("");
+        setValidUntil("");
+        setClientNotes("");
+        setInternalNotes("");
+        setLineItems([]);
+      } else {
+        navigate(`/quotes/${quoteId}`);
+      }
     } catch {
       // error handled by hooks
     } finally {
@@ -184,7 +193,13 @@ const QuoteForm = () => {
 
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving} className="gap-1.5">
+          {!isEdit && (
+            <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              {saving ? "Saving…" : "Save & Create Another"}
+            </Button>
+          )}
+          <Button onClick={() => handleSave(false)} disabled={saving} className="gap-1.5">
             <Save className="h-4 w-4" />
             {saving ? "Saving…" : isEdit ? "Update Quote" : "Create Quote"}
           </Button>
