@@ -76,6 +76,7 @@ const ClientDetail = () => {
   const createProperty = useCreateProperty();
 
   const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [newProperty, setNewProperty] = useState({ name: "", address_line1: "", city: "", state: "", zip: "" });
 
   if (isLoading) {
