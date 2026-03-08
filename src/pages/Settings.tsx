@@ -186,22 +186,24 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue={defaultTab}>
-          <TabsList>
-            <TabsTrigger value="company">Company</TabsTrigger>
-            <TabsTrigger value="invoicing">Invoicing</TabsTrigger>
-            <TabsTrigger value="team" className="gap-1.5">
-              <Users className="h-3.5 w-3.5" /> Team
-            </TabsTrigger>
-            <TabsTrigger value="reviews" className="gap-1.5">
-              <Star className="h-3.5 w-3.5" /> Reviews
-            </TabsTrigger>
-            <TabsTrigger value="billing" className="gap-1.5">
-              <CreditCard className="h-3.5 w-3.5" /> Billing
-            </TabsTrigger>
-            <TabsTrigger value="import" className="gap-1.5">
-              <FileSpreadsheet className="h-3.5 w-3.5" /> Import
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-1 px-1 scrollbar-hide">
+            <TabsList className="inline-flex w-auto min-w-full md:w-auto">
+              <TabsTrigger value="company">Company</TabsTrigger>
+              <TabsTrigger value="invoicing">Invoicing</TabsTrigger>
+              <TabsTrigger value="team" className="gap-1.5">
+                <Users className="h-3.5 w-3.5" /> Team
+              </TabsTrigger>
+              <TabsTrigger value="reviews" className="gap-1.5">
+                <Star className="h-3.5 w-3.5" /> Reviews
+              </TabsTrigger>
+              <TabsTrigger value="billing" className="gap-1.5">
+                <CreditCard className="h-3.5 w-3.5" /> Billing
+              </TabsTrigger>
+              <TabsTrigger value="import" className="gap-1.5">
+                <FileSpreadsheet className="h-3.5 w-3.5" /> Import
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Company Tab */}
           <TabsContent value="company" className="space-y-5 mt-5">
@@ -219,26 +221,26 @@ const Settings = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-start gap-6">
-                  <div className="shrink-0">
+              <div className="flex flex-col md:flex-row items-start gap-6">
+                  <div className="shrink-0 w-full md:w-auto">
                     <Label className="text-xs mb-1.5 block">Logo</Label>
-                    <div className="flex flex-col items-center gap-2">
+                    <div className="flex flex-row md:flex-col items-center gap-3 md:gap-2">
                       {logoUrl ? (
                         <img src={logoUrl} alt="Company logo" className="h-16 w-16 rounded-xl object-cover border" />
                       ) : (
-                        <div className="h-16 w-16 rounded-xl bg-secondary flex items-center justify-center">
+                        <div className="h-16 w-16 rounded-xl bg-secondary flex items-center justify-center shrink-0">
                           <Upload className="h-5 w-5 text-muted-foreground" />
                         </div>
                       )}
-                      <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="Logo URL" className="text-xs h-8 w-40" />
+                      <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="Logo URL" className="text-xs h-8 w-full md:w-40" />
                     </div>
                   </div>
-                  <div className="flex-1 space-y-3">
+                  <div className="flex-1 space-y-3 w-full">
                     <div>
                       <Label className="text-xs">Company Name</Label>
                       <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Your Company Name" />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <Label className="text-xs">Email</Label>
                         <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hello@company.com" />
@@ -265,7 +267,7 @@ const Settings = () => {
                     <Label className="text-xs">Address Line 2</Label>
                     <Input value={addressLine2} onChange={(e) => setAddressLine2(e.target.value)} placeholder="Suite 100" />
                   </div>
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="col-span-2">
                       <Label className="text-xs">City</Label>
                       <Input value={city} onChange={(e) => setCity(e.target.value)} />
@@ -356,7 +358,7 @@ const Settings = () => {
               </CardHeader>
               {authTeam.role === "admin" && (
                 <CardContent className="space-y-4">
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <div className="flex-1">
                       <Label className="text-xs">Email Address</Label>
                       <Input
@@ -366,18 +368,19 @@ const Settings = () => {
                         placeholder="colleague@company.com"
                       />
                     </div>
-                    <div className="w-32">
-                      <Label className="text-xs">Role</Label>
-                      <Select value={inviteRole} onValueChange={setInviteRole}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="manager">Manager</SelectItem>
-                          <SelectItem value="user">User</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-end">
+                    <div className="flex gap-3">
+                      <div className="w-32">
+                        <Label className="text-xs">Role</Label>
+                        <Select value={inviteRole} onValueChange={setInviteRole}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="manager">Manager</SelectItem>
+                            <SelectItem value="user">User</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-end">
                       <Button
                         onClick={async () => {
                           if (!inviteEmail || !teamId) return;
@@ -397,6 +400,7 @@ const Settings = () => {
                         <Mail className="h-4 w-4" />
                         {sendInvite.isPending ? "Sending…" : "Send Invite"}
                       </Button>
+                      </div>
                     </div>
                   </div>
                   {lastInviteUrl && (
@@ -576,9 +580,9 @@ const Settings = () => {
             {/* Current Plan Status */}
             <Card className="shadow-warm border-primary/20">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-display font-bold text-lg">
                         {currentTier ? SUBSCRIPTION_TIERS[currentTier].name : "Free Trial"}
                       </h3>
@@ -616,7 +620,7 @@ const Settings = () => {
             </Card>
 
             {/* Pricing Cards */}
-            <div className="grid gap-5 sm:grid-cols-3">
+            <div className="grid gap-5 grid-cols-1 sm:grid-cols-3">
               {(Object.entries(SUBSCRIPTION_TIERS) as [TierKey, typeof SUBSCRIPTION_TIERS[TierKey]][]).map(([key, tier]) => {
                 const isCurrentPlan = currentTier === key;
                 const isPopular = "popular" in tier && tier.popular;
