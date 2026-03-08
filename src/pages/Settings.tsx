@@ -400,6 +400,7 @@ const Settings = () => {
                         <Mail className="h-4 w-4" />
                         {sendInvite.isPending ? "Sending…" : "Send Invite"}
                       </Button>
+                      </div>
                     </div>
                   </div>
                   {lastInviteUrl && (
