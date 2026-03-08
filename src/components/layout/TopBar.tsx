@@ -11,13 +11,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function TopBar() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Keyboard shortcut: Ctrl/Cmd + N to open Create menu
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "n") {
@@ -28,8 +29,31 @@ export function TopBar() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
   const displayName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "U";
   const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+
+  if (isMobile) {
+    return (
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-card/80 backdrop-blur-sm px-4 border-b">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-display font-bold text-xs">
+            SP
+          </div>
+          <span className="font-display font-bold text-base tracking-tight">ServicePro</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="relative rounded-lg h-9 w-9">
+            <Bell className="h-4 w-4" />
+            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-status-danger" />
+          </Button>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+            {initials}
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-card/80 backdrop-blur-sm px-4">
