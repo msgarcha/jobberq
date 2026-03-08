@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useQuote, useQuoteLineItems, useUpdateQuote, useDeleteQuote } from "@/hooks/useQuotes";
 import { useCreateInvoice, useSaveInvoiceLineItems, useIncrementInvoiceNumber, useNextInvoiceNumber } from "@/hooks/useInvoices";
-import { ArrowLeft, Edit, Send, CheckCircle, FileText, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, Send, CheckCircle, FileText, Trash2, Download } from "lucide-react";
 import { format } from "date-fns";
 
 const statusStyles: Record<string, string> = {
