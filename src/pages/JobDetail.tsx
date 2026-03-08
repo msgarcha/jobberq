@@ -145,8 +145,15 @@ const JobDetail = () => {
               </Button>
             )}
             {job.status === "complete" && (
-              <Button onClick={handleCreateInvoice} className="gap-1.5" disabled={createInvoice.isPending}>
-                <FileText className="h-4 w-4" /> Create Invoice
+              <>
+                <Button onClick={handleCreateInvoice} className="gap-1.5" disabled={createInvoice.isPending}>
+                  <FileText className="h-4 w-4" /> Create Invoice
+                </Button>
+                <Button variant="outline" onClick={() => setReviewDialogOpen(true)} className="gap-1.5">
+                  <Star className="h-4 w-4" /> Request Review
+                </Button>
+              </>
+            )}
               </Button>
             )}
             {job.status === "invoiced" && (
