@@ -13,7 +13,6 @@ export default function AcceptInvite() {
   const { user, loading: authLoading } = useAuth();
   const [status, setStatus] = useState<"loading" | "success" | "error" | "login_required">("loading");
   const [message, setMessage] = useState("");
-  const [teamName, setTeamName] = useState("");
 
   useEffect(() => {
     if (authLoading) return;
@@ -32,91 +31,23 @@ export default function AcceptInvite() {
 
   const acceptInvite = async () => {
     try {
-      // Look up the invitation
-      const { data: invitation, error } = await supabase
-        .from("team_invitations")
-        .select("*, teams(name)")
-        .eq("token", token!)
-        .is("accepted_at", null)
-        .maybeSingle();
+      // Use the security definer function to accept the invite
+      const { data, error } = await supabase.rpc("accept_team_invitation", {
+        _token: token!,
+        _user_id: user!.id,
+      });
 
-      if (error || !invitation) {
+      if (error) throw error;
+
+      const result = data as any;
+      if (result?.error) {
         setStatus("error");
-        setMessage("This invite link is invalid or has already been used.");
+        setMessage(result.error);
         return;
       }
-
-      if (new Date(invitation.expires_at) < new Date()) {
-        setStatus("error");
-        setMessage("This invite link has expired.");
-        return;
-      }
-
-      setTeamName((invitation.teams as any)?.name || "the team");
-
-      // Check if user is already a member
-      const { data: existing } = await supabase
-        .from("team_members")
-        .select("id")
-        .eq("team_id", invitation.team_id)
-        .eq("user_id", user!.id)
-        .maybeSingle();
-
-      if (existing) {
-        setStatus("success");
-        setMessage("You're already a member of this team!");
-        return;
-      }
-
-      // Remove user from their current team (if solo team) and join new team
-      const { data: currentMembership } = await supabase
-        .from("team_members")
-        .select("team_id")
-        .eq("user_id", user!.id)
-        .maybeSingle();
-
-      if (currentMembership) {
-        // Check if current team has other members
-        const { count } = await supabase
-          .from("team_members")
-          .select("*", { count: "exact", head: true })
-          .eq("team_id", currentMembership.team_id);
-
-        if (count === 1) {
-          // Solo team, delete it
-          await supabase.from("team_members").delete().eq("user_id", user!.id);
-          await supabase.from("teams").delete().eq("id", currentMembership.team_id);
-        } else {
-          // Just remove from current team
-          await supabase.from("team_members").delete().eq("user_id", user!.id).eq("team_id", currentMembership.team_id);
-        }
-      }
-
-      // Join the new team
-      const { error: joinErr } = await supabase
-        .from("team_members")
-        .insert({
-          team_id: invitation.team_id,
-          user_id: user!.id,
-          role: invitation.role,
-        });
-
-      if (joinErr) throw joinErr;
-
-      // Mark invitation as accepted
-      await supabase
-        .from("team_invitations")
-        .update({ accepted_at: new Date().toISOString() })
-        .eq("id", invitation.id);
-
-      // Update data to new team
-      await supabase
-        .from("clients")
-        .update({ team_id: invitation.team_id } as any)
-        .eq("user_id", user!.id);
 
       setStatus("success");
-      setMessage(`You've joined ${(invitation.teams as any)?.name || "the team"}!`);
+      setMessage(result.message || "You've joined the team!");
     } catch (err: any) {
       setStatus("error");
       setMessage(err.message || "Failed to accept invitation.");
@@ -143,7 +74,10 @@ export default function AcceptInvite() {
               <p className="text-muted-foreground text-sm">
                 Sign in or create an account to join the team.
               </p>
-              <Button onClick={() => navigate(`/login?redirect=/accept-invite?token=${token}`)} className="w-full">
+              <Button
+                onClick={() => navigate(`/login?redirect=${encodeURIComponent(`/accept-invite?token=${token}`)}`)}
+                className="w-full"
+              >
                 Sign In to Accept
               </Button>
             </>
