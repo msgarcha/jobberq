@@ -100,6 +100,9 @@ const Settings = () => {
       setNextInvoiceNumber(settings.next_invoice_number || 1001);
       setDefaultTaxRate(Number(settings.default_tax_rate) || 0);
       setDefaultPaymentTerms(settings.default_payment_terms || "net_30");
+      setGoogleReviewUrl((settings as any).google_review_url || "");
+      setReviewMinStars((settings as any).review_min_stars ?? 4);
+      setReviewGatingEnabled((settings as any).review_gating_enabled ?? true);
     }
   }, [settings]);
 
