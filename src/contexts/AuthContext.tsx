@@ -25,6 +25,7 @@ interface AuthContextType {
   loading: boolean;
   subscription: SubscriptionState;
   team: TeamState;
+  isSuperAdmin: boolean;
   checkSubscription: () => Promise<void>;
   signOut: () => Promise<void>;
 }
