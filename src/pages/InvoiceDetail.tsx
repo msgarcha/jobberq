@@ -58,6 +58,7 @@ const InvoiceDetail = () => {
   const [payMethod, setPayMethod] = useState<string>("other");
   const [payRef, setPayRef] = useState("");
   const [payNotes, setPayNotes] = useState("");
+  const [generatingLink, setGeneratingLink] = useState(false);
 
   const handleSend = () => {
     updateInvoice.mutate({ id: id!, status: "sent", sent_at: new Date().toISOString() });
