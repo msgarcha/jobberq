@@ -14,7 +14,7 @@ import { useTeam, useTeamMembers, useTeamInvitations, useSendInvite, useUpdateMe
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SUBSCRIPTION_TIERS, type TierKey } from "@/lib/subscriptionTiers";
-import { Save, Building2, Upload, CreditCard, CheckCircle2, Crown, Zap, Users, Mail, Trash2, Copy, UserPlus } from "lucide-react";
+import { Save, Building2, Upload, CreditCard, CheckCircle2, Crown, Zap, Users, Mail, Trash2, Copy, UserPlus, Star } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 
