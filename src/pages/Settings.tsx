@@ -69,6 +69,9 @@ const Settings = () => {
   const [defaultPaymentTerms, setDefaultPaymentTerms] = useState("net_30");
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [googleReviewUrl, setGoogleReviewUrl] = useState("");
+  const [reviewMinStars, setReviewMinStars] = useState(4);
+  const [reviewGatingEnabled, setReviewGatingEnabled] = useState(true);
 
   // Handle checkout success
   useEffect(() => {
