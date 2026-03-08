@@ -77,8 +77,9 @@ function CardForm({ invoiceId, clientId, amount, onSuccess, onCancel }: ManualCa
               card_exp_month: 0,
               card_exp_year: 0,
             });
-            }
           } catch {
+            // Non-critical, card save failed but payment succeeded
+          }
             // Non-critical, card save failed but payment succeeded
           }
         }
