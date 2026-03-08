@@ -12,11 +12,19 @@ interface SubscriptionState {
   loading: boolean;
 }
 
+interface TeamState {
+  teamId: string | null;
+  teamName: string | null;
+  role: string | null;
+  loading: boolean;
+}
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
   loading: boolean;
   subscription: SubscriptionState;
+  team: TeamState;
   checkSubscription: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -30,11 +38,19 @@ const defaultSubscription: SubscriptionState = {
   loading: true,
 };
 
+const defaultTeam: TeamState = {
+  teamId: null,
+  teamName: null,
+  role: null,
+  loading: true,
+};
+
 const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
   loading: true,
   subscription: defaultSubscription,
+  team: defaultTeam,
   checkSubscription: async () => {},
   signOut: async () => {},
 });
@@ -45,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionState>(defaultSubscription);
+  const [team, setTeam] = useState<TeamState>(defaultTeam);
 
   const checkSubscription = useCallback(async () => {
     try {
@@ -78,6 +95,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const loadTeam = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('team_members')
+        .select('team_id, role, teams(name)')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Team load error:', error);
+        setTeam({ ...defaultTeam, loading: false });
+        return;
+      }
+
+      setTeam({
+        teamId: data?.team_id || null,
+        teamName: (data?.teams as any)?.name || null,
+        role: data?.role || null,
+        loading: false,
+      });
+    } catch (err) {
+      console.error('Team load failed:', err);
+      setTeam({ ...defaultTeam, loading: false });
+    }
+  }, []);
+
   useEffect(() => {
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
@@ -94,14 +137,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => authSub.unsubscribe();
   }, []);
 
-  // Check subscription when session changes
+  // Check subscription & team when session changes
   useEffect(() => {
     if (session) {
       checkSubscription();
+      loadTeam(session.user.id);
     } else {
       setSubscription({ ...defaultSubscription, loading: false });
+      setTeam({ ...defaultTeam, loading: false });
     }
-  }, [session, checkSubscription]);
+  }, [session, checkSubscription, loadTeam]);
 
   // Periodic refresh every 60s
   useEffect(() => {
@@ -120,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       loading,
       subscription,
+      team,
       checkSubscription,
       signOut,
     }}>
