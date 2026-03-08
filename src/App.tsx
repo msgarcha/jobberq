@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Clients from "./pages/Clients";
 import Quotes from "./pages/Quotes";
@@ -12,35 +14,41 @@ import Schedule from "./pages/Schedule";
 import Reports from "./pages/Reports";
 import Services from "./pages/Services";
 import Settings from "./pages/Settings";
+import Login from "./pages/Login";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/clients" element={<Clients />} />
-          <Route path="/clients/:id" element={<Clients />} />
-          <Route path="/clients/new" element={<Clients />} />
-          <Route path="/quotes" element={<Quotes />} />
-          <Route path="/quotes/new" element={<Quotes />} />
-          <Route path="/invoices" element={<Invoices />} />
-          <Route path="/invoices/new" element={<Invoices />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/jobs/new" element={<Jobs />} />
-          <Route path="/schedule" element={<Schedule />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+            <Route path="/clients/:id" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+            <Route path="/clients/new" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+            <Route path="/quotes" element={<ProtectedRoute><Quotes /></ProtectedRoute>} />
+            <Route path="/quotes/new" element={<ProtectedRoute><Quotes /></ProtectedRoute>} />
+            <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
+            <Route path="/invoices/new" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
+            <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
+            <Route path="/jobs/new" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
+            <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+            <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
