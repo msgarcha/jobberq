@@ -1,118 +1,77 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Building2,
+  Receipt,
+  CreditCard,
+  Users,
+  Bell,
+  Palette,
+  Shield,
+  HelpCircle,
+  ChevronRight,
+} from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+
+const settingsGroups = [
+  {
+    label: "Business",
+    items: [
+      { title: "Company Details", desc: "Business name, address, and logo", icon: Building2 },
+      { title: "Invoicing", desc: "Numbering, tax rates, payment terms", icon: Receipt },
+      { title: "Payment Methods", desc: "Stripe, ACH, and card setup", icon: CreditCard },
+    ],
+  },
+  {
+    label: "Account",
+    items: [
+      { title: "Team Members", desc: "Invite and manage your team", icon: Users },
+      { title: "Notifications", desc: "Email and push preferences", icon: Bell },
+      { title: "Appearance", desc: "Theme, colors, and display", icon: Palette },
+    ],
+  },
+  {
+    label: "Support",
+    items: [
+      { title: "Security", desc: "Password, two-factor auth", icon: Shield },
+      { title: "Help & Support", desc: "Documentation and contact", icon: HelpCircle },
+    ],
+  },
+];
 
 const Settings = () => {
   return (
     <DashboardLayout>
-      <div className="space-y-6 animate-fade-in max-w-3xl">
+      <div className="space-y-6 animate-fade-in max-w-2xl">
         <div>
           <h1 className="text-2xl font-display font-bold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground text-sm mt-1">Manage your company and account settings.</p>
+          <p className="text-muted-foreground text-sm mt-1">Manage your account and business settings.</p>
         </div>
 
-        <Tabs defaultValue="company">
-          <TabsList>
-            <TabsTrigger value="company">Company</TabsTrigger>
-            <TabsTrigger value="invoicing">Invoicing</TabsTrigger>
-            <TabsTrigger value="integrations">Integrations</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="company" className="space-y-4 mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base font-display">Company Information</CardTitle>
-                <CardDescription>Your business details shown on quotes and invoices.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Company Name</Label>
-                    <Input placeholder="Your Company Name" />
+        {settingsGroups.map((group, gi) => (
+          <div key={group.label} className="space-y-2">
+            <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-widest px-1">{group.label}</h2>
+            <Card className="shadow-warm">
+              <CardContent className="p-0">
+                {group.items.map((item, i) => (
+                  <div key={item.title}>
+                    <button className="w-full flex items-center gap-4 p-4 hover:bg-secondary/50 transition-colors text-left">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
+                        <item.icon className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{item.title}</p>
+                        <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                    </button>
+                    {i < group.items.length - 1 && <Separator />}
                   </div>
-                  <div className="space-y-2">
-                    <Label>Phone</Label>
-                    <Input placeholder="(555) 000-0000" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input placeholder="info@company.com" type="email" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Website</Label>
-                    <Input placeholder="https://company.com" />
-                  </div>
-                </div>
-                <Button>Save Changes</Button>
+                ))}
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="invoicing" className="space-y-4 mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base font-display">Invoice Settings</CardTitle>
-                <CardDescription>Customize invoice numbering and default terms.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Invoice Prefix</Label>
-                    <Input placeholder="INV-" defaultValue="INV-" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Next Invoice Number</Label>
-                    <Input placeholder="1043" defaultValue="1043" type="number" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Quote Prefix</Label>
-                    <Input placeholder="Q-" defaultValue="Q-" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Default Tax Rate (%)</Label>
-                    <Input placeholder="13" defaultValue="13" type="number" />
-                  </div>
-                </div>
-                <Button>Save Changes</Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="integrations" className="space-y-4 mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base font-display">Integrations</CardTitle>
-                <CardDescription>Connect payment processors and accounting software.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between py-3 border-b">
-                  <div>
-                    <p className="font-medium">Stripe</p>
-                    <p className="text-xs text-muted-foreground">Accept credit cards and ACH payments</p>
-                  </div>
-                  <Button variant="outline" size="sm">Connect</Button>
-                </div>
-                <div className="flex items-center justify-between py-3 border-b">
-                  <div>
-                    <p className="font-medium">QuickBooks Online</p>
-                    <p className="text-xs text-muted-foreground">Sync invoices and payments</p>
-                  </div>
-                  <Button variant="outline" size="sm">Connect</Button>
-                </div>
-                <div className="flex items-center justify-between py-3">
-                  <div>
-                    <p className="font-medium">Xero</p>
-                    <p className="text-xs text-muted-foreground">Sync invoices and payments</p>
-                  </div>
-                  <Button variant="outline" size="sm">Connect</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        ))}
       </div>
     </DashboardLayout>
   );
