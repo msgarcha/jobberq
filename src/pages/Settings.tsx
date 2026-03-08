@@ -33,6 +33,7 @@ const Settings = () => {
   const upsert = useUpsertCompanySettings();
   const { subscription, checkSubscription, user, team: authTeam } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("tab") || "company";
 
