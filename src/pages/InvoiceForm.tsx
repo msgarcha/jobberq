@@ -122,7 +122,7 @@ const InvoiceForm = () => {
     }
   }, [existingLineItems]);
 
-  const handleSave = async () => {
+  const handleSave = async (createAnother = false) => {
     setSaving(true);
     try {
       const totals = computeTotals(lineItems);
@@ -163,7 +163,22 @@ const InvoiceForm = () => {
         items: lineItems.map(({ id: _, ...rest }) => rest),
       });
 
-      navigate(`/invoices/${invoiceId}`);
+      if (createAnother && !isEdit) {
+        // Reset form for new invoice
+        setClientId(null);
+        setTitle("");
+        setDueDate("");
+        setPaymentTerms("net_30");
+        setClientNotes("");
+        setInternalNotes("");
+        setLineItems([]);
+        setIsRecurring(false);
+        setRecurringFrequency("monthly");
+        setRecurringStart("");
+        setRecurringEnd("");
+      } else {
+        navigate(`/invoices/${invoiceId}`);
+      }
     } catch {
       // error handled by hooks
     } finally {
