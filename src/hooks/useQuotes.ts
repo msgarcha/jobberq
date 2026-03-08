@@ -77,13 +77,13 @@ export function useQuoteLineItems(quoteId: string | undefined) {
 export function useCreateQuote() {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, team } = useAuth();
 
   return useMutation({
     mutationFn: async (data: Omit<QuoteInsert, "user_id">) => {
       const { data: result, error } = await supabase
         .from("quotes")
-        .insert({ ...data, user_id: user!.id })
+        .insert({ ...data, user_id: user!.id, team_id: team.teamId } as any)
         .select()
         .single();
       if (error) throw error;
