@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useInvoice, useInvoiceLineItems, useUpdateInvoice, useDeleteInvoice, usePayments, useRecordPayment, useDuplicateInvoice } from "@/hooks/useInvoices";
-import { ArrowLeft, Edit, Send, DollarSign, Trash2, Copy, RefreshCw } from "lucide-react";
+import { ArrowLeft, Edit, Send, DollarSign, Trash2, Copy, RefreshCw, Download } from "lucide-react";
 import { format } from "date-fns";
 
 const statusStyles: Record<string, string> = {
@@ -129,6 +129,9 @@ const InvoiceDetail = () => {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.open(`/invoices/${id}/print`, '_blank')}>
+              <Download className="h-3.5 w-3.5" /> PDF
+            </Button>
             <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDuplicate} disabled={duplicateInvoice.isPending}>
               <Copy className="h-3.5 w-3.5" /> Duplicate
             </Button>

@@ -15,6 +15,7 @@ import QuoteDetail from "./pages/QuoteDetail";
 import Invoices from "./pages/Invoices";
 import InvoiceForm from "./pages/InvoiceForm";
 import InvoiceDetail from "./pages/InvoiceDetail";
+import InvoicePrint from "./pages/InvoicePrint";
 import Jobs from "./pages/Jobs";
 import JobForm from "./pages/JobForm";
 import JobDetail from "./pages/JobDetail";
@@ -24,6 +25,7 @@ import Services from "./pages/Services";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
+import QuotePrint from "./pages/QuotePrint";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,10 +49,12 @@ const App = () => (
             <Route path="/quotes/new" element={<ProtectedRoute><QuoteForm /></ProtectedRoute>} />
             <Route path="/quotes/:id" element={<ProtectedRoute><QuoteDetail /></ProtectedRoute>} />
             <Route path="/quotes/:id/edit" element={<ProtectedRoute><QuoteForm /></ProtectedRoute>} />
+            <Route path="/quotes/:id/print" element={<ProtectedRoute><QuotePrint /></ProtectedRoute>} />
             <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
             <Route path="/invoices/new" element={<ProtectedRoute><InvoiceForm /></ProtectedRoute>} />
             <Route path="/invoices/:id" element={<ProtectedRoute><InvoiceDetail /></ProtectedRoute>} />
             <Route path="/invoices/:id/edit" element={<ProtectedRoute><InvoiceForm /></ProtectedRoute>} />
+            <Route path="/invoices/:id/print" element={<ProtectedRoute><InvoicePrint /></ProtectedRoute>} />
             <Route path="/jobs" element={<ProtectedRoute><Jobs /></ProtectedRoute>} />
             <Route path="/jobs/new" element={<ProtectedRoute><JobForm /></ProtectedRoute>} />
             <Route path="/jobs/:id" element={<ProtectedRoute><JobDetail /></ProtectedRoute>} />

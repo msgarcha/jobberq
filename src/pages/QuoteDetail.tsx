@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useQuote, useQuoteLineItems, useUpdateQuote, useDeleteQuote } from "@/hooks/useQuotes";
 import { useCreateInvoice, useSaveInvoiceLineItems, useIncrementInvoiceNumber, useNextInvoiceNumber } from "@/hooks/useInvoices";
-import { ArrowLeft, Edit, Send, CheckCircle, FileText, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, Send, CheckCircle, FileText, Trash2, Download } from "lucide-react";
 import { format } from "date-fns";
 
 const statusStyles: Record<string, string> = {
@@ -113,6 +113,9 @@ const QuoteDetail = () => {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.open(`/quotes/${id}/print`, '_blank')}>
+              <Download className="h-3.5 w-3.5" /> PDF
+            </Button>
             {quote.status === "draft" && (
               <>
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/quotes/${id}/edit`)}>
