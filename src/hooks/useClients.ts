@@ -118,11 +118,13 @@ export function useCreateClient() {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  const { team } = useAuth();
+
   return useMutation({
     mutationFn: async (data: Omit<ClientInsert, "user_id">) => {
       const { data: result, error } = await supabase
         .from("clients")
-        .insert({ ...data, user_id: user!.id })
+        .insert({ ...data, user_id: user!.id, team_id: team.teamId } as any)
         .select()
         .single();
       if (error) throw error;
