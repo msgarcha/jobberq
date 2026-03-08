@@ -64,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionState>(defaultSubscription);
   const [team, setTeam] = useState<TeamState>(defaultTeam);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const checkSubscription = useCallback(async () => {
     try {
