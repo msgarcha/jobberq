@@ -579,9 +579,9 @@ const Settings = () => {
             {/* Current Plan Status */}
             <Card className="shadow-warm border-primary/20">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-display font-bold text-lg">
                         {currentTier ? SUBSCRIPTION_TIERS[currentTier].name : "Free Trial"}
                       </h3>
