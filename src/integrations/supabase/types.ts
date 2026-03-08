@@ -592,6 +592,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          is_super_admin: boolean
           trial_ends_at: string | null
           updated_at: string
           user_id: string
@@ -601,6 +602,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_super_admin?: boolean
           trial_ends_at?: string | null
           updated_at?: string
           user_id: string
@@ -610,6 +612,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_super_admin?: boolean
           trial_ends_at?: string | null
           updated_at?: string
           user_id?: string
