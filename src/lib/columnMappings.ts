@@ -13,6 +13,7 @@ export interface FieldDef {
 export const CLIENT_FIELDS: FieldDef[] = [
   { key: 'first_name', label: 'First Name', required: true },
   { key: 'last_name', label: 'Last Name', required: true },
+  { key: 'title', label: 'Title (Mr/Ms)' },
   { key: 'company_name', label: 'Company Name' },
   { key: 'email', label: 'Email' },
   { key: 'phone', label: 'Phone' },
@@ -25,6 +26,8 @@ export const CLIENT_FIELDS: FieldDef[] = [
   { key: 'notes', label: 'Notes' },
   { key: 'tags', label: 'Tags' },
   { key: 'status', label: 'Status' },
+  { key: 'lead_source', label: 'Lead Source' },
+  { key: 'created_date', label: 'Created Date' },
 ];
 
 export const SERVICE_FIELDS: FieldDef[] = [
@@ -58,18 +61,31 @@ export function getFieldsForType(type: ImportDataType): FieldDef[] {
 const JOBBER_CLIENT_MAP: Record<string, string> = {
   'first name': 'first_name',
   'last name': 'last_name',
+  'title': 'title',
+  'display name': '_full_name',
   'company': 'company_name',
   'company name': 'company_name',
   'email': 'email',
   'email address': 'email',
+  'e-mails': 'email',
   'phone number': 'phone',
   'phone': 'phone',
+  'main phone #s': 'phone',
   'mobile phone': 'phone',
+  'mobile phone #s': 'phone',
   'home phone': 'phone',
+  'home phone #s': 'phone',
   'work phone': 'phone',
+  'work phone #s': 'phone',
   'street 1': 'address_line1',
   'street 2': 'address_line2',
   'street address': 'address_line1',
+  'billing street 1': 'address_line1',
+  'billing street 2': 'address_line2',
+  'billing city': 'city',
+  'billing state': 'state',
+  'billing zip code': 'zip',
+  'billing country': 'country',
   'city': 'city',
   'province': 'state',
   'state': 'state',
@@ -81,6 +97,17 @@ const JOBBER_CLIENT_MAP: Record<string, string> = {
   'notes': 'notes',
   'tags': 'tags',
   'status': 'status',
+  'archived': '_archived',
+  'created date': 'created_date',
+  'lead source': 'lead_source',
+  // Service property fields (prefixed for special handling)
+  'service property name': '_prop_name',
+  'service street 1': '_prop_street1',
+  'service street 2': '_prop_street2',
+  'service city': '_prop_city',
+  'service state': '_prop_state',
+  'service country': '_prop_country',
+  'service zip code': '_prop_zip',
 };
 
 const QUICKBOOKS_CLIENT_MAP: Record<string, string> = {
@@ -152,8 +179,16 @@ export function autoMapColumns(
 ): ColumnMapping[] {
   const fields = getFieldsForType(dataType);
   const validKeys = new Set(fields.map(f => f.key));
-  // Also allow _full_name for QuickBooks split
+  // Also allow special keys for QuickBooks/Jobber processing
   validKeys.add('_full_name');
+  validKeys.add('_archived');
+  validKeys.add('_prop_name');
+  validKeys.add('_prop_street1');
+  validKeys.add('_prop_street2');
+  validKeys.add('_prop_city');
+  validKeys.add('_prop_state');
+  validKeys.add('_prop_country');
+  validKeys.add('_prop_zip');
 
   const platformMap = source === 'jobber'
     ? JOBBER_CLIENT_MAP

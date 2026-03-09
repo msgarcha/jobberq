@@ -87,12 +87,14 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          lead_source: string | null
           notes: string | null
           phone: string | null
           state: string | null
           status: Database["public"]["Enums"]["client_status"]
           tags: string[] | null
           team_id: string | null
+          title: string | null
           updated_at: string
           user_id: string
           zip: string | null
@@ -109,12 +111,14 @@ export type Database = {
           first_name: string
           id?: string
           last_name: string
+          lead_source?: string | null
           notes?: string | null
           phone?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["client_status"]
           tags?: string[] | null
           team_id?: string | null
+          title?: string | null
           updated_at?: string
           user_id: string
           zip?: string | null
@@ -131,12 +135,14 @@ export type Database = {
           first_name?: string
           id?: string
           last_name?: string
+          lead_source?: string | null
           notes?: string | null
           phone?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["client_status"]
           tags?: string[] | null
           team_id?: string | null
+          title?: string | null
           updated_at?: string
           user_id?: string
           zip?: string | null
