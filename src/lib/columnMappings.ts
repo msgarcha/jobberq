@@ -13,6 +13,7 @@ export interface FieldDef {
 export const CLIENT_FIELDS: FieldDef[] = [
   { key: 'first_name', label: 'First Name', required: true },
   { key: 'last_name', label: 'Last Name', required: true },
+  { key: 'title', label: 'Title (Mr/Ms)' },
   { key: 'company_name', label: 'Company Name' },
   { key: 'email', label: 'Email' },
   { key: 'phone', label: 'Phone' },
@@ -25,6 +26,8 @@ export const CLIENT_FIELDS: FieldDef[] = [
   { key: 'notes', label: 'Notes' },
   { key: 'tags', label: 'Tags' },
   { key: 'status', label: 'Status' },
+  { key: 'lead_source', label: 'Lead Source' },
+  { key: 'created_date', label: 'Created Date' },
 ];
 
 export const SERVICE_FIELDS: FieldDef[] = [
