@@ -25,6 +25,78 @@ type Step = 'source' | 'upload' | 'map' | 'preview' | 'importing' | 'summary';
 const STEP_ORDER: Step[] = ['source', 'upload', 'map', 'preview', 'importing', 'summary'];
 const STEP_LABELS = ['Source', 'Upload', 'Map', 'Preview', 'Import', 'Done'];
 
+/** Parse Jobber date formats: "DD/MM/YYYY" or "YYYY-MM-DD" or "MM/DD/YYYY" */
+function parseJobberDate(raw: string): string | null {
+  if (!raw) return null;
+  // Try DD/MM/YYYY (Jobber's format)
+  const dmy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dmy) {
+    const [, day, month, year] = dmy;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00Z`;
+  }
+  // ISO format
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw;
+  return null;
+}
+
+interface MergedClient {
+  record: Record<string, string>;
+  properties: Array<{
+    name: string;
+    address_line1?: string;
+    address_line2?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    zip?: string;
+  }>;
+}
+
+/** Merge CSV rows by client identity (first+last+email) — same client with multiple properties */
+function mergeClientRows(records: Record<string, string>[]): MergedClient[] {
+  const map = new Map<string, MergedClient>();
+
+  for (const rec of records) {
+    const key = `${(rec.first_name || '').toLowerCase()}|${(rec.last_name || '').toLowerCase()}|${(rec.email || '').toLowerCase()}`;
+    
+    const prop = extractProperty(rec);
+    
+    if (map.has(key)) {
+      const existing = map.get(key)!;
+      // Add property if it has data
+      if (prop) existing.properties.push(prop);
+      // Merge missing fields from later rows
+      for (const [k, v] of Object.entries(rec)) {
+        if (!k.startsWith('_prop_') && !existing.record[k] && v) {
+          existing.record[k] = v;
+        }
+      }
+    } else {
+      map.set(key, {
+        record: { ...rec },
+        properties: prop ? [prop] : [],
+      });
+    }
+  }
+
+  return Array.from(map.values());
+}
+
+function extractProperty(rec: Record<string, string>) {
+  const name = rec['_prop_name'];
+  const street1 = rec['_prop_street1'];
+  if (!name && !street1) return null;
+  return {
+    name: name || 'Service Property',
+    address_line1: street1 || undefined,
+    address_line2: rec['_prop_street2'] || undefined,
+    city: rec['_prop_city'] || undefined,
+    state: rec['_prop_state'] || undefined,
+    country: rec['_prop_country'] || undefined,
+    zip: rec['_prop_zip'] || undefined,
+  };
+}
+
 const ImportData = () => {
   const [searchParams] = useSearchParams();
   const { user, team } = useAuth();
@@ -98,32 +170,74 @@ const ImportData = () => {
     const errors: string[] = [];
     const batchSize = 100;
 
-    for (let i = 0; i < toImport.length; i += batchSize) {
-      const batch = toImport.slice(i, i + batchSize);
+    if (dataType === 'clients') {
+      // Merge duplicate rows within the CSV (same client, different properties)
+      const merged = mergeClientRows(toImport);
 
-      if (dataType === 'clients') {
-        const rows = batch.map(r => ({
-          first_name: r.first_name,
-          last_name: r.last_name,
-          company_name: r.company_name || null,
-          email: r.email || null,
-          phone: r.phone || null,
-          address_line1: r.address_line1 || null,
-          address_line2: r.address_line2 || null,
-          city: r.city || null,
-          state: r.state || null,
-          zip: r.zip || null,
-          country: r.country || 'US',
-          notes: r.notes || null,
-          tags: r.tags ? r.tags.split(/[,;]/).map(t => t.trim()).filter(Boolean) : [],
-          status: (['lead', 'active', 'archived'].includes(r.status?.toLowerCase()) ? r.status.toLowerCase() : 'active') as 'lead' | 'active' | 'archived',
-          user_id: user.id,
-          team_id: team.teamId,
-        }));
+      for (let i = 0; i < merged.length; i += batchSize) {
+        const batch = merged.slice(i, i + batchSize);
+        const rows = batch.map(m => {
+          const r = m.record;
+          const isArchived = r['_archived']?.toLowerCase() === 'true' || r['_archived'] === 'Yes';
+          const parsedDate = parseJobberDate(r.created_date);
+          return {
+            first_name: r.first_name,
+            last_name: r.last_name,
+            title: r.title || null,
+            company_name: r.company_name || null,
+            email: r.email || null,
+            phone: r.phone || null,
+            address_line1: r.address_line1 || null,
+            address_line2: r.address_line2 || null,
+            city: r.city || null,
+            state: r.state || null,
+            zip: r.zip || null,
+            country: r.country || 'Canada',
+            notes: r.notes || null,
+            tags: r.tags ? r.tags.split(/[,;]/).map(t => t.trim()).filter(Boolean) : [],
+            status: (isArchived ? 'archived' : (['lead', 'active', 'archived'].includes(r.status?.toLowerCase()) ? r.status.toLowerCase() : 'active')) as 'lead' | 'active' | 'archived',
+            lead_source: r.lead_source || null,
+            ...(parsedDate ? { created_at: parsedDate } : {}),
+            user_id: user.id,
+            team_id: team.teamId,
+          };
+        });
+
         const { data, error } = await supabase.from('clients').insert(rows).select('id');
-        if (error) errors.push(`Batch ${Math.floor(i / batchSize) + 1}: ${error.message}`);
-        else imported += data.length;
-      } else if (dataType === 'services') {
+        if (error) {
+          errors.push(`Batch ${Math.floor(i / batchSize) + 1}: ${error.message}`);
+        } else {
+          imported += data.length;
+
+          // Create properties for each client
+          const propertyRows: any[] = [];
+          data.forEach((client, idx) => {
+            const m = batch[idx];
+            for (const prop of m.properties) {
+              propertyRows.push({
+                client_id: client.id,
+                name: prop.name,
+                address_line1: prop.address_line1 || null,
+                address_line2: prop.address_line2 || null,
+                city: prop.city || null,
+                state: prop.state || null,
+                country: prop.country || 'Canada',
+                zip: prop.zip || null,
+                user_id: user.id,
+                team_id: team.teamId,
+              });
+            }
+          });
+
+          if (propertyRows.length > 0) {
+            const { error: propError } = await supabase.from('properties').insert(propertyRows);
+            if (propError) errors.push(`Properties: ${propError.message}`);
+          }
+        }
+      }
+    } else if (dataType === 'services') {
+      for (let i = 0; i < toImport.length; i += batchSize) {
+        const batch = toImport.slice(i, i + batchSize);
         const rows = batch.map(r => ({
           name: r.name,
           description: r.description || null,
@@ -136,8 +250,10 @@ const ImportData = () => {
         const { data, error } = await supabase.from('services_catalog').insert(rows).select('id');
         if (error) errors.push(`Batch ${Math.floor(i / batchSize) + 1}: ${error.message}`);
         else imported += data.length;
-      } else if (dataType === 'jobs') {
-        // For jobs, we skip client matching in this phase — just import as standalone
+      }
+    } else if (dataType === 'jobs') {
+      for (let i = 0; i < toImport.length; i += batchSize) {
+        const batch = toImport.slice(i, i + batchSize);
         const rows = batch.map(r => ({
           title: r.title,
           description: r.description || null,
