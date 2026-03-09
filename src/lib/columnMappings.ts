@@ -179,8 +179,16 @@ export function autoMapColumns(
 ): ColumnMapping[] {
   const fields = getFieldsForType(dataType);
   const validKeys = new Set(fields.map(f => f.key));
-  // Also allow _full_name for QuickBooks split
+  // Also allow special keys for QuickBooks/Jobber processing
   validKeys.add('_full_name');
+  validKeys.add('_archived');
+  validKeys.add('_prop_name');
+  validKeys.add('_prop_street1');
+  validKeys.add('_prop_street2');
+  validKeys.add('_prop_city');
+  validKeys.add('_prop_state');
+  validKeys.add('_prop_country');
+  validKeys.add('_prop_zip');
 
   const platformMap = source === 'jobber'
     ? JOBBER_CLIENT_MAP
