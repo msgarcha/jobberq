@@ -219,6 +219,27 @@ const ImportData = () => {
         // Proceed without duplicate detection
       }
     }
+
+    // Check duplicate invoices by invoice_number
+    if (dataType === 'invoices') {
+      try {
+        const { data: existing } = await supabase
+          .from('invoices')
+          .select('invoice_number')
+          .eq('team_id', team.teamId!)
+          .limit(5000);
+        if (existing) {
+          const existingNums = new Set(existing.map(i => i.invoice_number));
+          const dups = new Set<number>();
+          valid.forEach((r, i) => {
+            if (existingNums.has(r.invoice_number)) dups.add(i);
+          });
+          setDuplicates(dups);
+        }
+      } catch {
+        // Proceed without duplicate detection
+      }
+    }
     setStep('preview');
   };
 
