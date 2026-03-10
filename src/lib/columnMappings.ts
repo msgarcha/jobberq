@@ -262,7 +262,7 @@ export function autoMapColumns(
   validKeys.add('_prop_zip');
 
   const platformMap = source === 'jobber'
-    ? JOBBER_CLIENT_MAP
+    ? (dataType === 'invoices' ? JOBBER_INVOICE_MAP : JOBBER_CLIENT_MAP)
     : source === 'quickbooks'
       ? QUICKBOOKS_CLIENT_MAP
       : {};
