@@ -27,7 +27,7 @@ const STEP_LABELS = ['Source', 'Upload', 'Map', 'Preview', 'Import', 'Done'];
 
 /** Parse Jobber date formats: "DD/MM/YYYY" or "YYYY-MM-DD" or "MM/DD/YYYY" */
 function parseJobberDate(raw: string): string | null {
-  if (!raw) return null;
+  if (!raw || raw === '-') return null;
   // Try DD/MM/YYYY (Jobber's format)
   const dmy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (dmy) {
@@ -36,7 +36,68 @@ function parseJobberDate(raw: string): string | null {
   }
   // ISO format
   if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw;
+  // "Mar 03, 2026" format
+  const mdy = raw.match(/^([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})$/);
+  if (mdy) {
+    const [, monthName, day, year] = mdy;
+    const months: Record<string, string> = {
+      jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+      jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+    };
+    const m = months[monthName.toLowerCase().slice(0, 3)];
+    if (m) return `${year}-${m}-${day.padStart(2, '0')}T00:00:00Z`;
+  }
   return null;
+}
+
+/** Parse Jobber date to just YYYY-MM-DD for date columns */
+function parseJobberDateOnly(raw: string): string | null {
+  const full = parseJobberDate(raw);
+  return full ? full.slice(0, 10) : null;
+}
+
+/** Map Jobber invoice status to our enum */
+function mapInvoiceStatus(raw: string): 'draft' | 'sent' | 'viewed' | 'paid' | 'overdue' {
+  switch (raw?.toLowerCase()?.trim()) {
+    case 'paid': return 'paid';
+    case 'awaiting payment': return 'sent';
+    case 'past due': return 'overdue';
+    case 'bad debt': return 'overdue';
+    case 'draft': return 'draft';
+    default: return 'draft';
+  }
+}
+
+/** Parse Jobber line items string like "Item A (1, $500), Item B (2, $100)" */
+function parseLineItems(raw: string, taxRate: number): Array<{ description: string; quantity: number; unit_price: number; tax_rate: number; line_total: number }> {
+  if (!raw || raw === '-') return [];
+  const items: Array<{ description: string; quantity: number; unit_price: number; tax_rate: number; line_total: number }> = [];
+  
+  // Split by pattern: description (qty, $price)
+  // We need to be careful because descriptions can contain commas
+  const regex = /([^,]+?)\s*\((\d+),\s*\$([0-9,.]+)\)/g;
+  let match;
+  while ((match = regex.exec(raw)) !== null) {
+    const description = match[1].trim().replace(/^,\s*/, '');
+    const quantity = parseInt(match[2], 10) || 1;
+    const unit_price = parseFloat(match[3].replace(/,/g, '')) || 0;
+    const line_total = quantity * unit_price;
+    items.push({ description, quantity, unit_price, tax_rate: taxRate, line_total });
+  }
+  
+  // If regex didn't match anything, treat whole string as one item
+  if (items.length === 0 && raw.trim()) {
+    items.push({ description: raw.trim(), quantity: 1, unit_price: 0, tax_rate: taxRate, line_total: 0 });
+  }
+  
+  return items;
+}
+
+/** Extract tax rate from Jobber tax string like "GST (5.0%)" or "HST (13.0%)" */
+function extractTaxRate(raw: string): number {
+  if (!raw || raw === '-') return 0;
+  const m = raw.match(/\((\d+\.?\d*)%\)/);
+  return m ? parseFloat(m[1]) : 0;
 }
 
 interface MergedClient {
