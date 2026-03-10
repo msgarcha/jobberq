@@ -49,11 +49,43 @@ export const JOB_FIELDS: FieldDef[] = [
   { key: 'client_email', label: 'Client Email (for matching)' },
 ];
 
+export const INVOICE_FIELDS: FieldDef[] = [
+  { key: 'invoice_number', label: 'Invoice #', required: true },
+  { key: 'client_name', label: 'Client Name' },
+  { key: 'client_email', label: 'Client Email' },
+  { key: 'client_phone', label: 'Client Phone' },
+  { key: 'title', label: 'Subject' },
+  { key: 'created_date', label: 'Created Date' },
+  { key: 'issued_date', label: 'Issued Date' },
+  { key: 'due_date', label: 'Due Date' },
+  { key: 'paid_date', label: 'Marked Paid Date' },
+  { key: 'status', label: 'Status' },
+  { key: 'line_items_raw', label: 'Line Items' },
+  { key: 'subtotal', label: 'Pre-tax Total' },
+  { key: 'total', label: 'Total' },
+  { key: 'balance_due', label: 'Balance' },
+  { key: 'tax_percent', label: 'Tax (%)' },
+  { key: 'deposit', label: 'Deposit' },
+  { key: 'discount_amount', label: 'Discount' },
+  { key: 'tax_amount', label: 'Tax Amount' },
+  { key: 'tip', label: 'Tip' },
+  { key: 'sent_to', label: 'Sent To' },
+  { key: 'billing_street', label: 'Billing Street' },
+  { key: 'billing_city', label: 'Billing City' },
+  { key: 'billing_province', label: 'Billing Province' },
+  { key: 'billing_zip', label: 'Billing ZIP' },
+  { key: 'lead_source', label: 'Lead Source' },
+  { key: 'viewed_date', label: 'Viewed in Client Hub' },
+  { key: 'job_numbers', label: 'Job #s' },
+  { key: 'days_to_paid', label: 'Days to Paid' },
+];
+
 export function getFieldsForType(type: ImportDataType): FieldDef[] {
   switch (type) {
     case 'clients': return CLIENT_FIELDS;
     case 'services': return SERVICE_FIELDS;
     case 'jobs': return JOB_FIELDS;
+    case 'invoices': return INVOICE_FIELDS;
   }
 }
 
