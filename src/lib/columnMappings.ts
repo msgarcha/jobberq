@@ -2,7 +2,7 @@
  * Smart column mapping engine for Jobber, QuickBooks, and generic CSV imports.
  */
 
-export type ImportDataType = 'clients' | 'services' | 'jobs';
+export type ImportDataType = 'clients' | 'services' | 'jobs' | 'invoices';
 
 export interface FieldDef {
   key: string;
