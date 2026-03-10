@@ -13,6 +13,7 @@ const dataTypes: { value: ImportDataType; label: string }[] = [
   { value: 'clients', label: 'Clients' },
   { value: 'services', label: 'Services' },
   { value: 'jobs', label: 'Jobs' },
+  { value: 'invoices', label: 'Invoices' },
 ];
 
 export function FileUploader({ dataType, onDataTypeChange, onFileLoaded }: Props) {

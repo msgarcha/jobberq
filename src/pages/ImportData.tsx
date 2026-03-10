@@ -27,7 +27,7 @@ const STEP_LABELS = ['Source', 'Upload', 'Map', 'Preview', 'Import', 'Done'];
 
 /** Parse Jobber date formats: "DD/MM/YYYY" or "YYYY-MM-DD" or "MM/DD/YYYY" */
 function parseJobberDate(raw: string): string | null {
-  if (!raw) return null;
+  if (!raw || raw === '-') return null;
   // Try DD/MM/YYYY (Jobber's format)
   const dmy = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (dmy) {
@@ -36,7 +36,68 @@ function parseJobberDate(raw: string): string | null {
   }
   // ISO format
   if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw;
+  // "Mar 03, 2026" format
+  const mdy = raw.match(/^([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})$/);
+  if (mdy) {
+    const [, monthName, day, year] = mdy;
+    const months: Record<string, string> = {
+      jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+      jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+    };
+    const m = months[monthName.toLowerCase().slice(0, 3)];
+    if (m) return `${year}-${m}-${day.padStart(2, '0')}T00:00:00Z`;
+  }
   return null;
+}
+
+/** Parse Jobber date to just YYYY-MM-DD for date columns */
+function parseJobberDateOnly(raw: string): string | null {
+  const full = parseJobberDate(raw);
+  return full ? full.slice(0, 10) : null;
+}
+
+/** Map Jobber invoice status to our enum */
+function mapInvoiceStatus(raw: string): 'draft' | 'sent' | 'viewed' | 'paid' | 'overdue' {
+  switch (raw?.toLowerCase()?.trim()) {
+    case 'paid': return 'paid';
+    case 'awaiting payment': return 'sent';
+    case 'past due': return 'overdue';
+    case 'bad debt': return 'overdue';
+    case 'draft': return 'draft';
+    default: return 'draft';
+  }
+}
+
+/** Parse Jobber line items string like "Item A (1, $500), Item B (2, $100)" */
+function parseLineItems(raw: string, taxRate: number): Array<{ description: string; quantity: number; unit_price: number; tax_rate: number; line_total: number }> {
+  if (!raw || raw === '-') return [];
+  const items: Array<{ description: string; quantity: number; unit_price: number; tax_rate: number; line_total: number }> = [];
+  
+  // Split by pattern: description (qty, $price)
+  // We need to be careful because descriptions can contain commas
+  const regex = /([^,]+?)\s*\((\d+),\s*\$([0-9,.]+)\)/g;
+  let match;
+  while ((match = regex.exec(raw)) !== null) {
+    const description = match[1].trim().replace(/^,\s*/, '');
+    const quantity = parseInt(match[2], 10) || 1;
+    const unit_price = parseFloat(match[3].replace(/,/g, '')) || 0;
+    const line_total = quantity * unit_price;
+    items.push({ description, quantity, unit_price, tax_rate: taxRate, line_total });
+  }
+  
+  // If regex didn't match anything, treat whole string as one item
+  if (items.length === 0 && raw.trim()) {
+    items.push({ description: raw.trim(), quantity: 1, unit_price: 0, tax_rate: taxRate, line_total: 0 });
+  }
+  
+  return items;
+}
+
+/** Extract tax rate from Jobber tax string like "GST (5.0%)" or "HST (13.0%)" */
+function extractTaxRate(raw: string): number {
+  if (!raw || raw === '-') return 0;
+  const m = raw.match(/\((\d+\.?\d*)%\)/);
+  return m ? parseFloat(m[1]) : 0;
 }
 
 interface MergedClient {
@@ -158,6 +219,27 @@ const ImportData = () => {
         // Proceed without duplicate detection
       }
     }
+
+    // Check duplicate invoices by invoice_number
+    if (dataType === 'invoices') {
+      try {
+        const { data: existing } = await supabase
+          .from('invoices')
+          .select('invoice_number')
+          .eq('team_id', team.teamId!)
+          .limit(5000);
+        if (existing) {
+          const existingNums = new Set(existing.map(i => i.invoice_number));
+          const dups = new Set<number>();
+          valid.forEach((r, i) => {
+            if (existingNums.has(r.invoice_number)) dups.add(i);
+          });
+          setDuplicates(dups);
+        }
+      } catch {
+        // Proceed without duplicate detection
+      }
+    }
     setStep('preview');
   };
 
@@ -268,6 +350,182 @@ const ImportData = () => {
         const { data, error } = await supabase.from('jobs').insert(rows).select('id');
         if (error) errors.push(`Batch ${Math.floor(i / batchSize) + 1}: ${error.message}`);
         else imported += data.length;
+      }
+    } else if (dataType === 'invoices') {
+      // Step 1: Fetch existing clients for matching
+      const { data: existingClients } = await supabase
+        .from('clients')
+        .select('id, email, first_name, last_name, phone, company_name')
+        .eq('team_id', team.teamId!)
+        .limit(5000);
+      const clients = existingClients || [];
+
+      // Step 2: Check existing invoice numbers to skip duplicates
+      const { data: existingInvoices } = await supabase
+        .from('invoices')
+        .select('invoice_number')
+        .eq('team_id', team.teamId!)
+        .limit(5000);
+      const existingInvNumbers = new Set((existingInvoices || []).map(i => i.invoice_number));
+
+      // Build client lookup maps
+      const clientByEmail = new Map<string, string>();
+      const clientByName = new Map<string, string>();
+      for (const c of clients) {
+        if (c.email) clientByEmail.set(c.email.toLowerCase(), c.id);
+        clientByName.set(`${c.first_name.toLowerCase()}|${c.last_name.toLowerCase()}`, c.id);
+        if (c.company_name) clientByName.set(c.company_name.toLowerCase(), c.id);
+      }
+
+      // Helper to find or create client
+      const findOrCreateClient = async (rec: Record<string, string>): Promise<string | null> => {
+        const email = rec.client_email?.toLowerCase();
+        if (email && clientByEmail.has(email)) return clientByEmail.get(email)!;
+        
+        // Try matching by name (Jobber "Client name" may be "Company Name" or "Mr. First Last")
+        const clientName = rec.client_name || '';
+        // Remove title prefixes
+        const cleanName = clientName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim();
+        const nameParts = cleanName.split(/\s+/);
+        
+        // Try company name match
+        if (clientByName.has(cleanName.toLowerCase())) return clientByName.get(cleanName.toLowerCase())!;
+        
+        // Try first+last name match
+        if (nameParts.length >= 2) {
+          const first = nameParts[0].toLowerCase();
+          const last = nameParts.slice(1).join(' ').toLowerCase();
+          const key = `${first}|${last}`;
+          if (clientByName.has(key)) return clientByName.get(key)!;
+        }
+
+        // Auto-create client
+        const firstName = nameParts[0] || 'Unknown';
+        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+        const { data: newClient, error } = await supabase.from('clients').insert({
+          first_name: firstName,
+          last_name: lastName || 'Client',
+          email: rec.client_email || null,
+          phone: rec.client_phone || null,
+          company_name: nameParts.length === 1 ? cleanName : null,
+          address_line1: rec.billing_street || null,
+          city: rec.billing_city || null,
+          state: rec.billing_province || null,
+          zip: rec.billing_zip || null,
+          country: 'Canada',
+          lead_source: rec.lead_source || null,
+          status: 'active' as const,
+          user_id: user.id,
+          team_id: team.teamId,
+        }).select('id').single();
+        
+        if (error || !newClient) return null;
+        
+        // Cache the new client
+        if (email) clientByEmail.set(email, newClient.id);
+        clientByName.set(`${firstName.toLowerCase()}|${(lastName || 'client').toLowerCase()}`, newClient.id);
+        if (nameParts.length === 1) clientByName.set(cleanName.toLowerCase(), newClient.id);
+        
+        return newClient.id;
+      };
+
+      let maxInvoiceNumber = 0;
+
+      // Process invoices one at a time to handle client creation properly
+      for (const rec of toImport) {
+        const invNum = rec.invoice_number;
+        if (!invNum || existingInvNumbers.has(invNum)) {
+          continue; // Skip duplicates
+        }
+
+        const clientId = await findOrCreateClient(rec);
+        const taxRate = extractTaxRate(rec.tax_percent);
+        const status = mapInvoiceStatus(rec.status);
+        const subtotal = parseFloat(rec.subtotal) || 0;
+        const total = parseFloat(rec.total) || 0;
+        const balanceDue = parseFloat(rec.balance_due) || 0;
+        const taxAmount = parseFloat(rec.tax_amount) || 0;
+        const discountAmount = parseFloat(rec.discount_amount) || 0;
+        const deposit = parseFloat(rec.deposit) || 0;
+        const amountPaid = total - balanceDue;
+
+        const createdDate = parseJobberDate(rec.created_date);
+        const issuedDate = parseJobberDate(rec.issued_date);
+        const dueDate = parseJobberDateOnly(rec.due_date);
+        const paidDate = parseJobberDate(rec.paid_date);
+        const viewedDate = parseJobberDate(rec.viewed_date);
+
+        // Build internal notes with deposit info
+        let internalNotes = '';
+        if (deposit > 0) internalNotes += `Deposit: $${deposit}`;
+        if (rec.tip && parseFloat(rec.tip) > 0) internalNotes += `${internalNotes ? ', ' : ''}Tip: $${rec.tip}`;
+        if (rec.job_numbers && rec.job_numbers !== '-' && rec.job_numbers.trim()) internalNotes += `${internalNotes ? ', ' : ''}Jobber Job #s: ${rec.job_numbers}`;
+
+        // Extract numeric part for tracking max
+        const numPart = parseInt(invNum.replace(/\D/g, ''), 10);
+        if (!isNaN(numPart) && numPart > maxInvoiceNumber) maxInvoiceNumber = numPart;
+
+        const { data: invoice, error: invError } = await supabase.from('invoices').insert({
+          invoice_number: invNum,
+          client_id: clientId,
+          title: rec.title || null,
+          status,
+          subtotal,
+          total,
+          tax_amount: taxAmount,
+          discount_amount: discountAmount,
+          amount_paid: amountPaid,
+          balance_due: balanceDue,
+          due_date: dueDate,
+          sent_at: issuedDate,
+          paid_at: paidDate,
+          viewed_at: viewedDate,
+          internal_notes: internalNotes || null,
+          payment_terms: null,
+          ...(createdDate ? { created_at: createdDate } : {}),
+          user_id: user.id,
+          team_id: team.teamId,
+        }).select('id').single();
+
+        if (invError) {
+          errors.push(`Invoice ${invNum}: ${invError.message}`);
+          continue;
+        }
+
+        imported++;
+        existingInvNumbers.add(invNum);
+
+        // Parse and insert line items
+        const lineItems = parseLineItems(rec.line_items_raw, taxRate);
+        if (lineItems.length > 0 && invoice) {
+          const lineRows = lineItems.map((item, idx) => ({
+            invoice_id: invoice.id,
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            tax_rate: item.tax_rate,
+            line_total: item.line_total,
+            sort_order: idx,
+            user_id: user.id,
+            team_id: team.teamId,
+          }));
+          const { error: lineError } = await supabase.from('invoice_line_items').insert(lineRows);
+          if (lineError) errors.push(`Line items for ${invNum}: ${lineError.message}`);
+        }
+      }
+
+      // Update next_invoice_number in company_settings
+      if (maxInvoiceNumber > 0) {
+        const { data: settings } = await supabase
+          .from('company_settings')
+          .select('id, next_invoice_number')
+          .eq('team_id', team.teamId!)
+          .maybeSingle();
+        if (settings && (settings.next_invoice_number || 0) <= maxInvoiceNumber) {
+          await supabase.from('company_settings')
+            .update({ next_invoice_number: maxInvoiceNumber + 1 })
+            .eq('id', settings.id);
+        }
       }
     }
 
