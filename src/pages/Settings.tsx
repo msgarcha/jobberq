@@ -357,6 +357,85 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Payment Setup - Stripe Connect */}
+            <Card className="shadow-warm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                  Payment Setup
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Connect your Stripe account so invoice payments go directly to your bank account.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {stripeStatusLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Checking payment setup…
+                  </div>
+                ) : stripeStatus?.connected ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`h-2.5 w-2.5 rounded-full ${stripeStatus.onboarding_complete ? 'bg-green-500' : 'bg-amber-500'}`} />
+                        <span className="text-sm font-medium">
+                          {stripeStatus.onboarding_complete ? "Connected & Active" : "Setup Incomplete"}
+                        </span>
+                      </div>
+                      <Badge variant={stripeStatus.onboarding_complete ? "default" : "secondary"} className="text-xs">
+                        {stripeStatus.onboarding_complete ? (
+                          <><CheckCircle2 className="h-3 w-3 mr-1" /> Ready</>
+                        ) : (
+                          "Pending"
+                        )}
+                      </Badge>
+                    </div>
+                    {!stripeStatus.onboarding_complete && (
+                      <p className="text-xs text-muted-foreground">
+                        Your Stripe account needs more information before you can accept payments. Click below to complete setup.
+                      </p>
+                    )}
+                    {stripeStatus.onboarding_complete && (
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <p>✓ Charges enabled — you can accept payments</p>
+                        <p>{stripeStatus.payouts_enabled ? "✓" : "✗"} Payouts enabled — funds transfer to your bank</p>
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      {!stripeStatus.onboarding_complete && (
+                        <Button size="sm" onClick={handleConnectStripe} disabled={stripeConnectLoading} className="gap-1.5">
+                          {stripeConnectLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
+                          Complete Setup
+                        </Button>
+                      )}
+                      <Button size="sm" variant="outline" onClick={checkStripeStatus} disabled={stripeStatusLoading}>
+                        Refresh Status
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        onClick={handleDisconnectStripe}
+                        disabled={stripeConnectLoading}
+                      >
+                        <Unlink className="h-3.5 w-3.5 mr-1" /> Disconnect
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Connect your Stripe account to accept credit card payments on invoices. You'll be redirected to Stripe to enter your bank details and verify your identity — we never see your banking info.
+                    </p>
+                    <Button onClick={handleConnectStripe} disabled={stripeConnectLoading} className="gap-1.5">
+                      {stripeConnectLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+                      Connect with Stripe
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Invoicing Tab */}
