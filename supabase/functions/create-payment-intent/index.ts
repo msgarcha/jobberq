@@ -59,6 +59,17 @@ serve(async (req) => {
       });
     }
 
+    // Look up the business's connected Stripe account
+    const { data: companySettings } = await supabase
+      .from("company_settings")
+      .select("stripe_account_id, stripe_onboarding_complete")
+      .maybeSingle();
+
+    const connectedAccountId =
+      companySettings?.stripe_onboarding_complete
+        ? companySettings.stripe_account_id
+        : null;
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
       apiVersion: "2025-08-27.basil",
     });
@@ -95,6 +106,13 @@ serve(async (req) => {
 
     if (save_card && customerId) {
       piParams.setup_future_usage = "off_session";
+    }
+
+    // Route payment to the business's connected Stripe account
+    if (connectedAccountId) {
+      piParams.transfer_data = { destination: connectedAccountId };
+      // Optional: set platform fee
+      // piParams.application_fee_amount = Math.round(Number(amount) * 100 * 0.02);
     }
 
     const paymentIntent = await stripe.paymentIntents.create(piParams);

@@ -59,11 +59,22 @@ serve(async (req) => {
       });
     }
 
+    // Look up the business's connected Stripe account
+    const { data: companySettings } = await supabase
+      .from("company_settings")
+      .select("stripe_account_id, stripe_onboarding_complete")
+      .maybeSingle();
+
+    const connectedAccountId =
+      companySettings?.stripe_onboarding_complete
+        ? companySettings.stripe_account_id
+        : null;
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
       apiVersion: "2025-08-27.basil",
     });
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    const piParams: any = {
       amount: Math.round(Number(amount) * 100),
       currency: "usd",
       customer: savedCard.stripe_customer_id,
@@ -75,7 +86,14 @@ serve(async (req) => {
         user_id: user.id,
         saved_card_id,
       },
-    });
+    };
+
+    // Route payment to the business's connected Stripe account
+    if (connectedAccountId) {
+      piParams.transfer_data = { destination: connectedAccountId };
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create(piParams);
 
     if (paymentIntent.status === "succeeded") {
       // Record payment in DB using service role
