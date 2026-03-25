@@ -75,6 +75,17 @@ serve(async (req) => {
       });
     }
 
+    // Look up the business's connected Stripe account
+    const { data: companySettings } = await supabase
+      .from("company_settings")
+      .select("stripe_account_id, stripe_onboarding_complete")
+      .maybeSingle();
+
+    const connectedAccountId =
+      companySettings?.stripe_onboarding_complete
+        ? companySettings.stripe_account_id
+        : null;
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
       apiVersion: "2025-08-27.basil",
     });
@@ -82,7 +93,7 @@ serve(async (req) => {
     const client = invoice.clients;
     const clientEmail = client?.email || undefined;
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       mode: "payment",
       customer_email: clientEmail,
       line_items: [
@@ -93,7 +104,7 @@ serve(async (req) => {
               name: `Invoice ${invoice.invoice_number}`,
               description: invoice.title || `Payment for invoice ${invoice.invoice_number}`,
             },
-            unit_amount: Math.round(balanceDue * 100), // cents
+            unit_amount: Math.round(balanceDue * 100),
           },
           quantity: 1,
         },
@@ -104,7 +115,18 @@ serve(async (req) => {
       },
       success_url: `${req.headers.get("origin")}/invoices/${invoice_id}?payment=success`,
       cancel_url: `${req.headers.get("origin")}/invoices/${invoice_id}?payment=cancelled`,
-    });
+    };
+
+    // Route payment to the business's connected Stripe account
+    if (connectedAccountId) {
+      sessionParams.payment_intent_data = {
+        transfer_data: { destination: connectedAccountId },
+        // Optional: platform fee
+        // application_fee_amount: Math.round(balanceDue * 100 * 0.02),
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

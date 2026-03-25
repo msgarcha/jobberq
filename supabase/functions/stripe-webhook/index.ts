@@ -40,6 +40,12 @@ serve(async (req) => {
     });
   }
 
+  // Use service role to bypass RLS
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const invoiceId = session.metadata?.invoice_id;
@@ -52,12 +58,6 @@ serve(async (req) => {
         headers: { "Content-Type": "application/json" },
       });
     }
-
-    // Use service role to bypass RLS
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
 
     const amountPaid = (session.amount_total || 0) / 100;
 
@@ -104,6 +104,20 @@ serve(async (req) => {
     }
 
     console.log(`Payment recorded for invoice ${invoiceId}: $${amountPaid}`);
+  }
+
+  // Handle Stripe Connect account updates
+  if (event.type === "account.updated") {
+    const account = event.data.object as Stripe.Account;
+    const isComplete = account.charges_enabled && account.details_submitted;
+
+    // Update company_settings for the matching stripe_account_id
+    await supabaseAdmin
+      .from("company_settings")
+      .update({ stripe_onboarding_complete: isComplete })
+      .eq("stripe_account_id", account.id);
+
+    console.log(`Account ${account.id} updated: charges_enabled=${account.charges_enabled}, details_submitted=${account.details_submitted}`);
   }
 
   return new Response(JSON.stringify({ received: true }), {
