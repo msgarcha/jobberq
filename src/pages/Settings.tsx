@@ -74,6 +74,79 @@ const Settings = () => {
   const [reviewMinStars, setReviewMinStars] = useState(4);
   const [reviewGatingEnabled, setReviewGatingEnabled] = useState(true);
 
+  // Stripe Connect state
+  const [stripeConnectLoading, setStripeConnectLoading] = useState(false);
+  const [stripeStatus, setStripeStatus] = useState<{
+    connected: boolean;
+    onboarding_complete?: boolean;
+    charges_enabled?: boolean;
+    payouts_enabled?: boolean;
+    account_id?: string;
+  } | null>(null);
+  const [stripeStatusLoading, setStripeStatusLoading] = useState(false);
+
+  // Check Stripe Connect status on mount and after redirect
+  useEffect(() => {
+    if (user) {
+      checkStripeStatus();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (searchParams.get("stripe") === "complete") {
+      checkStripeStatus();
+      toast({ title: "Stripe setup updated", description: "Checking your account status..." });
+    }
+  }, [searchParams]);
+
+  const checkStripeStatus = async () => {
+    setStripeStatusLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("connect-stripe-account", {
+        body: { action: "status" },
+      });
+      if (error) throw error;
+      setStripeStatus(data);
+    } catch (err: any) {
+      console.error("Failed to check Stripe status:", err);
+    } finally {
+      setStripeStatusLoading(false);
+    }
+  };
+
+  const handleConnectStripe = async () => {
+    setStripeConnectLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("connect-stripe-account", {
+        body: { action: "create" },
+      });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to start Stripe Connect", variant: "destructive" });
+    } finally {
+      setStripeConnectLoading(false);
+    }
+  };
+
+  const handleDisconnectStripe = async () => {
+    setStripeConnectLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("connect-stripe-account", {
+        body: { action: "disconnect" },
+      });
+      if (error) throw error;
+      setStripeStatus({ connected: false });
+      toast({ title: "Stripe disconnected" });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setStripeConnectLoading(false);
+    }
+  };
+
   // Handle checkout success
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
