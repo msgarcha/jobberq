@@ -181,6 +181,8 @@ export type Database = {
           review_gating_enabled: boolean
           review_min_stars: number
           state: string | null
+          stripe_account_id: string | null
+          stripe_onboarding_complete: boolean
           team_id: string | null
           updated_at: string
           user_id: string
@@ -210,6 +212,8 @@ export type Database = {
           review_gating_enabled?: boolean
           review_min_stars?: number
           state?: string | null
+          stripe_account_id?: string | null
+          stripe_onboarding_complete?: boolean
           team_id?: string | null
           updated_at?: string
           user_id: string
@@ -239,6 +243,8 @@ export type Database = {
           review_gating_enabled?: boolean
           review_min_stars?: number
           state?: string | null
+          stripe_account_id?: string | null
+          stripe_onboarding_complete?: boolean
           team_id?: string | null
           updated_at?: string
           user_id?: string
