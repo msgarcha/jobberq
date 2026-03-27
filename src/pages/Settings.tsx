@@ -63,6 +63,10 @@ const Settings = () => {
   const [zip, setZip] = useState("");
   const [country, setCountry] = useState("US");
   const [logoUrl, setLogoUrl] = useState("");
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [pdfPrimaryColor, setPdfPrimaryColor] = useState("#1a1a1a");
+  const [pdfAccentColor, setPdfAccentColor] = useState("#6366f1");
+  const [pdfStyle, setPdfStyle] = useState("classic");
   const [quotePrefix, setQuotePrefix] = useState("Q-");
   const [invoicePrefix, setInvoicePrefix] = useState("INV-");
   const [nextQuoteNumber, setNextQuoteNumber] = useState(1001);
