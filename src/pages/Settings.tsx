@@ -310,13 +310,60 @@ const Settings = () => {
                     <Label className="text-xs mb-1.5 block">Logo</Label>
                     <div className="flex flex-row md:flex-col items-center gap-3 md:gap-2">
                       {logoUrl ? (
-                        <img src={logoUrl} alt="Company logo" className="h-16 w-16 rounded-xl object-cover border" />
+                        <div className="relative">
+                          <img src={logoUrl} alt="Company logo" className="h-16 w-16 rounded-xl object-cover border" />
+                          <button
+                            type="button"
+                            onClick={() => setLogoUrl("")}
+                            className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
                       ) : (
                         <div className="h-16 w-16 rounded-xl bg-secondary flex items-center justify-center shrink-0">
                           <Upload className="h-5 w-5 text-muted-foreground" />
                         </div>
                       )}
-                      <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="Logo URL" className="text-xs h-8 w-full md:w-40" />
+                      <div className="flex flex-col gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-8 gap-1"
+                          disabled={logoUploading}
+                          onClick={() => document.getElementById("logo-upload-input")?.click()}
+                        >
+                          {logoUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                          {logoUrl ? "Change" : "Upload"}
+                        </Button>
+                        <input
+                          id="logo-upload-input"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setLogoUploading(true);
+                            try {
+                              const ext = file.name.split(".").pop() || "png";
+                              const teamId = authTeam.teamId || "default";
+                              const path = `${teamId}/logo.${ext}`;
+                              const { error: upErr } = await supabase.storage.from("company-assets").upload(path, file, { upsert: true });
+                              if (upErr) throw upErr;
+                              const { data: urlData } = supabase.storage.from("company-assets").getPublicUrl(path);
+                              setLogoUrl(urlData.publicUrl);
+                              toast({ title: "Logo uploaded" });
+                            } catch (err: any) {
+                              toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+                            } finally {
+                              setLogoUploading(false);
+                              e.target.value = "";
+                            }
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="flex-1 space-y-3 w-full">
