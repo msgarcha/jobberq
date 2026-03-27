@@ -38,6 +38,7 @@ import ReviewForm from "./pages/ReviewForm";
 import ImportData from "./pages/ImportData";
 import SuperAdmin from "./pages/SuperAdmin";
 import NotFound from "./pages/NotFound";
+import PublicInvoicePay from "./pages/PublicInvoicePay";
 
 const queryClient = new QueryClient();
 
