@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { CollectPaymentSheet } from "@/components/invoice/CollectPaymentSheet";
 import { useInvoice, useInvoiceLineItems, useUpdateInvoice, useDeleteInvoice, usePayments, useDuplicateInvoice } from "@/hooks/useInvoices";
-import { ArrowLeft, Edit, Send, Trash2, Copy, RefreshCw, Download, Loader2, DollarSign } from "lucide-react";
+import { ArrowLeft, Edit, Send, Trash2, Copy, RefreshCw, Download, Loader2, DollarSign, Link2 } from "lucide-react";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 
