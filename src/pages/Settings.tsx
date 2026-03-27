@@ -182,6 +182,9 @@ const Settings = () => {
       setGoogleReviewUrl((settings as any).google_review_url || "");
       setReviewMinStars((settings as any).review_min_stars ?? 4);
       setReviewGatingEnabled((settings as any).review_gating_enabled ?? true);
+      setPdfPrimaryColor((settings as any).pdf_primary_color || "#1a1a1a");
+      setPdfAccentColor((settings as any).pdf_accent_color || "#6366f1");
+      setPdfStyle((settings as any).pdf_style || "classic");
     }
   }, [settings]);
 
