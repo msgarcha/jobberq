@@ -38,6 +38,7 @@ import ReviewForm from "./pages/ReviewForm";
 import ImportData from "./pages/ImportData";
 import SuperAdmin from "./pages/SuperAdmin";
 import NotFound from "./pages/NotFound";
+import PublicInvoicePay from "./pages/PublicInvoicePay";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/accept-invite" element={<AcceptInvite />} />
             <Route path="/review/:token" element={<ReviewForm />} />
+            <Route path="/pay/:invoiceId" element={<PublicInvoicePay />} />
 
             {/* Onboarding (auth required, no company_settings check) */}
             <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />

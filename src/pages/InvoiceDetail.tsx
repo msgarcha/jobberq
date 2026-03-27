@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { CollectPaymentSheet } from "@/components/invoice/CollectPaymentSheet";
 import { useInvoice, useInvoiceLineItems, useUpdateInvoice, useDeleteInvoice, usePayments, useDuplicateInvoice } from "@/hooks/useInvoices";
-import { ArrowLeft, Edit, Send, Trash2, Copy, RefreshCw, Download, Loader2, DollarSign } from "lucide-react";
+import { ArrowLeft, Edit, Send, Trash2, Copy, RefreshCw, Download, Loader2, DollarSign, Link2 } from "lucide-react";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -184,7 +185,19 @@ const InvoiceDetail = () => {
 
           {/* Action buttons */}
           {showCollect && (
-            <div className="px-5 py-3 sm:px-6 flex gap-2">
+            <div className="px-5 py-3 sm:px-6 flex gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                  const payLink = `${window.location.origin}/pay/${id}`;
+                  navigator.clipboard.writeText(payLink);
+                  toast.success("Payment link copied!");
+                }}
+              >
+                <Link2 className="h-4 w-4" /> Copy Pay Link
+              </Button>
               <Button
                 variant="outline"
                 className="flex-1 gap-1.5"

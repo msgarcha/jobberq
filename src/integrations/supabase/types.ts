@@ -176,6 +176,7 @@ export type Database = {
           next_invoice_number: number | null
           next_job_number: number | null
           next_quote_number: number | null
+          payout_schedule: string | null
           pdf_accent_color: string | null
           pdf_primary_color: string | null
           pdf_style: string | null
@@ -185,7 +186,9 @@ export type Database = {
           review_min_stars: number
           state: string | null
           stripe_account_id: string | null
+          stripe_charges_enabled: boolean
           stripe_onboarding_complete: boolean
+          stripe_payouts_enabled: boolean
           team_id: string | null
           updated_at: string
           user_id: string
@@ -210,6 +213,7 @@ export type Database = {
           next_invoice_number?: number | null
           next_job_number?: number | null
           next_quote_number?: number | null
+          payout_schedule?: string | null
           pdf_accent_color?: string | null
           pdf_primary_color?: string | null
           pdf_style?: string | null
@@ -219,7 +223,9 @@ export type Database = {
           review_min_stars?: number
           state?: string | null
           stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean
           stripe_onboarding_complete?: boolean
+          stripe_payouts_enabled?: boolean
           team_id?: string | null
           updated_at?: string
           user_id: string
@@ -244,6 +250,7 @@ export type Database = {
           next_invoice_number?: number | null
           next_job_number?: number | null
           next_quote_number?: number | null
+          payout_schedule?: string | null
           pdf_accent_color?: string | null
           pdf_primary_color?: string | null
           pdf_style?: string | null
@@ -253,7 +260,9 @@ export type Database = {
           review_min_stars?: number
           state?: string | null
           stripe_account_id?: string | null
+          stripe_charges_enabled?: boolean
           stripe_onboarding_complete?: boolean
+          stripe_payouts_enabled?: boolean
           team_id?: string | null
           updated_at?: string
           user_id?: string
@@ -600,6 +609,47 @@ export type Database = {
           },
           {
             foreignKeyName: "payments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payouts: {
+        Row: {
+          amount_cents: number
+          arrival_date: string | null
+          created_at: string
+          id: string
+          status: string
+          stripe_payout_id: string | null
+          team_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          arrival_date?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          stripe_payout_id?: string | null
+          team_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          arrival_date?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          stripe_payout_id?: string | null
+          team_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
@@ -1102,6 +1152,30 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      webhook_errors: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_type: string | null
+          id: string
+          raw_payload: Json | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_type?: string | null
+          id?: string
+          raw_payload?: Json | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_type?: string | null
+          id?: string
+          raw_payload?: Json | null
         }
         Relationships: []
       }
