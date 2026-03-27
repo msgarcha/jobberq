@@ -494,6 +494,83 @@ const Settings = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* PDF Appearance */}
+            <Card className="shadow-warm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Palette className="h-4 w-4 text-muted-foreground" />
+                  PDF Appearance
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Customize how your invoices and quotes look when printed or downloaded.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs">Primary Color</Label>
+                    <p className="text-[10px] text-muted-foreground mb-1">Headings and main text accents</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={pdfPrimaryColor}
+                        onChange={(e) => setPdfPrimaryColor(e.target.value)}
+                        className="h-9 w-12 rounded border border-input cursor-pointer"
+                      />
+                      <Input
+                        value={pdfPrimaryColor}
+                        onChange={(e) => setPdfPrimaryColor(e.target.value)}
+                        className="text-xs h-9 font-mono uppercase"
+                        maxLength={7}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Accent Color</Label>
+                    <p className="text-[10px] text-muted-foreground mb-1">Borders, status badges, highlights</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={pdfAccentColor}
+                        onChange={(e) => setPdfAccentColor(e.target.value)}
+                        className="h-9 w-12 rounded border border-input cursor-pointer"
+                      />
+                      <Input
+                        value={pdfAccentColor}
+                        onChange={(e) => setPdfAccentColor(e.target.value)}
+                        className="text-xs h-9 font-mono uppercase"
+                        maxLength={7}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <Separator />
+                <div>
+                  <Label className="text-xs mb-2 block">PDF Style</Label>
+                  <RadioGroup value={pdfStyle} onValueChange={setPdfStyle} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { value: "classic", label: "Classic", desc: "Traditional layout with border lines" },
+                      { value: "modern", label: "Modern", desc: "Colored header band, rounded elements" },
+                      { value: "minimal", label: "Minimal", desc: "Clean, no borders, lots of whitespace" },
+                    ].map((opt) => (
+                      <label
+                        key={opt.value}
+                        className={`flex items-start gap-3 border rounded-lg p-3 cursor-pointer transition-colors ${
+                          pdfStyle === opt.value ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"
+                        }`}
+                      >
+                        <RadioGroupItem value={opt.value} className="mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">{opt.label}</p>
+                          <p className="text-[10px] text-muted-foreground">{opt.desc}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </RadioGroup>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Invoicing Tab */}
