@@ -210,6 +210,9 @@ const Settings = () => {
       google_review_url: googleReviewUrl || null,
       review_min_stars: reviewMinStars,
       review_gating_enabled: reviewGatingEnabled,
+      pdf_primary_color: pdfPrimaryColor,
+      pdf_accent_color: pdfAccentColor,
+      pdf_style: pdfStyle,
     } as any);
   };
 
