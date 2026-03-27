@@ -460,11 +460,26 @@ const Settings = () => {
                         <p>{stripeStatus.payouts_enabled ? "✓" : "✗"} Payouts enabled — funds transfer to your bank</p>
                       </div>
                     )}
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {!stripeStatus.onboarding_complete && (
                         <Button size="sm" onClick={handleConnectStripe} disabled={stripeConnectLoading} className="gap-1.5">
                           {stripeConnectLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
                           Complete Setup
+                        </Button>
+                      )}
+                      {stripeStatus.onboarding_complete && (
+                        <Button size="sm" variant="outline" className="gap-1.5" onClick={async () => {
+                          try {
+                            const { data, error } = await supabase.functions.invoke("connect-stripe-account", {
+                              body: { action: "login-link" },
+                            });
+                            if (error) throw error;
+                            if (data?.url) window.open(data.url, "_blank");
+                          } catch (err: any) {
+                            toast({ title: "Error", description: err.message || "Failed to open Stripe dashboard", variant: "destructive" });
+                          }
+                        }}>
+                          <ExternalLink className="h-3.5 w-3.5" /> View Stripe Dashboard
                         </Button>
                       )}
                       <Button size="sm" variant="outline" onClick={checkStripeStatus} disabled={stripeStatusLoading}>
