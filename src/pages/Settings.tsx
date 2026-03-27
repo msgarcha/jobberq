@@ -16,7 +16,8 @@ import { useTeam, useTeamMembers, useTeamInvitations, useSendInvite, useUpdateMe
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SUBSCRIPTION_TIERS, type TierKey } from "@/lib/subscriptionTiers";
-import { Save, Building2, Upload, CreditCard, CheckCircle2, Crown, Zap, Users, Mail, Trash2, Copy, UserPlus, Star, FileSpreadsheet, ArrowRight, Link2, Unlink, Loader2, ExternalLink } from "lucide-react";
+import { Save, Building2, Upload, CreditCard, CheckCircle2, Crown, Zap, Users, Mail, Trash2, Copy, UserPlus, Star, FileSpreadsheet, ArrowRight, Link2, Unlink, Loader2, ExternalLink, X, Palette } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 
