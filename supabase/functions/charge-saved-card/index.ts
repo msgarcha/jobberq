@@ -45,7 +45,6 @@ serve(async (req) => {
       });
     }
 
-    // Load saved card
     const { data: savedCard, error: cardErr } = await supabase
       .from("client_saved_cards")
       .select("*")
@@ -59,14 +58,13 @@ serve(async (req) => {
       });
     }
 
-    // Look up the business's connected Stripe account
     const { data: companySettings } = await supabase
       .from("company_settings")
-      .select("stripe_account_id, stripe_onboarding_complete")
+      .select("stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled")
       .maybeSingle();
 
     const connectedAccountId =
-      companySettings?.stripe_onboarding_complete
+      companySettings?.stripe_charges_enabled
         ? companySettings.stripe_account_id
         : null;
 
@@ -74,9 +72,13 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
+    const amountCents = Math.round(Number(amount) * 100);
+    const feePercent = Number(Deno.env.get("PLATFORM_FEE_PERCENT") || "0");
+    const applicationFee = feePercent > 0 ? Math.round(amountCents * feePercent / 100) : undefined;
+
     const piParams: any = {
-      amount: Math.round(Number(amount) * 100),
-      currency: "usd",
+      amount: amountCents,
+      currency: "cad",
       customer: savedCard.stripe_customer_id,
       payment_method: savedCard.stripe_payment_method_id,
       off_session: true,
@@ -88,21 +90,21 @@ serve(async (req) => {
       },
     };
 
-    // Route payment to the business's connected Stripe account
     if (connectedAccountId) {
       piParams.transfer_data = { destination: connectedAccountId };
+      if (applicationFee) {
+        piParams.application_fee_amount = applicationFee;
+      }
     }
 
     const paymentIntent = await stripe.paymentIntents.create(piParams);
 
     if (paymentIntent.status === "succeeded") {
-      // Record payment in DB using service role
       const serviceSupabase = createClient(
         Deno.env.get("SUPABASE_URL")!,
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
       );
 
-      // Get team_id from user's team membership
       const { data: membership } = await supabase
         .from("team_members")
         .select("team_id")
@@ -119,7 +121,6 @@ serve(async (req) => {
         notes: `Charged saved card ending in ${savedCard.card_last4}`,
       });
 
-      // Update invoice
       const { data: invoice } = await serviceSupabase
         .from("invoices")
         .select("amount_paid, total")

@@ -70,16 +70,20 @@ serve(async (req) => {
       .maybeSingle();
 
     if (action === "create") {
-      // If already has an account, just create a new account link
       let accountId = settings?.stripe_account_id;
 
       if (!accountId) {
-        // Create a new Standard connected account
+        // Create a new Express connected account
         const account = await stripe.accounts.create({
-          type: "standard",
+          type: "express",
+          country: "CA",
           email: settings?.email || undefined,
           business_profile: {
             name: settings?.company_name || undefined,
+          },
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
           },
         });
         accountId = account.id;
@@ -91,6 +95,8 @@ serve(async (req) => {
             .update({
               stripe_account_id: accountId,
               stripe_onboarding_complete: false,
+              stripe_charges_enabled: false,
+              stripe_payouts_enabled: false,
             })
             .eq("id", settings.id);
         } else {
@@ -101,6 +107,8 @@ serve(async (req) => {
               team_id: membership.team_id,
               stripe_account_id: accountId,
               stripe_onboarding_complete: false,
+              stripe_charges_enabled: false,
+              stripe_payouts_enabled: false,
             });
         }
       }
@@ -127,17 +135,18 @@ serve(async (req) => {
         });
       }
 
-      // Check account status with Stripe
       const account = await stripe.accounts.retrieve(settings.stripe_account_id);
       const isComplete = account.charges_enabled && account.details_submitted;
 
-      // Update onboarding status if changed
-      if (isComplete !== settings.stripe_onboarding_complete) {
-        await serviceSupabase
-          .from("company_settings")
-          .update({ stripe_onboarding_complete: isComplete })
-          .eq("id", settings.id);
-      }
+      // Update all status fields
+      await serviceSupabase
+        .from("company_settings")
+        .update({
+          stripe_onboarding_complete: isComplete,
+          stripe_charges_enabled: account.charges_enabled || false,
+          stripe_payouts_enabled: account.payouts_enabled || false,
+        })
+        .eq("id", settings.id);
 
       return new Response(
         JSON.stringify({
@@ -154,6 +163,22 @@ serve(async (req) => {
       );
     }
 
+    if (action === "login-link") {
+      if (!settings?.stripe_account_id) {
+        return new Response(JSON.stringify({ error: "No Stripe account connected" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const loginLink = await stripe.accounts.createLoginLink(settings.stripe_account_id);
+
+      return new Response(JSON.stringify({ url: loginLink.url }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     if (action === "disconnect") {
       if (settings?.id) {
         await serviceSupabase
@@ -161,6 +186,8 @@ serve(async (req) => {
           .update({
             stripe_account_id: null,
             stripe_onboarding_complete: false,
+            stripe_charges_enabled: false,
+            stripe_payouts_enabled: false,
           })
           .eq("id", settings.id);
       }

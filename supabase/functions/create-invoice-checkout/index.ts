@@ -46,7 +46,6 @@ serve(async (req) => {
       });
     }
 
-    // Load invoice with client info
     const { data: invoice, error: invoiceError } = await supabase
       .from("invoices")
       .select("*, clients(email, first_name, last_name, company_name)")
@@ -75,14 +74,13 @@ serve(async (req) => {
       });
     }
 
-    // Look up the business's connected Stripe account
     const { data: companySettings } = await supabase
       .from("company_settings")
-      .select("stripe_account_id, stripe_onboarding_complete")
+      .select("stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled")
       .maybeSingle();
 
     const connectedAccountId =
-      companySettings?.stripe_onboarding_complete
+      companySettings?.stripe_charges_enabled
         ? companySettings.stripe_account_id
         : null;
 
@@ -92,6 +90,11 @@ serve(async (req) => {
 
     const client = invoice.clients;
     const clientEmail = client?.email || undefined;
+    const balanceCents = Math.round(balanceDue * 100);
+
+    // Calculate platform fee
+    const feePercent = Number(Deno.env.get("PLATFORM_FEE_PERCENT") || "0");
+    const applicationFee = feePercent > 0 ? Math.round(balanceCents * feePercent / 100) : undefined;
 
     const sessionParams: any = {
       mode: "payment",
@@ -99,12 +102,12 @@ serve(async (req) => {
       line_items: [
         {
           price_data: {
-            currency: "usd",
+            currency: "cad",
             product_data: {
               name: `Invoice ${invoice.invoice_number}`,
               description: invoice.title || `Payment for invoice ${invoice.invoice_number}`,
             },
-            unit_amount: Math.round(balanceDue * 100),
+            unit_amount: balanceCents,
           },
           quantity: 1,
         },
@@ -117,13 +120,13 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/invoices/${invoice_id}?payment=cancelled`,
     };
 
-    // Route payment to the business's connected Stripe account
     if (connectedAccountId) {
       sessionParams.payment_intent_data = {
         transfer_data: { destination: connectedAccountId },
-        // Optional: platform fee
-        // application_fee_amount: Math.round(balanceDue * 100 * 0.02),
       };
+      if (applicationFee) {
+        sessionParams.payment_intent_data.application_fee_amount = applicationFee;
+      }
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);

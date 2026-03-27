@@ -15,29 +15,9 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const body = await req.json();
+    const { invoice_id, amount, save_card, client_id, public_pay } = body;
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
-    if (authErr || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { invoice_id, amount, save_card, client_id } = await req.json();
     if (!invoice_id || !amount) {
       return new Response(JSON.stringify({ error: "invoice_id and amount required" }), {
         status: 400,
@@ -45,8 +25,42 @@ serve(async (req) => {
       });
     }
 
-    // Load invoice
-    const { data: invoice, error: invErr } = await supabase
+    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
+      apiVersion: "2025-08-27.basil",
+    });
+
+    const serviceSupabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    let userId: string | null = null;
+
+    // For authenticated requests
+    if (authHeader?.startsWith("Bearer ")) {
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
+      if (authErr || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      userId = user.id;
+    } else if (!public_pay) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Load invoice with service role for public pay
+    const { data: invoice, error: invErr } = await serviceSupabase
       .from("invoices")
       .select("*, clients(email, first_name, last_name)")
       .eq("id", invoice_id)
@@ -60,19 +74,16 @@ serve(async (req) => {
     }
 
     // Look up the business's connected Stripe account
-    const { data: companySettings } = await supabase
+    const { data: companySettings } = await serviceSupabase
       .from("company_settings")
-      .select("stripe_account_id, stripe_onboarding_complete")
+      .select("stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled")
+      .eq("team_id", invoice.team_id)
       .maybeSingle();
 
     const connectedAccountId =
-      companySettings?.stripe_onboarding_complete
+      companySettings?.stripe_charges_enabled
         ? companySettings.stripe_account_id
         : null;
-
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
-      apiVersion: "2025-08-27.basil",
-    });
 
     const clientEmail = invoice.clients?.email;
     let customerId: string | undefined;
@@ -91,12 +102,18 @@ serve(async (req) => {
       }
     }
 
+    const amountCents = Math.round(Number(amount) * 100);
+
+    // Calculate platform fee
+    const feePercent = Number(Deno.env.get("PLATFORM_FEE_PERCENT") || "0");
+    const applicationFee = feePercent > 0 ? Math.round(amountCents * feePercent / 100) : undefined;
+
     const piParams: any = {
-      amount: Math.round(Number(amount) * 100),
-      currency: "usd",
+      amount: amountCents,
+      currency: "cad",
       metadata: {
         invoice_id,
-        user_id: user.id,
+        user_id: userId || invoice.user_id,
       },
     };
 
@@ -111,8 +128,9 @@ serve(async (req) => {
     // Route payment to the business's connected Stripe account
     if (connectedAccountId) {
       piParams.transfer_data = { destination: connectedAccountId };
-      // Optional: set platform fee
-      // piParams.application_fee_amount = Math.round(Number(amount) * 100 * 0.02);
+      if (applicationFee) {
+        piParams.application_fee_amount = applicationFee;
+      }
     }
 
     const paymentIntent = await stripe.paymentIntents.create(piParams);
