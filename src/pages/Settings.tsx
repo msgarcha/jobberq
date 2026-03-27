@@ -16,7 +16,8 @@ import { useTeam, useTeamMembers, useTeamInvitations, useSendInvite, useUpdateMe
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SUBSCRIPTION_TIERS, type TierKey } from "@/lib/subscriptionTiers";
-import { Save, Building2, Upload, CreditCard, CheckCircle2, Crown, Zap, Users, Mail, Trash2, Copy, UserPlus, Star, FileSpreadsheet, ArrowRight, Link2, Unlink, Loader2, ExternalLink } from "lucide-react";
+import { Save, Building2, Upload, CreditCard, CheckCircle2, Crown, Zap, Users, Mail, Trash2, Copy, UserPlus, Star, FileSpreadsheet, ArrowRight, Link2, Unlink, Loader2, ExternalLink, X, Palette } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 
@@ -62,6 +63,10 @@ const Settings = () => {
   const [zip, setZip] = useState("");
   const [country, setCountry] = useState("US");
   const [logoUrl, setLogoUrl] = useState("");
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [pdfPrimaryColor, setPdfPrimaryColor] = useState("#1a1a1a");
+  const [pdfAccentColor, setPdfAccentColor] = useState("#6366f1");
+  const [pdfStyle, setPdfStyle] = useState("classic");
   const [quotePrefix, setQuotePrefix] = useState("Q-");
   const [invoicePrefix, setInvoicePrefix] = useState("INV-");
   const [nextQuoteNumber, setNextQuoteNumber] = useState(1001);
@@ -177,6 +182,9 @@ const Settings = () => {
       setGoogleReviewUrl((settings as any).google_review_url || "");
       setReviewMinStars((settings as any).review_min_stars ?? 4);
       setReviewGatingEnabled((settings as any).review_gating_enabled ?? true);
+      setPdfPrimaryColor((settings as any).pdf_primary_color || "#1a1a1a");
+      setPdfAccentColor((settings as any).pdf_accent_color || "#6366f1");
+      setPdfStyle((settings as any).pdf_style || "classic");
     }
   }, [settings]);
 
@@ -202,6 +210,9 @@ const Settings = () => {
       google_review_url: googleReviewUrl || null,
       review_min_stars: reviewMinStars,
       review_gating_enabled: reviewGatingEnabled,
+      pdf_primary_color: pdfPrimaryColor,
+      pdf_accent_color: pdfAccentColor,
+      pdf_style: pdfStyle,
     } as any);
   };
 
@@ -299,13 +310,60 @@ const Settings = () => {
                     <Label className="text-xs mb-1.5 block">Logo</Label>
                     <div className="flex flex-row md:flex-col items-center gap-3 md:gap-2">
                       {logoUrl ? (
-                        <img src={logoUrl} alt="Company logo" className="h-16 w-16 rounded-xl object-cover border" />
+                        <div className="relative">
+                          <img src={logoUrl} alt="Company logo" className="h-16 w-16 rounded-xl object-cover border" />
+                          <button
+                            type="button"
+                            onClick={() => setLogoUrl("")}
+                            className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
                       ) : (
                         <div className="h-16 w-16 rounded-xl bg-secondary flex items-center justify-center shrink-0">
                           <Upload className="h-5 w-5 text-muted-foreground" />
                         </div>
                       )}
-                      <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="Logo URL" className="text-xs h-8 w-full md:w-40" />
+                      <div className="flex flex-col gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="text-xs h-8 gap-1"
+                          disabled={logoUploading}
+                          onClick={() => document.getElementById("logo-upload-input")?.click()}
+                        >
+                          {logoUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                          {logoUrl ? "Change" : "Upload"}
+                        </Button>
+                        <input
+                          id="logo-upload-input"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            setLogoUploading(true);
+                            try {
+                              const ext = file.name.split(".").pop() || "png";
+                              const teamId = authTeam.teamId || "default";
+                              const path = `${teamId}/logo.${ext}`;
+                              const { error: upErr } = await supabase.storage.from("company-assets").upload(path, file, { upsert: true });
+                              if (upErr) throw upErr;
+                              const { data: urlData } = supabase.storage.from("company-assets").getPublicUrl(path);
+                              setLogoUrl(urlData.publicUrl);
+                              toast({ title: "Logo uploaded" });
+                            } catch (err: any) {
+                              toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+                            } finally {
+                              setLogoUploading(false);
+                              e.target.value = "";
+                            }
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="flex-1 space-y-3 w-full">
@@ -434,6 +492,83 @@ const Settings = () => {
                     </Button>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* PDF Appearance */}
+            <Card className="shadow-warm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Palette className="h-4 w-4 text-muted-foreground" />
+                  PDF Appearance
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Customize how your invoices and quotes look when printed or downloaded.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs">Primary Color</Label>
+                    <p className="text-[10px] text-muted-foreground mb-1">Headings and main text accents</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={pdfPrimaryColor}
+                        onChange={(e) => setPdfPrimaryColor(e.target.value)}
+                        className="h-9 w-12 rounded border border-input cursor-pointer"
+                      />
+                      <Input
+                        value={pdfPrimaryColor}
+                        onChange={(e) => setPdfPrimaryColor(e.target.value)}
+                        className="text-xs h-9 font-mono uppercase"
+                        maxLength={7}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Accent Color</Label>
+                    <p className="text-[10px] text-muted-foreground mb-1">Borders, status badges, highlights</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={pdfAccentColor}
+                        onChange={(e) => setPdfAccentColor(e.target.value)}
+                        className="h-9 w-12 rounded border border-input cursor-pointer"
+                      />
+                      <Input
+                        value={pdfAccentColor}
+                        onChange={(e) => setPdfAccentColor(e.target.value)}
+                        className="text-xs h-9 font-mono uppercase"
+                        maxLength={7}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <Separator />
+                <div>
+                  <Label className="text-xs mb-2 block">PDF Style</Label>
+                  <RadioGroup value={pdfStyle} onValueChange={setPdfStyle} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      { value: "classic", label: "Classic", desc: "Traditional layout with border lines" },
+                      { value: "modern", label: "Modern", desc: "Colored header band, rounded elements" },
+                      { value: "minimal", label: "Minimal", desc: "Clean, no borders, lots of whitespace" },
+                    ].map((opt) => (
+                      <label
+                        key={opt.value}
+                        className={`flex items-start gap-3 border rounded-lg p-3 cursor-pointer transition-colors ${
+                          pdfStyle === opt.value ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/30"
+                        }`}
+                      >
+                        <RadioGroupItem value={opt.value} className="mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium">{opt.label}</p>
+                          <p className="text-[10px] text-muted-foreground">{opt.desc}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </RadioGroup>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
