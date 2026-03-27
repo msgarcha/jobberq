@@ -176,6 +176,9 @@ export type Database = {
           next_invoice_number: number | null
           next_job_number: number | null
           next_quote_number: number | null
+          pdf_accent_color: string | null
+          pdf_primary_color: string | null
+          pdf_style: string | null
           phone: string | null
           quote_prefix: string | null
           review_gating_enabled: boolean
@@ -207,6 +210,9 @@ export type Database = {
           next_invoice_number?: number | null
           next_job_number?: number | null
           next_quote_number?: number | null
+          pdf_accent_color?: string | null
+          pdf_primary_color?: string | null
+          pdf_style?: string | null
           phone?: string | null
           quote_prefix?: string | null
           review_gating_enabled?: boolean
@@ -238,6 +244,9 @@ export type Database = {
           next_invoice_number?: number | null
           next_job_number?: number | null
           next_quote_number?: number | null
+          pdf_accent_color?: string | null
+          pdf_primary_color?: string | null
+          pdf_style?: string | null
           phone?: string | null
           quote_prefix?: string | null
           review_gating_enabled?: boolean
