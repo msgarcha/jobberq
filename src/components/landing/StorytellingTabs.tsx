@@ -25,7 +25,7 @@ const stories = [
     statLabel: "saved per week",
     quote: "I used to spend Sunday nights scheduling. Now it takes 10 minutes.",
     author: "Jennifer L., Cleaning Services",
-    image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&h=500&fit=crop",
   },
   {
     value: "paid",
