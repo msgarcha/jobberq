@@ -1,4 +1,4 @@
-// Stripe product & price IDs for ServicePro subscription tiers
+// Stripe product & price IDs for QuickLinq subscription tiers
 export const SUBSCRIPTION_TIERS = {
   starter: {
     name: "Starter",

@@ -60,7 +60,7 @@ export default function StorytellingTabs() {
     <section ref={ref} className="py-20 sm:py-28 px-4 sm:px-6">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
-          <p className="text-sm font-semibold text-primary mb-3 tracking-wide uppercase">How ServicePro Works</p>
+          <p className="text-sm font-semibold text-primary mb-3 tracking-wide uppercase">How QuickLinq Works</p>
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight font-display">
             Four steps to a better business
           </h2>

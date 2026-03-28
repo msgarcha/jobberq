@@ -9,7 +9,7 @@ export default function LandingFooter() {
               <span className="font-bold font-display">ServicePro</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              The all-in-one platform for service businesses. Quotes, invoices, scheduling, and payments.
+              The all-in-one platform for service businesses. Clients, quotes, invoices, scheduling, and payments.
             </p>
           </div>
           <div>

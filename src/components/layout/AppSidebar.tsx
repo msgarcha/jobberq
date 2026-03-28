@@ -69,7 +69,7 @@ export function AppSidebar() {
           </div>
           {!collapsed && (
             <span className="font-display font-bold text-lg text-sidebar-accent-foreground tracking-tight">
-              ServicePro
+              QuickLinq
             </span>
           )}
         </div>

@@ -155,7 +155,7 @@ const Settings = () => {
   // Handle checkout success
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
-      toast({ title: "Subscription activated!", description: "Welcome to ServicePro." });
+      toast({ title: "Subscription activated!", description: "Welcome to QuickLinq." });
       checkSubscription();
     }
   }, [searchParams]);

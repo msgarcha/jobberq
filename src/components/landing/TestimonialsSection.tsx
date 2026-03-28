@@ -7,7 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const testimonials = [
   {
-    quote: "ServicePro replaced 4 different tools for us. Quoting, invoicing, scheduling — it's all in one place. Our team saves 15 hours a week.",
+    quote: "QuickLinq replaced 4 different tools for us. Quoting, invoicing, scheduling — it's all in one place. Our team saves 15 hours a week.",
     name: "Marcus Thompson",
     trade: "Thompson Landscaping",
     stars: 5,

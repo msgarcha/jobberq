@@ -44,7 +44,7 @@ export default function FeaturesGrid() {
             {/* Screenshot */}
             <img
               src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=900&h=500&fit=crop"
-              alt="ServicePro dashboard overview"
+              alt="QuickLinq dashboard overview"
               className="w-full h-auto"
               loading="lazy"
             />

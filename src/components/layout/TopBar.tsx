@@ -77,7 +77,7 @@ export function TopBar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-display font-bold text-xs">
             QL
           </div>
-          <span className="font-display font-bold text-base tracking-tight">ServicePro</span>
+          <span className="font-display font-bold text-base tracking-tight">QuickLinq</span>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="relative rounded-lg h-9 w-9" onClick={handleNotifications}>
