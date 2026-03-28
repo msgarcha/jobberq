@@ -211,9 +211,14 @@ export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 
           </div>
         ))}
 
-        <Button variant="outline" onClick={addRow} disabled={disabled} className="w-full h-12 gap-2 rounded-xl">
-          <Plus className="h-4 w-4" /> Add Line Item
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={addRow} disabled={disabled} className="flex-1 h-12 gap-2 rounded-xl">
+            <Plus className="h-4 w-4" /> Add Line Item
+          </Button>
+          <Button variant="ghost" onClick={() => navigate("/services")} className="h-12 gap-2 rounded-xl text-muted-foreground">
+            <Settings2 className="h-4 w-4" /> Manage Services
+          </Button>
+        </div>
 
         <div className="text-sm space-y-1.5 pt-2">
           <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{fmt(totals.subtotal)}</span></div>
