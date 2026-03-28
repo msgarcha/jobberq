@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     // Find the review request by token
     const { data: review, error: findErr } = await supabase
       .from("review_requests")
-      .select("*, company_settings:team_id(google_review_url, review_min_stars, review_gating_enabled)")
+      .select("*")
       .eq("token", token)
       .eq("status", "pending")
       .single();
