@@ -13,7 +13,7 @@ const stories = [
     statLabel: "quote turnaround",
     quote: "We went from losing half our leads to closing 80%. The speed alone changed everything.",
     author: "Mike R., Landscaping",
-    image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&h=500&fit=crop",
   },
   {
     value: "work",
@@ -25,7 +25,7 @@ const stories = [
     statLabel: "saved per week",
     quote: "I used to spend Sunday nights scheduling. Now it takes 10 minutes.",
     author: "Jennifer L., Cleaning Services",
-    image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&h=500&fit=crop",
   },
   {
     value: "paid",
@@ -37,7 +37,7 @@ const stories = [
     statLabel: "payment collection",
     quote: "Our average days-to-pay dropped from 30 to 3. That's life-changing for a small business.",
     author: "Carlos M., Electrical",
-    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800&h=500&fit=crop",
   },
   {
     value: "grow",
@@ -49,7 +49,7 @@ const stories = [
     statLabel: "avg. revenue growth",
     quote: "For the first time, I actually understand my numbers. We doubled revenue in 8 months.",
     author: "David & Amy T., Painting",
-    image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&h=500&fit=crop",
   },
 ];
 

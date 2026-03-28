@@ -143,6 +143,39 @@
   .ticker-pause:hover {
     animation-play-state: paused;
   }
+}
+
+/* Hero mosaic scroll animations */
+@keyframes scroll-up {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+@keyframes scroll-down {
+  0% { transform: translateY(-50%); }
+  100% { transform: translateY(0); }
+}
+@keyframes scroll-horizontal {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes ken-burns {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.animate-scroll-up {
+  animation: scroll-up 30s linear infinite;
+}
+.animate-scroll-down {
+  animation: scroll-down 30s linear infinite;
+}
+.animate-scroll-horizontal {
+  animation: scroll-horizontal 40s linear infinite;
+}
+.animate-ken-burns {
+  animation: ken-burns 10s ease-in-out infinite;
+}
 
   /* Safe area for notched devices */
   .safe-area-bottom {
