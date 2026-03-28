@@ -12,6 +12,7 @@ import { ClientSelector } from "@/components/ClientSelector";
 import { LineItemsEditor, LineItem, computeTotals } from "@/components/LineItemsEditor";
 import { useInvoice, useInvoiceLineItems, useCreateInvoice, useUpdateInvoice, useSaveInvoiceLineItems, useNextInvoiceNumber, useIncrementInvoiceNumber } from "@/hooks/useInvoices";
 import { useClient } from "@/hooks/useClients";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { ArrowLeft, Save, RefreshCw, Plus } from "lucide-react";
 import { addDays, format } from "date-fns";
 
@@ -43,7 +44,8 @@ const InvoiceForm = () => {
   const updateInvoice = useUpdateInvoice();
   const saveLineItems = useSaveInvoiceLineItems();
   const incrementNumber = useIncrementInvoiceNumber();
-
+  const { data: companySettings } = useCompanySettings();
+  const defaultTaxRate = companySettings?.default_tax_rate != null ? Number(companySettings.default_tax_rate) : 5;
   const [clientId, setClientId] = useState<string | null>(null);
   const { data: selectedClient } = useClient(clientId || undefined);
   const [title, setTitle] = useState("");
@@ -244,7 +246,7 @@ const InvoiceForm = () => {
 
         <Card className="shadow-warm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Line Items</CardTitle></CardHeader>
-          <CardContent><LineItemsEditor items={lineItems} onChange={setLineItems} /></CardContent>
+          <CardContent><LineItemsEditor items={lineItems} onChange={setLineItems} defaultTaxRate={defaultTaxRate} /></CardContent>
         </Card>
 
         <div className="grid gap-5 grid-cols-1 md:grid-cols-2">

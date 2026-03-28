@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClientSelector } from "@/components/ClientSelector";
 import { LineItemsEditor, LineItem, computeTotals } from "@/components/LineItemsEditor";
 import { useQuote, useQuoteLineItems, useCreateQuote, useUpdateQuote, useSaveQuoteLineItems, useNextQuoteNumber, useIncrementQuoteNumber } from "@/hooks/useQuotes";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { ArrowLeft, Save, Plus } from "lucide-react";
 
 const QuoteForm = () => {
@@ -23,7 +24,8 @@ const QuoteForm = () => {
   const updateQuote = useUpdateQuote();
   const saveLineItems = useSaveQuoteLineItems();
   const incrementNumber = useIncrementQuoteNumber();
-
+  const { data: companySettings } = useCompanySettings();
+  const defaultTaxRate = companySettings?.default_tax_rate != null ? Number(companySettings.default_tax_rate) : 5;
   const [clientId, setClientId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [validUntil, setValidUntil] = useState("");
@@ -126,7 +128,7 @@ const QuoteForm = () => {
 
         <Card className="shadow-warm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Line Items</CardTitle></CardHeader>
-          <CardContent><LineItemsEditor items={lineItems} onChange={setLineItems} /></CardContent>
+          <CardContent><LineItemsEditor items={lineItems} onChange={setLineItems} defaultTaxRate={defaultTaxRate} /></CardContent>
         </Card>
 
         <div className="grid gap-5 grid-cols-1 md:grid-cols-2">

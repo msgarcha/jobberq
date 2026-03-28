@@ -1,4 +1,4 @@
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useServices } from "@/hooks/useServices";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useNavigate } from "react-router-dom";
 
 export interface LineItem {
   id?: string;
@@ -52,21 +53,23 @@ interface Props {
   items: LineItem[];
   onChange: (items: LineItem[]) => void;
   disabled?: boolean;
+  defaultTaxRate?: number;
 }
 
-const emptyItem: LineItem = {
-  service_id: null,
-  description: "",
-  quantity: 1,
-  unit_price: 0,
-  tax_rate: 0,
-  discount_percent: 0,
-  line_total: 0,
-};
-
-export function LineItemsEditor({ items, onChange, disabled }: Props) {
+export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 }: Props) {
   const { data: services } = useServices({ status: "active" });
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+
+  const emptyItem: LineItem = {
+    service_id: null,
+    description: "",
+    quantity: 1,
+    unit_price: 0,
+    tax_rate: defaultTaxRate,
+    discount_percent: 0,
+    line_total: 0,
+  };
 
   const update = (index: number, partial: Partial<LineItem>) => {
     const updated = items.map((item, i) => {
@@ -208,9 +211,14 @@ export function LineItemsEditor({ items, onChange, disabled }: Props) {
           </div>
         ))}
 
-        <Button variant="outline" onClick={addRow} disabled={disabled} className="w-full h-12 gap-2 rounded-xl">
-          <Plus className="h-4 w-4" /> Add Line Item
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={addRow} disabled={disabled} className="flex-1 h-12 gap-2 rounded-xl">
+            <Plus className="h-4 w-4" /> Add Line Item
+          </Button>
+          <Button variant="ghost" onClick={() => navigate("/services")} className="h-12 gap-2 rounded-xl text-muted-foreground">
+            <Settings2 className="h-4 w-4" /> Manage Services
+          </Button>
+        </div>
 
         <div className="text-sm space-y-1.5 pt-2">
           <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{fmt(totals.subtotal)}</span></div>
@@ -283,9 +291,14 @@ export function LineItemsEditor({ items, onChange, disabled }: Props) {
       </div>
 
       <div className="flex items-start justify-between">
-        <Button variant="outline" size="sm" onClick={addRow} disabled={disabled} className="gap-1.5">
-          <Plus className="h-3.5 w-3.5" /> Add Line
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={addRow} disabled={disabled} className="gap-1.5">
+            <Plus className="h-3.5 w-3.5" /> Add Line
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/services")} className="gap-1.5 text-muted-foreground">
+            <Settings2 className="h-3.5 w-3.5" /> Manage Services
+          </Button>
+        </div>
         <div className="text-sm space-y-1 text-right min-w-[200px]">
           <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{fmt(totals.subtotal)}</span></div>
           {totals.discount_amount > 0 && (
