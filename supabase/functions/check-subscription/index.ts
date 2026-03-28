@@ -27,17 +27,19 @@ serve(async (req) => {
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY not set");
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header");
+    if (!authHeader?.startsWith("Bearer ")) throw new Error("No authorization header");
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Auth error: ${userError.message}`);
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated");
-    logStep("User authenticated", { email: user.email });
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) throw new Error(`Auth error: ${claimsError?.message || "Invalid token"}`);
+    
+    const userId = claimsData.claims.sub as string;
+    const email = claimsData.claims.email as string;
+    if (!email) throw new Error("User not authenticated");
+    logStep("User authenticated", { email });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    const customers = await stripe.customers.list({ email, limit: 1 });
 
     if (customers.data.length === 0) {
       logStep("No Stripe customer found");
@@ -45,7 +47,7 @@ serve(async (req) => {
       const { data: profile } = await supabaseClient
         .from("profiles")
         .select("trial_ends_at")
-        .eq("user_id", user.id)
+         .eq("user_id", userId)
         .single();
 
       const trialEndsAt = profile?.trial_ends_at || null;
@@ -96,7 +98,7 @@ serve(async (req) => {
       const { data: profile } = await supabaseClient
         .from("profiles")
         .select("trial_ends_at")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .single();
       const trialEndsAt = profile?.trial_ends_at || null;
       isTrialing = trialEndsAt ? new Date(trialEndsAt) > new Date() : false;
