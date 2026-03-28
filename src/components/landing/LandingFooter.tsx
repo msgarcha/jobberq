@@ -5,11 +5,11 @@ export default function LandingFooter() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-10">
           <div className="col-span-2 sm:col-span-1">
             <div className="flex items-center gap-2 mb-3">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs font-display">SP</div>
+              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs font-display">QL</div>
               <span className="font-bold font-display">ServicePro</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              The all-in-one platform for service businesses. Quotes, invoices, scheduling, and payments.
+              The all-in-one platform for service businesses. Clients, quotes, invoices, scheduling, and payments.
             </p>
           </div>
           <div>
@@ -40,7 +40,7 @@ export default function LandingFooter() {
           </div>
         </div>
         <div className="border-t border-border/50 pt-6 text-center">
-          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} ServicePro. All rights reserved.</p>
+          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} QuickLinq. All rights reserved.</p>
         </div>
       </div>
     </footer>

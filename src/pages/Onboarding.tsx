@@ -86,7 +86,7 @@ export default function Onboarding() {
           </div>
           <div>
             <h1 className="font-bold text-lg" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Welcome to ServicePro
+              Welcome to QuickLinq
             </h1>
             <p className="text-xs text-muted-foreground">Let's set up your business in under 2 minutes.</p>
           </div>

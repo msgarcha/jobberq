@@ -65,11 +65,11 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground font-display font-bold text-sm">
-            SP
+            QL
           </div>
           {!collapsed && (
             <span className="font-display font-bold text-lg text-sidebar-accent-foreground tracking-tight">
-              ServicePro
+              QuickLinq
             </span>
           )}
         </div>

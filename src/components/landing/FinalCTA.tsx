@@ -24,7 +24,7 @@ export default function FinalCTA() {
           <span className="block" style={{ color: "hsl(170 50% 55%)" }}>Your paperwork shouldn't be.</span>
         </h2>
         <p className="text-lg max-w-xl mx-auto" style={{ color: "hsl(195 15% 65%)" }}>
-          Join thousands of service professionals who switched to ServicePro and never looked back.
+          Join thousands of service professionals who switched to QuickLinq and never looked back.
         </p>
         <Button size="lg" onClick={() => navigate("/login")} className="text-base px-10 h-12 rounded-xl gap-2">
           Get Started Free <ArrowRight className="h-4 w-4" />

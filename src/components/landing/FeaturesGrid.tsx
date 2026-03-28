@@ -23,7 +23,7 @@ export default function FeaturesGrid() {
             Everything you need to grow
           </h2>
           <p className="text-muted-foreground mt-3 max-w-xl mx-auto">
-            From first client contact to final payment — ServicePro handles the entire workflow.
+            From first client contact to final payment — QuickLinq handles the entire workflow.
           </p>
         </div>
 
@@ -38,13 +38,13 @@ export default function FeaturesGrid() {
                 <div className="h-2.5 w-2.5 rounded-full bg-status-success/60" />
               </div>
               <div className="flex-1 mx-8">
-                <div className="bg-background/60 rounded-md px-3 py-1 text-[10px] text-muted-foreground text-center">app.servicepro.com/dashboard</div>
+                <div className="bg-background/60 rounded-md px-3 py-1 text-[10px] text-muted-foreground text-center">app.quicklinq.com/dashboard</div>
               </div>
             </div>
             {/* Screenshot */}
             <img
               src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=900&h=500&fit=crop"
-              alt="ServicePro dashboard overview"
+              alt="QuickLinq dashboard overview"
               className="w-full h-auto"
               loading="lazy"
             />

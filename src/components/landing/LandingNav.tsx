@@ -14,9 +14,9 @@ export default function LandingNav() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm font-display">
-            SP
+            QL
           </div>
-          <span className="font-bold text-lg font-display">ServicePro</span>
+          <span className="font-bold text-lg font-display">QuickLinq</span>
         </div>
         <div className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
           <button onClick={() => scrollTo("features")} className="hover:text-foreground transition-colors">Features</button>
