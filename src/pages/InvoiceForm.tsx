@@ -44,7 +44,8 @@ const InvoiceForm = () => {
   const updateInvoice = useUpdateInvoice();
   const saveLineItems = useSaveInvoiceLineItems();
   const incrementNumber = useIncrementInvoiceNumber();
-
+  const { data: companySettings } = useCompanySettings();
+  const defaultTaxRate = companySettings?.default_tax_rate != null ? Number(companySettings.default_tax_rate) : 5;
   const [clientId, setClientId] = useState<string | null>(null);
   const { data: selectedClient } = useClient(clientId || undefined);
   const [title, setTitle] = useState("");
