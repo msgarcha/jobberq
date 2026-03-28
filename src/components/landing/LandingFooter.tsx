@@ -40,7 +40,7 @@ export default function LandingFooter() {
           </div>
         </div>
         <div className="border-t border-border/50 pt-6 text-center">
-          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} ServicePro. All rights reserved.</p>
+          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} QuickLinq. All rights reserved.</p>
         </div>
       </div>
     </footer>
