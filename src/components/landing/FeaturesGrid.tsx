@@ -23,7 +23,7 @@ export default function FeaturesGrid() {
             Everything you need to grow
           </h2>
           <p className="text-muted-foreground mt-3 max-w-xl mx-auto">
-            From first client contact to final payment — ServicePro handles the entire workflow.
+            From first client contact to final payment — QuickLinq handles the entire workflow.
           </p>
         </div>
 
