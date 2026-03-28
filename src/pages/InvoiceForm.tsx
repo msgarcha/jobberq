@@ -12,6 +12,7 @@ import { ClientSelector } from "@/components/ClientSelector";
 import { LineItemsEditor, LineItem, computeTotals } from "@/components/LineItemsEditor";
 import { useInvoice, useInvoiceLineItems, useCreateInvoice, useUpdateInvoice, useSaveInvoiceLineItems, useNextInvoiceNumber, useIncrementInvoiceNumber } from "@/hooks/useInvoices";
 import { useClient } from "@/hooks/useClients";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { ArrowLeft, Save, RefreshCw, Plus } from "lucide-react";
 import { addDays, format } from "date-fns";
 
