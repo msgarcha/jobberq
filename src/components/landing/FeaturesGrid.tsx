@@ -38,7 +38,7 @@ export default function FeaturesGrid() {
                 <div className="h-2.5 w-2.5 rounded-full bg-status-success/60" />
               </div>
               <div className="flex-1 mx-8">
-                <div className="bg-background/60 rounded-md px-3 py-1 text-[10px] text-muted-foreground text-center">app.servicepro.com/dashboard</div>
+                <div className="bg-background/60 rounded-md px-3 py-1 text-[10px] text-muted-foreground text-center">app.quicklinq.com/dashboard</div>
               </div>
             </div>
             {/* Screenshot */}
