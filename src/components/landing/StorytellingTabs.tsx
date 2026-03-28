@@ -49,7 +49,7 @@ const stories = [
     statLabel: "avg. revenue growth",
     quote: "For the first time, I actually understand my numbers. We doubled revenue in 8 months.",
     author: "David & Amy T., Painting",
-    image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&h=500&fit=crop",
   },
 ];
 
