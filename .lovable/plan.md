@@ -1,68 +1,59 @@
 
 
-## Upgrade QuickLinq: Fonts, Landing Page Sections, Dashboard Polish
+## Redesign Hero Image Carousel and Add Cinematic Sections
 
-### 1. Font Update (Jobber-style)
+### Problem
+The hero section currently shows a flat row of small cards that look cramped and generic. The "Cleaning" image is broken. The layout doesn't match the cinematic, storytelling feel of Jobber's landing page which uses large, full-bleed photos in an auto-scrolling grid.
 
-Jobber uses **Poppins** for headings and body text. We will:
+### Changes
 
-- Replace `Space Grotesk` (display/heading font) with **Poppins**
-- Replace `DM Sans` (body font) with **Poppins** (lighter weight for body, semibold/bold for headings)
-- Update heading sizes to match Jobber's larger, bolder style (hero h1 ~56-64px, section h2 ~40-48px)
+#### 1. Hero Section — Full-width Auto-scrolling Carousel
+Replace the current small card grid with a Jobber-inspired layout:
+- **Left side**: Keep the headline/CTA copy (already good)
+- **Right side**: Replace the 3x2 grid with a **2-column vertical auto-scrolling mosaic** — two columns of tall portrait photos that slowly scroll in opposite directions (one up, one down), creating a cinematic parallax effect
+- Use high-quality Unsplash photos of real tradespeople in action (landscaping, plumbing, electrical, HVAC, roofing, cleaning, painting, carpentry)
+- Each photo is large (~280px wide, ~360px tall) with rounded corners, name overlay at bottom
+- CSS animation for the infinite vertical scroll (no JS library needed)
+- On mobile: horizontal auto-scrolling carousel using CSS animation instead
 
-**Files**: `src/index.css` (Google Fonts import), `tailwind.config.ts` (fontFamily), all landing components (font-size adjustments)
+**File**: `src/components/landing/HeroSection.tsx`
 
-### 2. New Landing Page Sections (Differentiators)
+#### 2. New Cinematic Video/Story Section
+Add a full-width cinematic section between IndustryTicker and StorytellingTabs that shows a large hero-style background image with a subtle Ken Burns (slow zoom) CSS animation, overlaid with a bold stat or quote. This breaks up the page and adds visual drama without actual video.
 
-Add 3 new sections that position QuickLinq as better than Jobber, without copying their layout:
+- Full-bleed background image of a trade pro at work
+- Slow CSS zoom animation (8-10 seconds cycle)
+- Overlaid bold text: "Trusted by 10,000+ service businesses across 50+ trades"
+- Dark gradient overlay for readability
 
-**A. "Why Pros Switch" Comparison Section** (after StatsBanner)
-- A clean, non-aggressive comparison table showing what QuickLinq includes at lower tiers that competitors charge more for
-- Columns: Feature | Others | QuickLinq
-- Not naming Jobber directly — just "Other platforms"
-- Warm, confident tone
+**File**: `src/components/landing/CinematicBanner.tsx` (new)
 
-**B. "Built Different" Split-Feature Showcase** (after FeaturesGrid)
-- 3 horizontal cards, each with a left illustration area and right text
-- Highlights: (1) No per-user fees, (2) AI-powered smart scheduling, (3) One-click review collection
-- Each card has a subtle gradient background, not boxy/AI-looking
+#### 3. Update StorytellingTabs Images
+Replace the current generic stock images with better, more cinematic Unsplash photos that show real tradespeople in warm, golden-hour lighting — not sterile stock photo vibes.
 
-**C. "Real Results" ROI Calculator Section** (before Pricing)
-- Interactive mini-calculator: user enters # of jobs/week → shows estimated time saved, revenue recovered
-- Simple slider + live output numbers
-- Makes the value tangible and personal
+**File**: `src/components/landing/StorytellingTabs.tsx`
 
-### 3. Dashboard Improvements
+#### 4. Add Infinite Scroll CSS Animation
+Add the `@keyframes` for the vertical auto-scroll columns and Ken Burns zoom to the global CSS.
 
-Based on the Jobber reference screenshots, improve the dashboard:
+**File**: `src/index.css`
 
-- **Quick action cards row** below KPIs: "New Quote", "New Invoice", "New Job", "New Client" as icon cards (not just the top-bar dropdown)
-- **Revenue mini-chart** in the KPI area (sparkline or small bar chart for last 7 days)
-- **Better today's schedule styling**: time-based vertical timeline layout instead of flat list
-- **Welcome banner with progress**: show onboarding completeness or a tip of the day
+#### 5. Wire CinematicBanner into Landing Page
+Insert between IndustryTicker and StorytellingTabs.
 
-### Files to Change
+**File**: `src/pages/Landing.tsx`
 
-| File | Changes |
-|------|---------|
-| `src/index.css` | Swap Google Fonts import to Poppins |
-| `tailwind.config.ts` | Update fontFamily sans + display to Poppins |
-| `src/components/landing/HeroSection.tsx` | Increase heading size, adjust font weights |
-| `src/components/landing/StorytellingTabs.tsx` | Font size bump on headings |
-| `src/components/landing/FeaturesGrid.tsx` | Font size bump |
-| `src/components/landing/TestimonialsSection.tsx` | Font size bump |
-| `src/components/landing/PricingSection.tsx` | Font size bump |
-| `src/components/landing/StatsBanner.tsx` | Font size bump |
-| `src/components/landing/FinalCTA.tsx` | Font size bump |
-| `src/components/landing/ComparisonSection.tsx` | **NEW** — "Why Pros Switch" table |
-| `src/components/landing/BuiltDifferent.tsx` | **NEW** — 3 differentiator cards |
-| `src/components/landing/ROICalculator.tsx` | **NEW** — interactive savings calculator |
-| `src/pages/Landing.tsx` | Import + render new sections |
-| `src/pages/Index.tsx` | Dashboard: quick actions, better schedule, welcome banner |
+### Image Strategy
+Use Unsplash photos with `w=800&h=1000&fit=crop` for high resolution. Select images that show:
+- People actually working (not posing)
+- Warm, natural lighting
+- Diverse trades: lawn mowing, plumbing under sink, electrician at panel, painter on ladder, cleaner, roofer, HVAC tech, carpenter
+- 10-12 images total for the scrolling mosaic (5-6 per column)
 
-### Design Notes
-- All new sections use existing color palette (dark teal, cream, warm gold)
-- No stock-looking card grids — use asymmetric layouts, subtle gradients, real spacing
-- Interactive calculator uses native React state (no external deps)
-- Dashboard quick actions use the same icon set already in the sidebar
+### Technical Details
+- Vertical scroll animation via CSS `@keyframes` with `translateY` — two copies of images stacked, animating upward infinitely
+- Opposite column animates downward for visual contrast
+- `animation-play-state: paused` on hover
+- Ken Burns effect: `@keyframes` scaling from `scale(1)` to `scale(1.08)` over 10s
+- No new dependencies needed
 
