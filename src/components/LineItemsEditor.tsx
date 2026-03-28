@@ -291,9 +291,14 @@ export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 
       </div>
 
       <div className="flex items-start justify-between">
-        <Button variant="outline" size="sm" onClick={addRow} disabled={disabled} className="gap-1.5">
-          <Plus className="h-3.5 w-3.5" /> Add Line
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={addRow} disabled={disabled} className="gap-1.5">
+            <Plus className="h-3.5 w-3.5" /> Add Line
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/services")} className="gap-1.5 text-muted-foreground">
+            <Settings2 className="h-3.5 w-3.5" /> Manage Services
+          </Button>
+        </div>
         <div className="text-sm space-y-1 text-right min-w-[200px]">
           <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{fmt(totals.subtotal)}</span></div>
           {totals.discount_amount > 0 && (

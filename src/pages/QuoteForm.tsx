@@ -128,7 +128,7 @@ const QuoteForm = () => {
 
         <Card className="shadow-warm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Line Items</CardTitle></CardHeader>
-          <CardContent><LineItemsEditor items={lineItems} onChange={setLineItems} /></CardContent>
+          <CardContent><LineItemsEditor items={lineItems} onChange={setLineItems} defaultTaxRate={defaultTaxRate} /></CardContent>
         </Card>
 
         <div className="grid gap-5 grid-cols-1 md:grid-cols-2">
