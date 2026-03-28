@@ -96,7 +96,8 @@ export default function Login() {
               </Button>
             </form>
           </CardContent>
-        </Card>
+          </Card>
+        </div>
       </div>
     );
   }
