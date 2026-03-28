@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -69,12 +70,18 @@ export default function Login() {
   if (resetMode) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md shadow-warm-md border-border/50">
-          <CardHeader className="text-center pb-2">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-display font-bold text-xl">SP</div>
-            <CardTitle className="font-display text-2xl">Reset Password</CardTitle>
-            <CardDescription>Enter your email to receive a reset link.</CardDescription>
-          </CardHeader>
+        <div className="w-full max-w-md">
+          <div className="mb-4">
+            <Link to="/landing" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-4 w-4" /> Back to Home
+            </Link>
+          </div>
+          <Card className="shadow-warm-md border-border/50">
+            <CardHeader className="text-center pb-2">
+              <Link to="/landing" className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-bold text-xl hover:opacity-90 transition-opacity">QL</Link>
+              <CardTitle className="text-2xl">Reset Password</CardTitle>
+              <CardDescription>Enter your email to receive a reset link.</CardDescription>
+            </CardHeader>
           <CardContent>
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div className="space-y-2">
@@ -89,7 +96,8 @@ export default function Login() {
               </Button>
             </form>
           </CardContent>
-        </Card>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -97,10 +105,15 @@ export default function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md animate-slide-up">
+        <div className="mb-4">
+          <Link to="/landing" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-4 w-4" /> Back to Home
+          </Link>
+        </div>
         <Card className="shadow-warm-md border-border/50 overflow-hidden">
           <CardHeader className="text-center pb-2 px-5">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-display font-bold text-xl">QL</div>
-            <CardTitle className="font-display text-2xl">QuickLinq</CardTitle>
+            <Link to="/landing" className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-bold text-xl hover:opacity-90 transition-opacity">QL</Link>
+            <CardTitle className="text-2xl">QuickLinq</CardTitle>
             <CardDescription>Manage your service business with ease.</CardDescription>
           </CardHeader>
           <CardContent className="px-5">
