@@ -177,10 +177,9 @@
   animation: ken-burns 10s ease-in-out infinite;
 }
 
-  /* Safe area for notched devices */
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
+/* Safe area for notched devices */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Mobile touch targets */
