@@ -27,7 +27,7 @@ export default function HeroSection() {
               <Star className="h-3 w-3 fill-current" /> Rated 4.9/5 by 2,000+ service pros
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-bold tracking-tight leading-[1.08] font-display" style={{ color: "hsl(40 23% 96%)" }}>
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.75rem] xl:text-[4rem] font-bold tracking-tight leading-[1.08] font-display" style={{ color: "hsl(40 23% 96%)" }}>
               Your craft deserves{" "}
               <span style={{ color: "hsl(170 50% 55%)" }}>better than paperwork</span>
             </h1>
