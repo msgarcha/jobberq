@@ -47,7 +47,7 @@ serve(async (req) => {
       const { data: profile } = await supabaseClient
         .from("profiles")
         .select("trial_ends_at")
-        .eq("user_id", user.id)
+         .eq("user_id", userId)
         .single();
 
       const trialEndsAt = profile?.trial_ends_at || null;
