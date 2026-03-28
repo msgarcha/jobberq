@@ -1,6 +1,7 @@
 import LandingNav from "@/components/landing/LandingNav";
 import HeroSection from "@/components/landing/HeroSection";
 import IndustryTicker from "@/components/landing/IndustryTicker";
+import CinematicBanner from "@/components/landing/CinematicBanner";
 import StorytellingTabs from "@/components/landing/StorytellingTabs";
 import StatsBanner from "@/components/landing/StatsBanner";
 import ComparisonSection from "@/components/landing/ComparisonSection";
