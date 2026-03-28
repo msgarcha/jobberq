@@ -61,7 +61,7 @@ export default function StorytellingTabs() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <p className="text-sm font-semibold text-primary mb-3 tracking-wide uppercase">How QuickLinq Works</p>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight font-display">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight font-display">
             Four steps to a better business
           </h2>
         </div>

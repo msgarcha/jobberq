@@ -60,7 +60,7 @@ export default function TestimonialsSection() {
         <div className="flex items-end justify-between mb-10">
           <div>
             <p className="text-sm font-semibold text-primary mb-3 tracking-wide uppercase">Testimonials</p>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight font-display">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight font-display">
               Loved by service pros everywhere
             </h2>
           </div>

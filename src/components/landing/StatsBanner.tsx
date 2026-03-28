@@ -19,7 +19,7 @@ export default function StatsBanner() {
             className={`text-center transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"}`}
             style={{ transitionDelay: `${i * 120}ms` }}
           >
-            <p className="text-3xl sm:text-4xl lg:text-5xl font-bold font-display" style={{ color: "hsl(170 50% 55%)" }}>
+            <p className="text-3xl sm:text-4xl lg:text-[3.25rem] font-bold font-display" style={{ color: "hsl(170 50% 55%)" }}>
               {s.value}
             </p>
             <p className="text-sm mt-1" style={{ color: "hsl(195 15% 70%)" }}>{s.label}</p>

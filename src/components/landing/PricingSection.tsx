@@ -44,7 +44,7 @@ export default function PricingSection() {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <p className="text-sm font-semibold text-primary mb-3 tracking-wide uppercase">Pricing</p>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight font-display">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight font-display">
             Simple, transparent pricing
           </h2>
           <p className="text-muted-foreground mt-2">Start free for 14 days. Upgrade when you're ready.</p>
