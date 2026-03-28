@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
 
 const ReviewForm = () => {
   const { token } = useParams();
@@ -25,44 +24,26 @@ const ReviewForm = () => {
     if (!token) return;
     (async () => {
       try {
-        // Fetch review request (public via anon RLS)
-        const { data: rev, error: revErr } = await supabase
-          .from("review_requests")
-          .select("*, clients(first_name, last_name)")
-          .eq("token", token)
-          .maybeSingle();
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const res = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/get-review-request`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token }),
+          }
+        );
+        const data = await res.json();
 
-        if (revErr || !rev) {
-          setError("This review link is invalid or has already been used.");
+        if (data.error) {
+          setError(data.error);
           setLoading(false);
           return;
         }
 
-        if (rev.status !== "pending") {
-          setError("This review has already been submitted. Thank you!");
-          setLoading(false);
-          return;
-        }
-
-        if (new Date(rev.expires_at) < new Date()) {
-          setError("This review link has expired.");
-          setLoading(false);
-          return;
-        }
-
-        setReview(rev);
-
-        // Fetch company settings for branding
-        const { data: settings } = await supabase
-          .from("company_settings")
-          .select("company_name, logo_url")
-          .eq("team_id", rev.team_id)
-          .maybeSingle();
-
-        if (settings) {
-          setCompanyName(settings.company_name || "");
-          setLogoUrl(settings.logo_url || "");
-        }
+        setReview(data.review);
+        setCompanyName(data.companyName || "");
+        setLogoUrl(data.logoUrl || "");
       } catch {
         setError("Something went wrong.");
       }
@@ -113,7 +94,6 @@ const ReviewForm = () => {
     );
   }
 
-  // Success screen
   if (result) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -152,7 +132,6 @@ const ReviewForm = () => {
     );
   }
 
-  // Review form
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
@@ -172,7 +151,6 @@ const ReviewForm = () => {
           </p>
         </div>
 
-        {/* Star picker */}
         <div className="flex justify-center gap-2">
           {[1, 2, 3, 4, 5].map((s) => (
             <button
