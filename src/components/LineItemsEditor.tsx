@@ -59,6 +59,17 @@ interface Props {
 export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 }: Props) {
   const { data: services } = useServices({ status: "active" });
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+
+  const emptyItem: LineItem = {
+    service_id: null,
+    description: "",
+    quantity: 1,
+    unit_price: 0,
+    tax_rate: defaultTaxRate,
+    discount_percent: 0,
+    line_total: 0,
+  };
 
   const update = (index: number, partial: Partial<LineItem>) => {
     const updated = items.map((item, i) => {
