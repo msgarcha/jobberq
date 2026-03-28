@@ -64,7 +64,9 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="QuickLinq" className="h-9 w-9 shrink-0 rounded-xl object-contain" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground font-display font-bold text-sm">
+            QL
+          </div>
           {!collapsed && (
             <span className="font-display font-bold text-lg text-sidebar-accent-foreground tracking-tight">
               QuickLinq
