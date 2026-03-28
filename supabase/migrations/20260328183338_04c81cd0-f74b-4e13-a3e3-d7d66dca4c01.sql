@@ -1,0 +1,1 @@
+ALTER TABLE public.team_members ADD CONSTRAINT fk_team_members_profile FOREIGN KEY (user_id) REFERENCES public.profiles(user_id);
