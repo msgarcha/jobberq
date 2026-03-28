@@ -1,4 +1,4 @@
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useServices } from "@/hooks/useServices";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useNavigate } from "react-router-dom";
 
 export interface LineItem {
   id?: string;
@@ -52,19 +53,10 @@ interface Props {
   items: LineItem[];
   onChange: (items: LineItem[]) => void;
   disabled?: boolean;
+  defaultTaxRate?: number;
 }
 
-const emptyItem: LineItem = {
-  service_id: null,
-  description: "",
-  quantity: 1,
-  unit_price: 0,
-  tax_rate: 0,
-  discount_percent: 0,
-  line_total: 0,
-};
-
-export function LineItemsEditor({ items, onChange, disabled }: Props) {
+export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 }: Props) {
   const { data: services } = useServices({ status: "active" });
   const isMobile = useIsMobile();
 
