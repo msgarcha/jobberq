@@ -82,7 +82,7 @@ export default function HeroSection() {
                 size="lg"
                 variant="outline"
                 onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
-                className="text-base px-8 h-12 rounded-xl border-white/20 hover:bg-white/5 text-white/90"
+                className="text-base px-8 h-12 rounded-xl border-white/30 bg-white/10 hover:bg-white/20 text-white font-medium"
               >
                 See How It Works
               </Button>
