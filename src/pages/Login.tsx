@@ -99,7 +99,7 @@ export default function Login() {
       <div className="w-full max-w-md animate-slide-up">
         <Card className="shadow-warm-md border-border/50 overflow-hidden">
           <CardHeader className="text-center pb-2 px-5">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-display font-bold text-xl">SP</div>
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-display font-bold text-xl">QL</div>
             <CardTitle className="font-display text-2xl">QuickLinq</CardTitle>
             <CardDescription>Manage your service business with ease.</CardDescription>
           </CardHeader>
