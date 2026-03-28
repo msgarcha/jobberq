@@ -37,7 +37,7 @@ const stories = [
     statLabel: "payment collection",
     quote: "Our average days-to-pay dropped from 30 to 3. That's life-changing for a small business.",
     author: "Carlos M., Electrical",
-    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800&h=500&fit=crop",
   },
   {
     value: "grow",
