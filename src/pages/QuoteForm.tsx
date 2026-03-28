@@ -24,7 +24,8 @@ const QuoteForm = () => {
   const updateQuote = useUpdateQuote();
   const saveLineItems = useSaveQuoteLineItems();
   const incrementNumber = useIncrementQuoteNumber();
-
+  const { data: companySettings } = useCompanySettings();
+  const defaultTaxRate = companySettings?.default_tax_rate != null ? Number(companySettings.default_tax_rate) : 5;
   const [clientId, setClientId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [validUntil, setValidUntil] = useState("");
