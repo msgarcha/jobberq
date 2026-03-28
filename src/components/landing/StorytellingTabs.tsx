@@ -13,7 +13,7 @@ const stories = [
     statLabel: "quote turnaround",
     quote: "We went from losing half our leads to closing 80%. The speed alone changed everything.",
     author: "Mike R., Landscaping",
-    image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop",
+    image: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&h=500&fit=crop",
   },
   {
     value: "work",
