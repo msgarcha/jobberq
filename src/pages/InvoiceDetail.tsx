@@ -468,6 +468,22 @@ const InvoiceDetail = () => {
         invoiceNumber={invoice.invoice_number}
         onPaymentRecorded={handlePaymentRecorded}
       />
+
+      {/* Email Dialog */}
+      <EmailDocumentDialog
+        open={emailOpen}
+        onOpenChange={setEmailOpen}
+        type="invoice"
+        documentId={id!}
+        documentNumber={invoice.invoice_number}
+        documentTitle={invoice.title}
+        clientName={client ? `${client.first_name} ${client.last_name}` : undefined}
+        clientEmail={client?.email}
+        companyName={companySettings?.company_name}
+        total={Number(invoice.total)}
+        balanceDue={Number(invoice.balance_due)}
+        dueDate={invoice.due_date}
+      />
     </DashboardLayout>
   );
 };
