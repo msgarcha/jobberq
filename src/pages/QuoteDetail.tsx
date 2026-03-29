@@ -273,6 +273,20 @@ const QuoteDetail = () => {
           </div>
         )}
       </div>
+
+      {/* Email Dialog */}
+      <EmailDocumentDialog
+        open={emailOpen}
+        onOpenChange={setEmailOpen}
+        type="quote"
+        documentId={id!}
+        documentNumber={quote.quote_number}
+        documentTitle={quote.title}
+        clientName={client ? `${client.first_name} ${client.last_name}` : undefined}
+        clientEmail={client?.email}
+        companyName={companySettings?.company_name}
+        total={Number(quote.total)}
+      />
     </DashboardLayout>
   );
 };
