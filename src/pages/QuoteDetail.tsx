@@ -36,7 +36,7 @@ const QuoteDetail = () => {
   const [emailOpen, setEmailOpen] = useState(false);
 
   const handleSend = () => {
-    updateQuote.mutate({ id: id!, status: "sent", sent_at: new Date().toISOString() });
+    setEmailOpen(true);
   };
 
   const handleApprove = () => {
