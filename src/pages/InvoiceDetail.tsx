@@ -44,6 +44,8 @@ const InvoiceDetail = () => {
   const duplicateInvoice = useDuplicateInvoice();
 
   const [collectOpen, setCollectOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const { data: companySettings } = useCompanySettings();
 
   const handleSend = () => {
     updateInvoice.mutate({ id: id!, status: "sent", sent_at: new Date().toISOString() });
