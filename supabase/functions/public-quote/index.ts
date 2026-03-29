@@ -13,9 +13,9 @@ serve(async (req) => {
   }
 
   try {
-    const { invoice_id } = await req.json();
-    if (!invoice_id) {
-      return new Response(JSON.stringify({ error: "invoice_id required" }), {
+    const { quote_id } = await req.json();
+    if (!quote_id) {
+      return new Response(JSON.stringify({ error: "quote_id required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -26,47 +26,37 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Load invoice with line items and client info
-    const { data: invoice, error: invErr } = await supabaseAdmin
-      .from("invoices")
-      .select("id, invoice_number, title, subtotal, discount_amount, tax_amount, total, balance_due, amount_paid, status, due_date, created_at, client_id, team_id, clients(first_name, last_name, company_name, email)")
-      .eq("id", invoice_id)
+    const { data: quote, error: qErr } = await supabaseAdmin
+      .from("quotes")
+      .select("id, quote_number, title, subtotal, discount_amount, tax_amount, total, status, valid_until, created_at, client_id, team_id, client_notes, clients(first_name, last_name, company_name, email)")
+      .eq("id", quote_id)
       .single();
 
-    if (invErr || !invoice) {
-      return new Response(JSON.stringify({ error: "Invoice not found" }), {
+    if (qErr || !quote) {
+      return new Response(JSON.stringify({ error: "Quote not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Load line items
     const { data: lineItems } = await supabaseAdmin
-      .from("invoice_line_items")
+      .from("quote_line_items")
       .select("description, quantity, unit_price, line_total, tax_rate, discount_percent")
-      .eq("invoice_id", invoice_id)
+      .eq("quote_id", quote_id)
       .order("sort_order", { ascending: true });
 
-    // Load company settings for branding
     const { data: company } = await supabaseAdmin
       .from("company_settings")
-      .select("company_name, logo_url, email, phone, address_line1, city, state, zip, stripe_charges_enabled, website")
-      .eq("team_id", invoice.team_id)
+      .select("company_name, logo_url, email, phone, address_line1, city, state, zip, website")
+      .eq("team_id", quote.team_id)
       .maybeSingle();
 
     return new Response(
-      JSON.stringify({
-        invoice,
-        line_items: lineItems || [],
-        company,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
+      JSON.stringify({ quote, line_items: lineItems || [], company }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {
-    console.error("Error loading public invoice:", error);
+    console.error("Error loading public quote:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

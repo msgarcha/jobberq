@@ -8,8 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { CollectPaymentSheet } from "@/components/invoice/CollectPaymentSheet";
+import { EmailDocumentDialog } from "@/components/EmailDocumentDialog";
 import { useInvoice, useInvoiceLineItems, useUpdateInvoice, useDeleteInvoice, usePayments, useDuplicateInvoice } from "@/hooks/useInvoices";
-import { ArrowLeft, Edit, Send, Trash2, Copy, RefreshCw, Download, Loader2, DollarSign, Link2 } from "lucide-react";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
+import { ArrowLeft, Edit, Send, Trash2, Copy, RefreshCw, Download, Loader2, DollarSign, Link2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
@@ -42,9 +44,11 @@ const InvoiceDetail = () => {
   const duplicateInvoice = useDuplicateInvoice();
 
   const [collectOpen, setCollectOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const { data: companySettings } = useCompanySettings();
 
   const handleSend = () => {
-    updateInvoice.mutate({ id: id!, status: "sent", sent_at: new Date().toISOString() });
+    setEmailOpen(true);
   };
 
   const handleResend = () => {
@@ -201,10 +205,9 @@ const InvoiceDetail = () => {
               <Button
                 variant="outline"
                 className="flex-1 gap-1.5"
-                onClick={handleResend}
-                disabled={updateInvoice.isPending}
+                onClick={() => setEmailOpen(true)}
               >
-                <Send className="h-4 w-4" /> Resend
+                <Mail className="h-4 w-4" /> Email
               </Button>
               <Button
                 className="flex-1 gap-1.5 bg-primary hover:bg-primary/90"
@@ -464,6 +467,22 @@ const InvoiceDetail = () => {
         balanceDue={Number(invoice.balance_due)}
         invoiceNumber={invoice.invoice_number}
         onPaymentRecorded={handlePaymentRecorded}
+      />
+
+      {/* Email Dialog */}
+      <EmailDocumentDialog
+        open={emailOpen}
+        onOpenChange={setEmailOpen}
+        type="invoice"
+        documentId={id!}
+        documentNumber={invoice.invoice_number}
+        documentTitle={invoice.title}
+        clientName={client ? `${client.first_name} ${client.last_name}` : undefined}
+        clientEmail={client?.email}
+        companyName={companySettings?.company_name}
+        total={Number(invoice.total)}
+        balanceDue={Number(invoice.balance_due)}
+        dueDate={invoice.due_date}
       />
     </DashboardLayout>
   );

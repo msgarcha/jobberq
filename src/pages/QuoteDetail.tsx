@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -5,9 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { EmailDocumentDialog } from "@/components/EmailDocumentDialog";
 import { useQuote, useQuoteLineItems, useUpdateQuote, useDeleteQuote } from "@/hooks/useQuotes";
 import { useCreateInvoice, useSaveInvoiceLineItems, useIncrementInvoiceNumber, useNextInvoiceNumber } from "@/hooks/useInvoices";
-import { ArrowLeft, Edit, Send, CheckCircle, FileText, Trash2, Download } from "lucide-react";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
+import { ArrowLeft, Edit, Send, CheckCircle, FileText, Trash2, Download, Mail, Link2 } from "lucide-react";
 import { format } from "date-fns";
 
 const statusStyles: Record<string, string> = {
@@ -29,9 +32,11 @@ const QuoteDetail = () => {
   const saveInvoiceLineItems = useSaveInvoiceLineItems();
   const { data: nextInvNumber } = useNextInvoiceNumber();
   const incrementInvNumber = useIncrementInvoiceNumber();
+  const { data: companySettings } = useCompanySettings();
+  const [emailOpen, setEmailOpen] = useState(false);
 
   const handleSend = () => {
-    updateQuote.mutate({ id: id!, status: "sent", sent_at: new Date().toISOString() });
+    setEmailOpen(true);
   };
 
   const handleApprove = () => {
@@ -116,6 +121,23 @@ const QuoteDetail = () => {
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.open(`/quotes/${id}/print`, '_blank')}>
               <Download className="h-3.5 w-3.5" /> PDF
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => {
+                const quoteLink = `${window.location.origin}/quote/view/${id}`;
+                navigator.clipboard.writeText(quoteLink);
+                import("sonner").then(({ toast }) => toast.success("Quote link copied!"));
+              }}
+            >
+              <Link2 className="h-3.5 w-3.5" /> Copy Link
+            </Button>
+            {(quote.status === "sent" || quote.status === "draft") && (
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEmailOpen(true)}>
+                <Mail className="h-3.5 w-3.5" /> Email
+              </Button>
+            )}
             {quote.status === "draft" && (
               <>
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/quotes/${id}/edit`)}>
@@ -251,6 +273,20 @@ const QuoteDetail = () => {
           </div>
         )}
       </div>
+
+      {/* Email Dialog */}
+      <EmailDocumentDialog
+        open={emailOpen}
+        onOpenChange={setEmailOpen}
+        type="quote"
+        documentId={id!}
+        documentNumber={quote.quote_number}
+        documentTitle={quote.title}
+        clientName={client ? `${client.first_name} ${client.last_name}` : undefined}
+        clientEmail={client?.email}
+        companyName={companySettings?.company_name}
+        total={Number(quote.total)}
+      />
     </DashboardLayout>
   );
 };
