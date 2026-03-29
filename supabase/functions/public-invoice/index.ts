@@ -50,7 +50,7 @@ serve(async (req) => {
     // Load company settings for branding
     const { data: company } = await supabaseAdmin
       .from("company_settings")
-      .select("company_name, logo_url, email, phone, address_line1, city, state, zip, stripe_charges_enabled")
+      .select("company_name, logo_url, email, phone, address_line1, city, state, zip, stripe_charges_enabled, website")
       .eq("team_id", invoice.team_id)
       .maybeSingle();
 

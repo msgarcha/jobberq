@@ -58,6 +58,7 @@ const App = () => (
             <Route path="/accept-invite" element={<AcceptInvite />} />
             <Route path="/review/:token" element={<ReviewForm />} />
             <Route path="/pay/:invoiceId" element={<PublicInvoicePay />} />
+            <Route path="/quote/view/:quoteId" element={<PublicQuoteView />} />
 
             {/* Onboarding (auth required, no company_settings check) */}
             <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
