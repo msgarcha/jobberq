@@ -8,8 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { CollectPaymentSheet } from "@/components/invoice/CollectPaymentSheet";
+import { EmailDocumentDialog } from "@/components/EmailDocumentDialog";
 import { useInvoice, useInvoiceLineItems, useUpdateInvoice, useDeleteInvoice, usePayments, useDuplicateInvoice } from "@/hooks/useInvoices";
-import { ArrowLeft, Edit, Send, Trash2, Copy, RefreshCw, Download, Loader2, DollarSign, Link2 } from "lucide-react";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
+import { ArrowLeft, Edit, Send, Trash2, Copy, RefreshCw, Download, Loader2, DollarSign, Link2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
