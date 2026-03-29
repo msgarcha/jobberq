@@ -121,6 +121,23 @@ const QuoteDetail = () => {
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.open(`/quotes/${id}/print`, '_blank')}>
               <Download className="h-3.5 w-3.5" /> PDF
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => {
+                const quoteLink = `${window.location.origin}/quote/view/${id}`;
+                navigator.clipboard.writeText(quoteLink);
+                import("sonner").then(({ toast }) => toast.success("Quote link copied!"));
+              }}
+            >
+              <Link2 className="h-3.5 w-3.5" /> Copy Link
+            </Button>
+            {(quote.status === "sent" || quote.status === "draft") && (
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setEmailOpen(true)}>
+                <Mail className="h-3.5 w-3.5" /> Email
+              </Button>
+            )}
             {quote.status === "draft" && (
               <>
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/quotes/${id}/edit`)}>
