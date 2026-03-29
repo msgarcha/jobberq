@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -5,9 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { EmailDocumentDialog } from "@/components/EmailDocumentDialog";
 import { useQuote, useQuoteLineItems, useUpdateQuote, useDeleteQuote } from "@/hooks/useQuotes";
 import { useCreateInvoice, useSaveInvoiceLineItems, useIncrementInvoiceNumber, useNextInvoiceNumber } from "@/hooks/useInvoices";
-import { ArrowLeft, Edit, Send, CheckCircle, FileText, Trash2, Download } from "lucide-react";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
+import { ArrowLeft, Edit, Send, CheckCircle, FileText, Trash2, Download, Mail, Link2 } from "lucide-react";
 import { format } from "date-fns";
 
 const statusStyles: Record<string, string> = {
