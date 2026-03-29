@@ -32,6 +32,8 @@ const QuoteDetail = () => {
   const saveInvoiceLineItems = useSaveInvoiceLineItems();
   const { data: nextInvNumber } = useNextInvoiceNumber();
   const incrementInvNumber = useIncrementInvoiceNumber();
+  const { data: companySettings } = useCompanySettings();
+  const [emailOpen, setEmailOpen] = useState(false);
 
   const handleSend = () => {
     updateQuote.mutate({ id: id!, status: "sent", sent_at: new Date().toISOString() });
