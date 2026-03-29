@@ -1,43 +1,40 @@
 
 
-## Fix Hero Carousel Images, Labels, and Color Contrast
+## Replace CinematicBanner + Fix Features Dashboard
 
-### Problems
-1. **Mismatched image-label pairs**: Unsplash photo IDs don't match their trade labels (e.g., a construction/wood worker labeled "Painter", a cleaning scene labeled "Plumbing")
-2. **Broken/missing Cleaning image**: `photo-1558618666-fcd25c85f82e` used twice and doesn't show cleaning
-3. **Poor color contrast**: Hero text and images blend into the dark teal background — no visual separation or pop
+### 1. Rewrite `src/components/landing/CinematicBanner.tsx`
 
-### Changes
+Replace the "Trusted by 10,000+" banner with a **"How QuickLinq Works"** section using the same dark teal overlay style as `FinalCTA.tsx`:
 
-#### 1. Replace all Unsplash image URLs with correct trade-matching photos
-Swap every image URL to one that actually depicts the labeled trade. Research and use verified Unsplash photo IDs:
+- Background: Unsplash image of a trade team working on-site
+- Dark overlay: `hsl(195 55% 10% / 0.88)` to `hsl(195 55% 10% / 0.95)` gradient
+- Dot pattern overlay (same as FinalCTA)
+- **4 numbered steps** in a horizontal row (responsive grid):
+  1. **Quote** — "Create and send branded quotes in minutes"
+  2. **Schedule** — "Assign crews and manage your calendar"
+  3. **Invoice** — "One-click invoicing from completed jobs"
+  4. **Get Paid** — "Online payments, automated reminders"
+- Each step: large teal number, cream title, muted description
+- Section header: "How QuickLinq Works" in cream/white, subtitle in muted text
 
-| Label | Current Issue | New Photo Subject |
-|-------|--------------|-------------------|
-| Landscaping | OK-ish | Lawn mower / garden work |
-| Roofing | Shows construction | Roofer on roof |
-| Plumbing | Shows cleaning | Plumber under sink |
-| Cleaning | Broken/wrong image | Person cleaning/mopping |
-| Carpentry | OK | Carpenter with wood |
-| Electrical | OK | Electrician at panel |
-| Painting | Shows woodwork | Painter with roller/brush |
-| HVAC | Unclear | HVAC tech with unit |
-| Property Mgmt | Shows house exterior | Person inspecting property |
-| Pressure Wash | Duplicate of cleaning | Pressure washing surface |
+### 2. Rewrite dashboard mockup in `src/components/landing/FeaturesGrid.tsx`
 
-**File**: `src/components/landing/HeroSection.tsx` (lines 5-19)
+Replace the stock Unsplash `<img>` (lines ~37-47) with a **static HTML/CSS mini-dashboard** inside the browser chrome frame, mirroring the real `Index.tsx` layout:
 
-#### 2. Add visual pop to hero section
-- Add a **subtle teal-to-transparent gradient border/glow** around the image mosaic columns
-- Add a **light teal accent strip or glow** behind the carousel area to separate it from the background
-- Make the "better than paperwork" accent text use a brighter, more vibrant teal (`#00C9A7` or similar) instead of the muted primary
-- Add a subtle **white/teal gradient overlay** at the top and bottom of scroll columns for a polished fade effect
+- **4 KPI cards** across top: Revenue (MTD), Outstanding, Overdue, Active Quotes — with fake sample data ($12,450 / $3,200 / $890 / 7)
+- **Quick action buttons row**: New Quote, New Invoice, New Job, New Client
+- **2-3 schedule items** below: mock job entries with times and status badges
+- All using existing Tailwind classes, scaled down with `text-[10px]` / `text-[8px]` sizing to fit the mockup frame
+- Keeps the browser chrome header already in place
 
-**File**: `src/components/landing/HeroSection.tsx` (lines 26-44, 52-65, 97-100)
+### 3. `src/pages/Landing.tsx`
 
-#### 3. Improve heading contrast
-- Make the main heading pure white instead of `hsl(var(--background))` which blends
-- Bump the subtext to a lighter shade for readability
+No changes needed — `CinematicBanner` import stays, it just renders new content.
 
-**File**: `src/components/landing/HeroSection.tsx` (lines 63-65, 68)
+### Files
+
+| File | Change |
+|------|--------|
+| `src/components/landing/CinematicBanner.tsx` | Full rewrite → "How It Works" with FinalCTA overlay style |
+| `src/components/landing/FeaturesGrid.tsx` | Replace `<img>` with HTML dashboard mockup |
 
