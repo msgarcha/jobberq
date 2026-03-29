@@ -48,7 +48,7 @@ const InvoiceDetail = () => {
   const { data: companySettings } = useCompanySettings();
 
   const handleSend = () => {
-    updateInvoice.mutate({ id: id!, status: "sent", sent_at: new Date().toISOString() });
+    setEmailOpen(true);
   };
 
   const handleResend = () => {
