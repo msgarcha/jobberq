@@ -205,10 +205,9 @@ const InvoiceDetail = () => {
               <Button
                 variant="outline"
                 className="flex-1 gap-1.5"
-                onClick={handleResend}
-                disabled={updateInvoice.isPending}
+                onClick={() => setEmailOpen(true)}
               >
-                <Send className="h-4 w-4" /> Resend
+                <Mail className="h-4 w-4" /> Email
               </Button>
               <Button
                 className="flex-1 gap-1.5 bg-primary hover:bg-primary/90"
