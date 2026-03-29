@@ -11,6 +11,63 @@ const features = [
   { icon: BarChart3, title: "Reports & Insights", desc: "Revenue trends, outstanding balances, and team performance at a glance." },
 ];
 
+function DashboardMockup() {
+  return (
+    <div className="bg-background p-3 sm:p-4 space-y-3 min-h-[260px]">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-4 gap-2">
+        {[
+          { label: "Revenue (MTD)", value: "$12,450", change: "+18%", positive: true },
+          { label: "Outstanding", value: "$3,200", change: "4 invoices", positive: false },
+          { label: "Overdue", value: "$890", change: "2 invoices", positive: false },
+          { label: "Active Quotes", value: "7", change: "+3 this week", positive: true },
+        ].map((kpi) => (
+          <div key={kpi.label} className="bg-card border border-border/50 rounded-lg p-2 sm:p-2.5">
+            <p className="text-[8px] sm:text-[9px] text-muted-foreground truncate">{kpi.label}</p>
+            <p className="text-sm sm:text-base font-bold font-display text-foreground">{kpi.value}</p>
+            <p className={`text-[7px] sm:text-[8px] ${kpi.positive ? "text-status-success" : "text-muted-foreground"}`}>
+              {kpi.change}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="flex gap-1.5">
+        {["New Quote", "New Invoice", "New Job", "New Client"].map((action) => (
+          <div
+            key={action}
+            className="flex-1 bg-primary/10 text-primary text-[8px] sm:text-[9px] font-medium rounded-md py-1.5 text-center"
+          >
+            {action}
+          </div>
+        ))}
+      </div>
+
+      {/* Schedule Items */}
+      <div className="space-y-1.5">
+        <p className="text-[9px] sm:text-[10px] font-semibold text-foreground">Today's Schedule</p>
+        {[
+          { time: "9:00 AM", title: "Lawn Care — Johnson Residence", status: "In Progress", color: "bg-status-warning" },
+          { time: "11:30 AM", title: "Deck Repair — Williams Property", status: "Scheduled", color: "bg-primary" },
+          { time: "2:00 PM", title: "Plumbing — Oak Street Office", status: "Pending", color: "bg-muted" },
+        ].map((item) => (
+          <div
+            key={item.time}
+            className="flex items-center gap-2 bg-muted/30 rounded-md px-2 py-1.5"
+          >
+            <span className="text-[8px] text-muted-foreground w-12 shrink-0">{item.time}</span>
+            <span className="text-[8px] sm:text-[9px] text-foreground truncate flex-1">{item.title}</span>
+            <span className={`${item.color} text-[7px] text-white px-1.5 py-0.5 rounded-full`}>
+              {item.status}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function FeaturesGrid() {
   const { ref, inView } = useInView();
 
@@ -27,7 +84,7 @@ export default function FeaturesGrid() {
           </p>
         </div>
 
-        {/* App mockup */}
+        {/* Dashboard mockup */}
         <div className={`mb-14 transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
           <div className="relative mx-auto max-w-4xl rounded-2xl overflow-hidden shadow-warm-lg border border-border/50">
             {/* Browser chrome */}
@@ -41,13 +98,8 @@ export default function FeaturesGrid() {
                 <div className="bg-background/60 rounded-md px-3 py-1 text-[10px] text-muted-foreground text-center">app.quicklinq.com/dashboard</div>
               </div>
             </div>
-            {/* Screenshot */}
-            <img
-              src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=900&h=500&fit=crop"
-              alt="QuickLinq dashboard overview"
-              className="w-full h-auto"
-              loading="lazy"
-            />
+            {/* Mini dashboard */}
+            <DashboardMockup />
           </div>
         </div>
 
