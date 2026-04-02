@@ -14,6 +14,7 @@ import {
   Star,
   Shield,
 } from "lucide-react";
+import QuickLinqLogo from "@/components/QuickLinqLogo";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -64,9 +65,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground font-display font-bold text-sm">
-            QL
-          </div>
+          <QuickLinqLogo size={36} />
           {!collapsed && (
             <div className="flex flex-col">
               <span className="font-display font-bold text-lg text-sidebar-accent-foreground tracking-tight leading-tight">

@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { useUpsertCompanySettings } from "@/hooks/useCompanySettings";
 import { Building2, MapPin, Settings2, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
+import QuickLinqLogo from "@/components/QuickLinqLogo";
 
 const paymentTermOptions = [
   { value: "due_on_receipt", label: "Due on Receipt" },
@@ -81,9 +82,7 @@ export default function Onboarding() {
       {/* Header */}
       <div className="border-b border-border/50 bg-background">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            QL
-          </div>
+          <QuickLinqLogo size={36} />
           <div>
             <h1 className="font-bold text-lg" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               Welcome to QuickLinq

@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
+import QuickLinqLogo from '@/components/QuickLinqLogo';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -78,7 +79,7 @@ export default function Login() {
           </div>
           <Card className="shadow-warm-md border-border/50">
             <CardHeader className="text-center pb-2">
-              <Link to="/landing" className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-bold text-xl hover:opacity-90 transition-opacity">QL</Link>
+              <Link to="/landing" className="mx-auto mb-4 flex items-center justify-center hover:opacity-90 transition-opacity"><QuickLinqLogo size={56} /></Link>
               <CardTitle className="text-2xl">Reset Password</CardTitle>
               <CardDescription>Enter your email to receive a reset link.</CardDescription>
             </CardHeader>
@@ -112,7 +113,7 @@ export default function Login() {
         </div>
         <Card className="shadow-warm-md border-border/50 overflow-hidden">
           <CardHeader className="text-center pb-2 px-5">
-            <Link to="/landing" className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-bold text-xl hover:opacity-90 transition-opacity">QL</Link>
+            <Link to="/landing" className="mx-auto mb-4 flex items-center justify-center hover:opacity-90 transition-opacity"><QuickLinqLogo size={56} /></Link>
             <CardTitle className="text-2xl">QuickLinq</CardTitle>
             <CardDescription>Send Quotes. Win Jobs. Get Paid.</CardDescription>
           </CardHeader>

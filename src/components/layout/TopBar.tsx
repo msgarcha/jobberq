@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Bell, Plus, Search, Users, FileText, Receipt, Briefcase, Settings, KeyRound, LogOut } from "lucide-react";
+import QuickLinqLogo from "@/components/QuickLinqLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -74,9 +75,7 @@ export function TopBar() {
     return (
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-card/80 backdrop-blur-sm px-4 border-b">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-display font-bold text-xs">
-            QL
-          </div>
+          <QuickLinqLogo size={32} />
           <span className="font-display font-bold text-base tracking-tight">QuickLinq</span>
         </div>
         <div className="flex items-center gap-2">

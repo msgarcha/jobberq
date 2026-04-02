@@ -1,3 +1,5 @@
+import QuickLinqLogo from "@/components/QuickLinqLogo";
+
 export default function LandingFooter() {
   return (
     <footer className="border-t border-border/50 py-12 px-4 sm:px-6 bg-background">
@@ -5,7 +7,7 @@ export default function LandingFooter() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-10">
           <div className="col-span-2 sm:col-span-1">
             <div className="flex items-center gap-2 mb-3">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs font-display">QL</div>
+              <QuickLinqLogo size={32} />
               <span className="font-bold font-display">QuickLinq</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
