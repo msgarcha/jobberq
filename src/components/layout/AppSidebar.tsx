@@ -14,6 +14,7 @@ import {
   Star,
   Shield,
 } from "lucide-react";
+import QuickLinqLogo from "@/components/QuickLinqLogo";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
