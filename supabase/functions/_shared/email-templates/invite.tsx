@@ -31,6 +31,7 @@ export const InviteEmail = ({
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>You've been invited</Heading>
+        <Text style={tagline}>Send Quotes. Win Jobs. Get Paid.</Text>
         <Text style={text}>
           You've been invited to join{' '}
           <Link href={siteUrl} style={link}>

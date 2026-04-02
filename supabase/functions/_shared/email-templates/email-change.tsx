@@ -33,6 +33,7 @@ export const EmailChangeEmail = ({
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>Confirm your email change</Heading>
+        <Text style={tagline}>Send Quotes. Win Jobs. Get Paid.</Text>
         <Text style={text}>
           You requested to change your email address for {siteName} from{' '}
           <Link href={`mailto:${email}`} style={link}>

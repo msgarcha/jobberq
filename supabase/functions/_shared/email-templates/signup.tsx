@@ -33,6 +33,7 @@ export const SignupEmail = ({
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>Welcome to {siteName}!</Heading>
+        <Text style={tagline}>Send Quotes. Win Jobs. Get Paid.</Text>
         <Text style={text}>
           Thanks for signing up! Please confirm your email address (
           <Link href={`mailto:${recipient}`} style={link}>

@@ -28,6 +28,7 @@ export const MagicLinkEmail = ({
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>Your login link</Heading>
+        <Text style={tagline}>Send Quotes. Win Jobs. Get Paid.</Text>
         <Text style={text}>
           Click the button below to log in to {siteName}. This link will expire
           shortly.

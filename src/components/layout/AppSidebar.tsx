@@ -68,9 +68,12 @@ export function AppSidebar() {
             QL
           </div>
           {!collapsed && (
-            <span className="font-display font-bold text-lg text-sidebar-accent-foreground tracking-tight">
-              QuickLinq
-            </span>
+            <div className="flex flex-col">
+              <span className="font-display font-bold text-lg text-sidebar-accent-foreground tracking-tight leading-tight">
+                QuickLinq
+              </span>
+              <span className="text-[9px] text-sidebar-foreground/40 tracking-wide">Send Quotes. Win Jobs. Get Paid.</span>
+            </div>
           )}
         </div>
       </SidebarHeader>

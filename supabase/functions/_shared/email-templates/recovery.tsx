@@ -28,6 +28,7 @@ export const RecoveryEmail = ({
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>Reset your password</Heading>
+        <Text style={tagline}>Send Quotes. Win Jobs. Get Paid.</Text>
         <Text style={text}>
           We received a request to reset your password for {siteName}. Click
           the button below to choose a new password.
