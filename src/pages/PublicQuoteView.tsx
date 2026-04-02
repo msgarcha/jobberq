@@ -259,7 +259,7 @@ export default function PublicQuoteView() {
           )}
 
           {/* Action buttons */}
-          <div className="px-6 py-5 bg-[hsl(40,23%,96%)] border-t border-[hsl(40,15%,88%)] space-y-3">
+          <div className="px-6 py-5 bg-[hsl(40,23%,96%)] border-t border-[hsl(40,15%,88%)] space-y-3 no-print">
             {canApprove && (
               <Button
                 onClick={handleApprove}

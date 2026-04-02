@@ -350,7 +350,7 @@ export default function PublicInvoicePay() {
           ) : null}
 
           {/* Download PDF */}
-          <div className="px-6 py-4 border-t border-[hsl(40,15%,88%)]">
+          <div className="px-6 py-4 border-t border-[hsl(40,15%,88%)] no-print">
             <Button
               variant="outline"
               onClick={() => window.print()}
