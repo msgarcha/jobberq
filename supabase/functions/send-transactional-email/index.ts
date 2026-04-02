@@ -73,7 +73,6 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
-  }
 
   // Parse request body
   let templateName: string
