@@ -1,54 +1,74 @@
 
 
-## Fix Critical Email Issues (3 Problems)
+## Mobile UI/UX Fixes -- 6 Issues + General Polish
 
-### Problem Summary
+### 1. Login Page -- Button Outside Container (IMG_2180)
+The "Forgot password?" button renders outside the card on small screens due to the `min-height: 44px` CSS rule applying to all buttons on mobile. Fix: scope the `min-height` rule to exclude link-variant buttons, and ensure the login card has proper bottom padding.
 
-1. **Signup verification email not sent**: Auth logs show `immediate_login_after_signup: true` — auto-confirm is enabled, so no verification email is sent. Users bypass email verification entirely.
-2. **No onboarding/welcome email**: No welcome email template exists — this needs to be created as a transactional email.
-3. **Quote/Invoice email returns 401**: The `send-transactional-email` function has `verify_jwt = true` in `config.toml`, and edge function logs show `POST | 401` responses. The client is calling the function but the JWT is being rejected or not passed.
+**File:** `src/index.css` -- adjust the mobile `min-height` rule to exclude `variant="link"` buttons
+**File:** `src/pages/Login.tsx` -- add `pb-6` to CardContent, ensure the forgot password button sits inside the card
 
-### Root Causes & Fixes
+### 2. Dashboard KPI Cards -- Make Clickable (IMG_2183)
+The 4 KPI cards (Revenue, Outstanding, Overdue, Active Quotes) are not clickable. Each should navigate to the relevant page.
 
-#### Issue 1: Disable Auto-Confirm for Email Signups
-- Use the auth configuration tool to **disable auto-confirm email signups**
-- Once disabled, Supabase Auth will trigger the `auth-email-hook` to send a verification email before the user can sign in
-- Update `src/pages/Login.tsx` to show a "Check your email to verify" message after signup instead of immediately redirecting
+**File:** `src/pages/Index.tsx`
+- Revenue (MTD) → `/invoices?status=paid`
+- Outstanding → `/invoices?status=sent`
+- Overdue → `/invoices?status=overdue`
+- Active Quotes → `/quotes`
+- Add `cursor-pointer` and `onClick` to each KPI card
 
-#### Issue 2: Welcome/Onboarding Email
-- Create a new transactional email template `welcome-email.tsx` in `_shared/transactional-email-templates/`
-- Register it in `registry.ts`
-- Trigger it from `AuthContext.tsx` or `Onboarding.tsx` after the user completes onboarding
-- Deploy `send-transactional-email`
+### 3. Quote Detail -- Mobile-Friendly Layout
+The quote detail page (QuoteDetail.tsx) has a horizontal button row that overflows on mobile. Needs the same mobile treatment as InvoiceDetail.
 
-#### Issue 3: Fix 401 on send-transactional-email
-- The 401 is coming from Supabase's gateway JWT verification. The function has `verify_jwt = true` which is correct for authenticated users. However, the client might not be passing the JWT correctly, or the user's session may be invalid.
-- **Fix**: Change `verify_jwt = false` in `config.toml` for `send-transactional-email` and add manual JWT validation inside the function instead. This is more resilient and matches how other functions in the project work.
-- Alternatively, verify the Supabase client is correctly passing auth headers — but since `supabase.functions.invoke()` should do this automatically, the safer fix is to handle auth in-function.
+**File:** `src/pages/QuoteDetail.tsx`
+- Replace the desktop-only `flex gap-2` action bar with a mobile-responsive layout
+- On mobile: stack action buttons as full-width rows inside the card (like InvoiceDetail's hero card pattern)
+- On desktop: keep the horizontal button row
+- Add mobile line items view (stacked cards instead of table) matching InvoiceDetail's `sm:hidden` pattern
+- Add `pb-24` to the container for bottom nav clearance
 
-### Implementation Steps
+### 4. Recent Activity -- Include Quotes + Meaningful Descriptions
+Currently `useRecentActivity` only fetches invoices. It should also include quotes and show descriptive activity text (e.g., "Invoice INV-001 marked as paid", "Quote QT-005 approved by client").
 
-| # | Step | Files |
-|---|------|-------|
-| 1 | Disable auto-confirm email signups via auth config tool | Auth settings |
-| 2 | Update Login page to show verification message after signup | `src/pages/Login.tsx` |
-| 3 | Set `verify_jwt = false` for `send-transactional-email` and add in-function auth check | `supabase/config.toml`, `supabase/functions/send-transactional-email/index.ts` |
-| 4 | Create welcome email template | `supabase/functions/_shared/transactional-email-templates/welcome-email.tsx` |
-| 5 | Register welcome template in registry | `supabase/functions/_shared/transactional-email-templates/registry.ts` |
-| 6 | Add welcome email trigger after onboarding | `src/pages/Onboarding.tsx` |
-| 7 | Deploy all updated edge functions | `send-transactional-email`, `auth-email-hook` |
-| 8 | Test all email flows via edge function logs | Verify auth emails queue, transactional emails send |
+**File:** `src/hooks/useInvoices.ts` -- update `useRecentActivity`:
+- Fetch recent quotes alongside invoices
+- Map status to human-readable descriptions: draft→"created", sent→"sent to client", paid→"marked as paid", approved→"approved by client", viewed→"viewed by client", overdue→"is overdue"
+- Merge and sort both lists by `updated_at` descending
+- Include timestamp in the activity item
 
-### Email Flows After Fix
+**File:** `src/pages/Index.tsx` -- update activity item rendering:
+- Use different icons for invoices vs quotes (Receipt vs FileText)
+- Navigate to correct detail page based on type
+- Show relative time (e.g., "2h ago", "Yesterday")
 
-```text
-Signup → verification email (auth-email-hook) → user verifies → login
-Onboarding complete → welcome email (send-transactional-email)
-Send Quote → document email (send-transactional-email) ✓
-Send Invoice → document email (send-transactional-email) ✓
-Password Reset → recovery email (auth-email-hook)
-```
+### 5. Client Viewed Timestamp
+Invoices already have `viewed_at`. Quotes do not.
 
-### Key Detail: Why 401 Happens
-The `send-transactional-email` function uses `verify_jwt = true`, which means Supabase's API gateway validates the JWT before the request reaches the function. If the user's token is expired or the session refresh failed, the gateway returns 401 without the function ever executing — hence no error logs in the function itself. Setting `verify_jwt = false` and checking auth manually inside the function gives better error messages and more control.
+**Database migration:** Add `viewed_at` column to the `quotes` table.
+
+**File:** `supabase/functions/public-quote/index.ts` -- record `viewed_at` when the public quote is accessed (same pattern as public-invoice)
+**File:** `src/pages/QuoteDetail.tsx` -- display "Viewed" timestamp in the Details card
+**File:** `src/pages/InvoiceDetail.tsx` -- display "Viewed" timestamp in the Details card (check if already shown)
+
+### 6. FAB Toggle (Center + Button)
+Looking at the code, the FAB already toggles correctly (`setFabOpen((p) => !p)`). The X icon shows when open and clicking it closes. This appears to already work. Will verify and ensure the overlay click also closes it (it does via `onClick={() => setFabOpen(false)}`). No changes needed unless testing reveals a bug.
+
+### Additional Mobile Polish
+- **All detail pages**: Ensure `pb-24` padding bottom for bottom nav clearance
+- **Quote detail mobile actions**: Add Copy Link, Email, Edit, Send as stacked buttons in a hero card (matching InvoiceDetail pattern)
+- **Relative timestamps**: Add a `formatRelativeTime` utility for "2h ago", "Yesterday" style times in activity feed
+
+### Summary of Changes
+
+| # | File | Change |
+|---|------|--------|
+| 1 | `src/index.css` | Fix mobile button min-height for link buttons |
+| 2 | `src/pages/Login.tsx` | Ensure card padding contains all elements |
+| 3 | `src/pages/Index.tsx` | Clickable KPIs, improved activity rendering with icons + relative time |
+| 4 | `src/hooks/useInvoices.ts` | Expand `useRecentActivity` to include quotes + descriptive text |
+| 5 | `src/pages/QuoteDetail.tsx` | Mobile-responsive layout with hero card, stacked actions, mobile line items |
+| 6 | Database migration | Add `viewed_at` to quotes table |
+| 7 | `supabase/functions/public-quote/index.ts` | Record viewed_at on public access |
+| 8 | `src/pages/InvoiceDetail.tsx` | Show viewed_at timestamp in Details card |
 
