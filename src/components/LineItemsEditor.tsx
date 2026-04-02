@@ -304,9 +304,14 @@ export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 
             {items.map((item, i) => (
               <TableRow key={i}>
                 <TableCell className="p-1.5">
-                  <Select value={item.service_id || ""} onValueChange={(v) => selectService(i, v)} disabled={disabled}>
+                  <Select value={item.service_id || ""} onValueChange={(v) => handleServiceChange(i, v)} disabled={disabled}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select…" /></SelectTrigger>
-                    <SelectContent>{services?.map((s) => (<SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>))}</SelectContent>
+                    <SelectContent>
+                      {services?.map((s) => (<SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>))}
+                      <SelectItem value="__new__" className="text-primary font-medium">
+                        <span className="flex items-center gap-1.5"><Plus className="h-3.5 w-3.5" /> Add New Service</span>
+                      </SelectItem>
+                    </SelectContent>
                   </Select>
                 </TableCell>
                 <TableCell className="p-1.5">
