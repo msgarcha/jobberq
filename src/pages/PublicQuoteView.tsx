@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, CheckCircle2, AlertCircle, FileText, Phone, Mail, Globe } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, FileText, Phone, Mail, Globe, Download } from "lucide-react";
 
 interface QuoteData {
   quote: {
