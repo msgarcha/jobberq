@@ -1,37 +1,26 @@
 
 
-## Unified QuickLinq Branding Update
+## Fix Hero Section Broken Images
 
-**Brand**: QuickLinq  
-**Tagline**: Send Quotes. Win Jobs. Get Paid.
+### Problem
+Two Unsplash images return errors (removed/unavailable):
+1. **Roofing** (Chris W.) - `photo-1635424709498-bb2be0baa304` - broken
+2. **HVAC** (Kevin P.) - `photo-1621460249485-4e4f92d9689a` - broken
 
-### Files to Update
+Additionally, "Property Mgmt" is not a trade/service job type. It should be replaced with something more fitting.
 
-| # | File | Change |
-|---|------|--------|
-| 1 | `index.html` | Update `<title>` and all meta tags to "QuickLinq — Send Quotes. Win Jobs. Get Paid." |
-| 2 | `src/components/landing/LandingNav.tsx` | Already correct (QuickLinq). No change needed. |
-| 3 | `src/components/landing/LandingFooter.tsx` | Fix "ServicePro" → "QuickLinq". Update description to include tagline. |
-| 4 | `src/components/landing/HeroSection.tsx` | Add tagline as the subtitle/subheading under main headline |
-| 5 | `src/components/landing/FinalCTA.tsx` | Reference tagline in CTA copy |
-| 6 | `src/pages/Login.tsx` | Change `CardDescription` from "Manage your service business with ease." → "Send Quotes. Win Jobs. Get Paid." |
-| 7 | `src/pages/Onboarding.tsx` | Update welcome subtitle to include tagline |
-| 8 | `src/components/layout/AppSidebar.tsx` | Add small tagline text under "QuickLinq" in collapsed=false state |
-| 9 | `supabase/functions/auth-email-hook/index.ts` | Change `SITE_NAME` from `"jobberq"` → `"QuickLinq"` |
-| 10 | `supabase/functions/send-transactional-email/index.ts` | Change `SITE_NAME` from `"jobberq"` → `"QuickLinq"` |
-| 11 | `supabase/functions/_shared/transactional-email-templates/document-email.tsx` | Already "QuickLinq". No change needed. |
-| 12 | All 6 auth email templates (`signup`, `recovery`, `magic-link`, `invite`, `email-change`, `reauthentication`) | Add "Send Quotes. Win Jobs. Get Paid." as a subtle tagline below the heading in each template |
-| 13 | `src/pages/PublicInvoicePay.tsx` | Ensure "Powered by QuickLinq" footer stays. No change needed. |
-| 14 | `src/pages/PublicQuoteView.tsx` | Same as above. No change needed. |
+### Fix in `src/components/landing/HeroSection.tsx`
 
-### Edge Function Redeployment
+Replace the 3 broken/mismatched images with verified working Unsplash URLs:
 
-After updating `auth-email-hook` and `send-transactional-email`, both must be redeployed for changes to take effect.
+| Slot | Current Label | Issue | New Image | New Label |
+|------|--------------|-------|-----------|-----------|
+| Column 1, #2 | Roofing | Broken URL | Roofer on roof (`photo-1632759145351-1d592919f522`) | Roofing |
+| Column 2, #3 | HVAC | Broken URL | HVAC technician (`photo-1558618666-fcd25c85f82e`) | HVAC |
+| Column 2, #4 | Property Mgmt | Wrong trade type | Concrete/masonry worker (`photo-1590846083693-f23fdede555c`) | Concrete |
 
-### Summary
+All replacement URLs will use the same `?w=600&h=800&fit=crop&crop=center` parameters.
 
-- Fix the one "ServicePro" reference in the footer
-- Fix `SITE_NAME = "jobberq"` in both edge functions → `"QuickLinq"`
-- Add the tagline "Send Quotes. Win Jobs. Get Paid." to: login page, onboarding, hero section, all auth email templates, and the landing footer
-- Keep existing correct "QuickLinq" references as-is
+### File
+`src/components/landing/HeroSection.tsx` -- lines 7, 16, 17 updated with new URLs and labels.
 
