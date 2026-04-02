@@ -40,6 +40,7 @@ import SuperAdmin from "./pages/SuperAdmin";
 import NotFound from "./pages/NotFound";
 import PublicInvoicePay from "./pages/PublicInvoicePay";
 import PublicQuoteView from "./pages/PublicQuoteView";
+import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/review/:token" element={<ReviewForm />} />
             <Route path="/pay/:invoiceId" element={<PublicInvoicePay />} />
             <Route path="/quote/view/:quoteId" element={<PublicQuoteView />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
 
             {/* Onboarding (auth required, no company_settings check) */}
             <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />

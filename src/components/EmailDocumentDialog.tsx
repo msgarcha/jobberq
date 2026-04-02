@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Send, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EmailDocumentDialogProps {
   open: boolean;
@@ -27,6 +28,7 @@ export function EmailDocumentDialog({
   open,
   onOpenChange,
   type,
+  documentId,
   documentNumber,
   documentTitle,
   clientName,
@@ -82,12 +84,44 @@ ${companyName || ""}`.trim();
 
     setSending(true);
     try {
-      // TODO: Wire to send-document-email edge function when email domain is set up
-      // For now, simulate sending and mark as sent
-      await new Promise((r) => setTimeout(r, 800));
+      // Build CTA URL
+      const origin = window.location.origin;
+      const ctaUrl = type === "invoice"
+        ? `${origin}/pay/${documentId}`
+        : `${origin}/quote/view/${documentId}`;
+      const ctaLabel = type === "invoice" ? "View & Pay Invoice" : "View & Approve Estimate";
+
+      const { error } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "document-email",
+          recipientEmail: toEmail.trim(),
+          idempotencyKey: `${type}-email-${documentId}-${Date.now()}`,
+          templateData: {
+            companyName: companyName || "Our Company",
+            clientName: clientName || "there",
+            body,
+            ctaUrl,
+            ctaLabel,
+            documentType: label,
+            documentNumber,
+            subject,
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      // Update document status to "sent"
+      if (type === "invoice") {
+        await supabase.from("invoices").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", documentId);
+      } else {
+        await supabase.from("quotes").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", documentId);
+      }
+
       toast.success(`${label} sent to ${toEmail}`);
       handleOpenChange(false);
     } catch (err: any) {
+      console.error("Email send error:", err);
       toast.error(err.message || "Failed to send email");
     } finally {
       setSending(false);
