@@ -75,7 +75,7 @@ export function TopBar() {
     return (
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-card/80 backdrop-blur-sm px-4 border-b">
         <div className="flex items-center gap-2">
-          <QuickLinqLogo size={32} />
+          <QuickLinqLogo size={28} variant="green" />
           <span className="font-display font-bold text-base tracking-tight">QuickLinq</span>
         </div>
         <div className="flex items-center gap-2">

@@ -7,7 +7,7 @@ export default function LandingFooter() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-10">
           <div className="col-span-2 sm:col-span-1">
             <div className="flex items-center gap-2 mb-3">
-              <QuickLinqLogo size={32} />
+              <QuickLinqLogo size={24} variant="green" />
               <span className="font-bold font-display">QuickLinq</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
