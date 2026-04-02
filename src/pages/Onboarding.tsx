@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { useUpsertCompanySettings } from "@/hooks/useCompanySettings";
 import { Building2, MapPin, Settings2, ArrowRight, ArrowLeft, CheckCircle2 } from "lucide-react";
+import QuickLinqLogo from "@/components/QuickLinqLogo";
 
 const paymentTermOptions = [
   { value: "due_on_receipt", label: "Due on Receipt" },
