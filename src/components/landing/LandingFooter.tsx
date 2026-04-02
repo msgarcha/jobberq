@@ -1,3 +1,5 @@
+import QuickLinqLogo from "@/components/QuickLinqLogo";
+
 export default function LandingFooter() {
   return (
     <footer className="border-t border-border/50 py-12 px-4 sm:px-6 bg-background">
