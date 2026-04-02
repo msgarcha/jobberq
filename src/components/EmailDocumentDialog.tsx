@@ -91,25 +91,41 @@ ${companyName || ""}`.trim();
         : `${origin}/quote/view/${documentId}`;
       const ctaLabel = type === "invoice" ? "View & Pay Invoice" : "View & Approve Estimate";
 
-      const { error } = await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "document-email",
-          recipientEmail: toEmail.trim(),
-          idempotencyKey: `${type}-email-${documentId}-${Date.now()}`,
-          templateData: {
-            companyName: companyName || "Our Company",
-            clientName: clientName || "there",
-            body,
-            ctaUrl,
-            ctaLabel,
-            documentType: label,
-            documentNumber,
-            subject,
-          },
+      const emailPayload = {
+        templateName: "document-email",
+        recipientEmail: toEmail.trim(),
+        idempotencyKey: `${type}-email-${documentId}-${Date.now()}`,
+        templateData: {
+          companyName: companyName || "Our Company",
+          clientName: clientName || "there",
+          body,
+          ctaUrl,
+          ctaLabel,
+          documentType: label,
+          documentNumber,
+          subject,
         },
+      };
+
+      const { error } = await supabase.functions.invoke("send-transactional-email", {
+        body: emailPayload,
       });
 
       if (error) throw error;
+
+      // Send a copy to the logged-in user if requested
+      if (sendCopy) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email && user.email !== toEmail.trim()) {
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              ...emailPayload,
+              recipientEmail: user.email,
+              idempotencyKey: `${type}-copy-${documentId}-${Date.now()}`,
+            },
+          }).catch(console.error);
+        }
+      }
 
       // Update document status to "sent"
       if (type === "invoice") {
