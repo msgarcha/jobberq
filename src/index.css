@@ -227,14 +227,20 @@
     visibility: hidden;
   }
   .print-document,
-  .print-document * {
+  .print-document *,
+  .print-public-page,
+  .print-public-page * {
     visibility: visible;
   }
-  .print-document {
+  .print-document,
+  .print-public-page {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
+  }
+  .no-print {
+    display: none !important;
   }
   @page {
     margin: 0.5in;

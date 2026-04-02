@@ -4,7 +4,7 @@ import { Elements, CardElement, useStripe, useElements } from "@stripe/react-str
 import { getStripe } from "@/lib/stripe";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, CreditCard, Lock, CheckCircle2, AlertCircle, FileText, Phone, Mail, Globe } from "lucide-react";
+import { Loader2, CreditCard, Lock, CheckCircle2, AlertCircle, FileText, Phone, Mail, Globe, Download } from "lucide-react";
 
 interface InvoiceData {
   invoice: {
@@ -229,7 +229,7 @@ export default function PublicInvoicePay() {
   const stripePromise = getStripe();
 
   return (
-    <div className="min-h-screen bg-[hsl(40,23%,96%)]">
+    <div className="min-h-screen bg-[hsl(40,23%,96%)] print-public-page">
       {/* Company Header Bar */}
       <div className="bg-[hsl(192,60%,22%)] text-white">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
@@ -331,7 +331,7 @@ export default function PublicInvoicePay() {
 
           {/* Payment Section */}
           {balanceDue > 0 && company?.stripe_charges_enabled && stripePromise ? (
-            <div className="px-6 py-5 bg-[hsl(40,23%,96%)] border-t border-[hsl(40,15%,88%)]">
+            <div className="px-6 py-5 bg-[hsl(40,23%,96%)] border-t border-[hsl(40,15%,88%)] no-print">
               <h3 className="text-sm font-semibold text-[hsl(200,30%,14%)] mb-3 flex items-center gap-2">
                 <CreditCard className="h-4 w-4" /> Pay Now
               </h3>
@@ -348,6 +348,17 @@ export default function PublicInvoicePay() {
               Online payment is not available for this invoice. Please contact {company?.company_name || "the business"} directly.
             </div>
           ) : null}
+
+          {/* Download PDF */}
+          <div className="px-6 py-4 border-t border-[hsl(40,15%,88%)] no-print">
+            <Button
+              variant="outline"
+              onClick={() => window.print()}
+              className="w-full h-10 gap-2 text-sm"
+            >
+              <Download className="h-4 w-4" /> Download PDF
+            </Button>
+          </div>
         </div>
 
         {/* Company Footer */}
