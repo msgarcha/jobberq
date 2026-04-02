@@ -4,7 +4,7 @@ import { ArrowRight, Shield, Star } from "lucide-react";
 
 const columnOneImages = [
   { src: "https://images.unsplash.com/photo-1589923188900-85dae523342b?w=600&h=800&fit=crop&crop=center", label: "Landscaping", name: "Marcus T." },
-  { src: "https://images.unsplash.com/photo-1635424709498-bb2be0baa304?w=600&h=800&fit=crop&crop=center", label: "Roofing", name: "Chris W." },
+  { src: "https://images.unsplash.com/photo-1632759145351-1d592919f522?w=600&h=800&fit=crop&crop=center", label: "Roofing", name: "Chris W." },
   { src: "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=600&h=800&fit=crop&crop=center", label: "Plumbing", name: "Sarah K." },
   { src: "https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=600&h=800&fit=crop&crop=center", label: "Cleaning", name: "Maria G." },
   { src: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=800&fit=crop&crop=center", label: "Carpentry", name: "Tom B." },
@@ -13,8 +13,8 @@ const columnOneImages = [
 const columnTwoImages = [
   { src: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&h=800&fit=crop&crop=center", label: "Electrical", name: "James R." },
   { src: "https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?w=600&h=800&fit=crop&crop=center", label: "Painting", name: "David L." },
-  { src: "https://images.unsplash.com/photo-1621460249485-4e4f92d9689a?w=600&h=800&fit=crop&crop=center", label: "HVAC", name: "Kevin P." },
-  { src: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=800&fit=crop&crop=center", label: "Property Mgmt", name: "Lisa H." },
+  { src: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=800&fit=crop&crop=center", label: "HVAC", name: "Kevin P." },
+  { src: "https://images.unsplash.com/photo-1590846083693-f23fdede555c?w=600&h=800&fit=crop&crop=center", label: "Concrete", name: "Lisa H." },
   { src: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=800&fit=crop&crop=center", label: "Pressure Wash", name: "Ryan S." },
 ];
 
