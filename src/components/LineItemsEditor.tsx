@@ -60,8 +60,43 @@ interface Props {
 
 export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 }: Props) {
   const { data: services } = useServices({ status: "active" });
+  const createService = useCreateService();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
+
+  const [newServiceOpen, setNewServiceOpen] = useState(false);
+  const [newServiceRow, setNewServiceRow] = useState<number | null>(null);
+  const [newName, setNewName] = useState("");
+  const [newPrice, setNewPrice] = useState("");
+  const [newTax, setNewTax] = useState("");
+
+  const openNewServiceDialog = (rowIndex: number) => {
+    setNewServiceRow(rowIndex);
+    setNewName("");
+    setNewPrice("");
+    setNewTax("");
+    setNewServiceOpen(true);
+  };
+
+  const handleCreateService = async () => {
+    if (!newName.trim()) return;
+    const result = await createService.mutateAsync({
+      name: newName.trim(),
+      default_price: parseFloat(newPrice) || 0,
+      tax_rate: parseFloat(newTax) || 0,
+      is_active: true,
+    });
+    if (result && newServiceRow != null) {
+      const svc = result as any;
+      update(newServiceRow, {
+        service_id: svc.id,
+        description: svc.name + (svc.description ? ` – ${svc.description}` : ""),
+        unit_price: Number(svc.default_price),
+        tax_rate: svc.tax_rate != null ? Number(svc.tax_rate) : 0,
+      });
+    }
+    setNewServiceOpen(false);
+  };
 
   const emptyItem: LineItem = {
     service_id: null,
