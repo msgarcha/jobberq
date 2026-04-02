@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useDashboardStats, useRecentActivity } from "@/hooks/useInvoices";
+import { useDashboardStats, useRecentActivity, formatRelativeTime } from "@/hooks/useInvoices";
 import { useJobsByDate } from "@/hooks/useJobs";
 import { format } from "date-fns";
 
@@ -36,6 +36,8 @@ const statusColors: Record<string, string> = {
   approved: "bg-status-success text-status-success-foreground",
   overdue: "bg-status-danger text-status-danger-foreground",
   viewed: "bg-status-warning text-status-warning-foreground",
+  converted: "bg-primary text-primary-foreground",
+  expired: "bg-status-danger text-status-danger-foreground",
 };
 
 const quickActions = [
@@ -66,10 +68,10 @@ const Index = () => {
   const tipOfDay = tips[new Date().getDate() % tips.length];
 
   const kpis = [
-    { label: "Revenue (MTD)", value: `$${(stats?.revenueMTD || 0).toLocaleString()}`, icon: DollarSign, color: "text-primary" },
-    { label: "Outstanding", value: `$${(stats?.outstanding || 0).toLocaleString()}`, sub: `${stats?.unpaidCount || 0} unpaid`, icon: Clock, color: "text-status-warning" },
-    { label: "Overdue", value: `$${(stats?.overdueTotal || 0).toLocaleString()}`, sub: `${stats?.overdueCount || 0} invoices`, icon: AlertTriangle, color: "text-status-danger" },
-    { label: "Active Quotes", value: `${stats?.quotesCount || 0}`, sub: `$${(stats?.quotesValue || 0).toLocaleString()} value`, icon: FileText, color: "text-primary" },
+    { label: "Revenue (MTD)", value: `$${(stats?.revenueMTD || 0).toLocaleString()}`, icon: DollarSign, color: "text-primary", path: "/invoices?status=paid" },
+    { label: "Outstanding", value: `$${(stats?.outstanding || 0).toLocaleString()}`, sub: `${stats?.unpaidCount || 0} unpaid`, icon: Clock, color: "text-status-warning", path: "/invoices?status=sent" },
+    { label: "Overdue", value: `$${(stats?.overdueTotal || 0).toLocaleString()}`, sub: `${stats?.overdueCount || 0} invoices`, icon: AlertTriangle, color: "text-status-danger", path: "/invoices?status=overdue" },
+    { label: "Active Quotes", value: `${stats?.quotesCount || 0}`, sub: `$${(stats?.quotesValue || 0).toLocaleString()} value`, icon: FileText, color: "text-primary", path: "/quotes" },
   ];
 
   return (
@@ -111,7 +113,11 @@ const Index = () => {
         {/* KPI Row */}
         <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
           {kpis.map((kpi) => (
-            <Card key={kpi.label} className="shadow-warm hover:shadow-warm-md transition-shadow">
+            <Card
+              key={kpi.label}
+              className="shadow-warm hover:shadow-warm-md transition-shadow cursor-pointer active:scale-[0.98]"
+              onClick={() => navigate(kpi.path)}
+            >
               <CardContent className="p-4 md:p-5">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1 min-w-0">
@@ -154,10 +160,8 @@ const Index = () => {
                 </div>
               ) : (
                 <div className="relative">
-                  {/* Timeline line */}
                   <div className="absolute left-[18px] top-3 bottom-3 w-px bg-border" />
-                  
-                  {todayJobs.slice(0, 5).map((job: any, index: number) => {
+                  {todayJobs.slice(0, 5).map((job: any) => {
                     const client = job.clients;
                     const clientName = client ? `${client.first_name} ${client.last_name}` : "";
                     const startTime = job.scheduled_start ? format(new Date(job.scheduled_start), "h:mm a") : "";
@@ -167,15 +171,11 @@ const Index = () => {
                         className="relative flex items-start gap-4 py-3 cursor-pointer hover:bg-secondary/30 -mx-2 px-2 rounded-lg transition-colors"
                         onClick={() => navigate(`/jobs/${job.id}`)}
                       >
-                        {/* Timeline dot */}
                         <div className="relative z-10 mt-1">
                           <div className="h-[10px] w-[10px] rounded-full bg-primary border-2 border-background" />
                         </div>
-
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold truncate">{job.title}</p>
-                          </div>
+                          <p className="text-sm font-semibold truncate">{job.title}</p>
                           <p className="text-xs text-muted-foreground">{clientName}</p>
                           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                             {startTime && (
@@ -221,23 +221,27 @@ const Index = () => {
                 </div>
               ) : (
                 <div className="divide-y">
-                  {activity.slice(0, 8).map((item) => (
-                    <div key={item.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 cursor-pointer hover:bg-secondary/30 -mx-2 px-2 rounded transition-colors" onClick={() => navigate(`/invoices/${item.id}`)}>
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
-                        <Receipt className="h-4 w-4 text-muted-foreground" />
+                  {activity.slice(0, 8).map((item) => {
+                    const Icon = item.type === "quote" ? FileText : Receipt;
+                    const detailPath = item.type === "quote" ? `/quotes/${item.id}` : `/invoices/${item.id}`;
+                    return (
+                      <div key={`${item.type}-${item.id}`} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 cursor-pointer hover:bg-secondary/30 -mx-2 px-2 rounded transition-colors" onClick={() => navigate(detailPath)}>
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{item.text}</p>
+                          <p className="text-xs text-muted-foreground truncate">{item.detail}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <Badge className={statusColors[item.status] || "bg-status-neutral text-status-neutral-foreground"} variant="secondary">
+                            {item.status}
+                          </Badge>
+                          <p className="text-[10px] text-muted-foreground mt-1">{formatRelativeTime(item.time)}</p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{item.text}</p>
-                        <p className="text-xs text-muted-foreground">{item.detail}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <Badge className={statusColors[item.status] || "bg-status-neutral text-status-neutral-foreground"} variant="secondary">
-                          {item.status}
-                        </Badge>
-                        <p className="text-[10px] text-muted-foreground mt-1">{format(new Date(item.time), "MMM d")}</p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

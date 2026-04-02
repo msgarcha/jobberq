@@ -433,26 +433,77 @@ export function useDashboardStats() {
   });
 }
 
+const invoiceStatusDesc: Record<string, string> = {
+  draft: "created",
+  sent: "sent to client",
+  viewed: "viewed by client",
+  paid: "marked as paid",
+  overdue: "is overdue",
+};
+
+const quoteStatusDesc: Record<string, string> = {
+  draft: "created",
+  sent: "sent to client",
+  approved: "approved by client",
+  converted: "converted to invoice",
+  expired: "has expired",
+};
+
+export function formatRelativeTime(dateStr: string) {
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "Just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay === 1) return "Yesterday";
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 export function useRecentActivity() {
   const { user } = useAuth();
 
   return useQuery({
     queryKey: ["recent-activity"],
     queryFn: async () => {
-      const { data: recentInvoices } = await supabase
-        .from("invoices")
-        .select("id, invoice_number, status, total, updated_at, clients(first_name, last_name)")
-        .order("updated_at", { ascending: false })
-        .limit(10);
+      const [{ data: recentInvoices }, { data: recentQuotes }] = await Promise.all([
+        supabase
+          .from("invoices")
+          .select("id, invoice_number, status, total, updated_at, clients(first_name, last_name)")
+          .order("updated_at", { ascending: false })
+          .limit(8),
+        supabase
+          .from("quotes")
+          .select("id, quote_number, status, total, updated_at, clients(first_name, last_name)")
+          .order("updated_at", { ascending: false })
+          .limit(8),
+      ]);
 
-      return (recentInvoices || []).map((inv: any) => ({
+      const invoiceItems = (recentInvoices || []).map((inv: any) => ({
         id: inv.id,
         type: "invoice" as const,
-        text: `Invoice ${inv.invoice_number} ${inv.status}`,
+        text: `Invoice ${inv.invoice_number} ${invoiceStatusDesc[inv.status] || inv.status}`,
         detail: inv.clients ? `${inv.clients.first_name} ${inv.clients.last_name} · $${Number(inv.total).toLocaleString()}` : `$${Number(inv.total).toLocaleString()}`,
         status: inv.status,
         time: inv.updated_at,
       }));
+
+      const quoteItems = (recentQuotes || []).map((q: any) => ({
+        id: q.id,
+        type: "quote" as const,
+        text: `Quote ${q.quote_number} ${quoteStatusDesc[q.status] || q.status}`,
+        detail: q.clients ? `${q.clients.first_name} ${q.clients.last_name} · $${Number(q.total).toLocaleString()}` : `$${Number(q.total).toLocaleString()}`,
+        status: q.status,
+        time: q.updated_at,
+      }));
+
+      return [...invoiceItems, ...quoteItems]
+        .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+        .slice(0, 10);
     },
     enabled: !!user,
   });
