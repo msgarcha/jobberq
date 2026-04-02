@@ -15,7 +15,7 @@ import {
   Text,
 } from 'npm:@react-email/components@0.0.22'
 
-const LOGO_URL = 'https://bfnlvdbswhjlpzdfwznz.supabase.co/storage/v1/object/public/email-assets/quicklinq-logo.png'
+const LOGO_URL = 'https://bfnlvdbswhjlpzdfwznz.supabase.co/storage/v1/object/public/email-assets/quicklinq-logo-white.png'
 
 interface EmailChangeEmailProps {
   siteName: string
@@ -35,7 +35,7 @@ export const EmailChangeEmail = ({
     <Preview>Confirm your email change for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src={LOGO_URL} alt="QuickLinq" width="48" height="48" style={logo} />
+        <div style={logoBadge}><Img src={LOGO_URL} alt="QuickLinq" width="28" height="28" style={logoImg} /></div>
         <Heading style={h1}>Confirm your email change</Heading>
         <Text style={tagline}>Send Quotes. Win Jobs. Get Paid.</Text>
         <Text style={text}>
@@ -68,7 +68,8 @@ export default EmailChangeEmail
 
 const main = { backgroundColor: '#ffffff', fontFamily: "'Poppins', Arial, sans-serif" }
 const container = { padding: '20px 25px' }
-const logo = { margin: '0 0 16px' }
+const logoBadge = { width: '48px', height: '48px', borderRadius: '12px', backgroundColor: 'hsl(195, 55%, 10%)', display: 'flex' as const, alignItems: 'center' as const, justifyContent: 'center' as const, margin: '0 0 16px' }
+const logoImg = { margin: '0', display: 'block' as const }
 const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: 'hsl(200, 30%, 14%)', margin: '0 0 4px' }
 const tagline = { fontSize: '11px', color: 'hsl(170, 50%, 40%)', letterSpacing: '0.5px', margin: '0 0 20px', fontWeight: 500 as const }
 const text = { fontSize: '14px', color: '#55575d', lineHeight: '1.5', margin: '0 0 25px' }

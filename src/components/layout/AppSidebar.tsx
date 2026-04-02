@@ -65,7 +65,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2.5">
-          <QuickLinqLogo size={36} />
+          <QuickLinqLogo size={32} variant="white" />
           {!collapsed && (
             <div className="flex flex-col">
               <span className="font-display font-bold text-lg text-sidebar-accent-foreground tracking-tight leading-tight">

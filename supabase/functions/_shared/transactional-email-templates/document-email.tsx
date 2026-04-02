@@ -5,7 +5,7 @@ import {
 import type { TemplateEntry } from './registry.ts'
 
 const SITE_NAME = "QuickLinq"
-const LOGO_URL = 'https://bfnlvdbswhjlpzdfwznz.supabase.co/storage/v1/object/public/email-assets/quicklinq-logo.png'
+const LOGO_URL = 'https://bfnlvdbswhjlpzdfwznz.supabase.co/storage/v1/object/public/email-assets/quicklinq-logo-white.png'
 
 interface DocumentEmailProps {
   companyName?: string
@@ -33,7 +33,7 @@ const DocumentEmail = ({
       <Container style={container}>
         {/* Logo + Company header */}
         <Section style={headerSection}>
-          <Img src={LOGO_URL} alt="QuickLinq" width="40" height="40" style={logo} />
+          <div style={logoBadge}><Img src={LOGO_URL} alt="QuickLinq" width="24" height="24" style={logoImgStyle} /></div>
           <Text style={companyNameStyle}>{companyName}</Text>
         </Section>
 
@@ -87,7 +87,8 @@ export const template = {
 const main = { backgroundColor: '#ffffff', fontFamily: "'Poppins', Arial, sans-serif" }
 const container = { padding: '30px 25px', maxWidth: '560px', margin: '0 auto' }
 const headerSection = { paddingBottom: '8px' }
-const logo = { margin: '0 0 8px' }
+const logoBadge = { width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'hsl(195, 55%, 10%)', display: 'inline-block' as const, textAlign: 'center' as const, lineHeight: '40px', margin: '0 0 8px' }
+const logoImgStyle = { margin: '0', display: 'inline-block' as const, verticalAlign: 'middle' }
 const companyNameStyle = { fontSize: '18px', fontWeight: '700' as const, color: '#1a3a3a', margin: '0' }
 const divider = { borderColor: '#e8e5e0', margin: '16px 0' }
 const bodySection = { padding: '8px 0' }
