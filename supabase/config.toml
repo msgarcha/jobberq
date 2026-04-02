@@ -26,6 +26,6 @@ project_id = "bfnlvdbswhjlpzdfwznz"
   [functions.public-quote]
     verify_jwt = false
   [functions.send-transactional-email]
-    verify_jwt = true
+    verify_jwt = false
   [functions.submit-review]
     verify_jwt = false

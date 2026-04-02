@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,6 +69,17 @@ export default function Onboarding() {
       {
         onSuccess: async () => {
           await qc.invalidateQueries({ queryKey: ["company-settings"] });
+          // Send welcome email (fire-and-forget)
+          if (user?.email) {
+            supabase.functions.invoke('send-transactional-email', {
+              body: {
+                templateName: 'welcome-email',
+                recipientEmail: user.email,
+                idempotencyKey: `welcome-${user.id}`,
+                templateData: { companyName: companyName || undefined },
+              },
+            }).catch(console.error);
+          }
           navigate("/");
         },
       }

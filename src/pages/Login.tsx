@@ -49,7 +49,10 @@ export default function Login() {
     if (error) {
       toast({ title: 'Sign up failed', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Account created', description: 'Check your email to confirm, or log in now.' });
+      toast({ title: 'Account created', description: 'Please check your email and click the verification link before logging in.' });
+      setEmail('');
+      setPassword('');
+      setDisplayName('');
     }
   };
 
