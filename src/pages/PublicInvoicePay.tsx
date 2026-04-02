@@ -229,7 +229,7 @@ export default function PublicInvoicePay() {
   const stripePromise = getStripe();
 
   return (
-    <div className="min-h-screen bg-[hsl(40,23%,96%)]">
+    <div className="min-h-screen bg-[hsl(40,23%,96%)] print-public-page">
       {/* Company Header Bar */}
       <div className="bg-[hsl(192,60%,22%)] text-white">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
