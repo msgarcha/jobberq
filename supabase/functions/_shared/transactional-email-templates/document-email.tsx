@@ -33,7 +33,7 @@ const DocumentEmail = ({
       <Container style={container}>
         {/* Logo + Company header */}
         <Section style={headerSection}>
-          <Img src={LOGO_URL} alt="QuickLinq" width="40" height="40" style={logo} />
+          <div style={logoBadge}><Img src={LOGO_URL} alt="QuickLinq" width="24" height="24" style={logoImgStyle} /></div>
           <Text style={companyNameStyle}>{companyName}</Text>
         </Section>
 
