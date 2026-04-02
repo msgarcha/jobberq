@@ -13,8 +13,8 @@ const columnOneImages = [
 const columnTwoImages = [
   { src: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&h=800&fit=crop&crop=center", label: "Electrical", name: "James R." },
   { src: "https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?w=600&h=800&fit=crop&crop=center", label: "Painting", name: "David L." },
-  { src: "https://images.unsplash.com/photo-1621460249485-4e4f92d9689a?w=600&h=800&fit=crop&crop=center", label: "HVAC", name: "Kevin P." },
-  { src: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=800&fit=crop&crop=center", label: "Property Mgmt", name: "Lisa H." },
+  { src: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=800&fit=crop&crop=center", label: "HVAC", name: "Kevin P." },
+  { src: "https://images.unsplash.com/photo-1590846083693-f23fdede555c?w=600&h=800&fit=crop&crop=center", label: "Concrete", name: "Lisa H." },
   { src: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=800&fit=crop&crop=center", label: "Pressure Wash", name: "Ryan S." },
 ];
 
