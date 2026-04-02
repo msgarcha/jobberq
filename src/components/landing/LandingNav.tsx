@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import QuickLinqLogo from "@/components/QuickLinqLogo";
 
 export default function LandingNav() {
   const navigate = useNavigate();
