@@ -120,7 +120,7 @@ export default function Login() {
             <CardTitle className="text-2xl">QuickLinq</CardTitle>
             <CardDescription>Send Quotes. Win Jobs. Get Paid.</CardDescription>
           </CardHeader>
-          <CardContent className="px-5">
+          <CardContent className="px-5 pb-6">
             <Tabs defaultValue="login">
               <TabsList className="grid w-full grid-cols-2 rounded-lg">
                 <TabsTrigger value="login" className="rounded-md">Log In</TabsTrigger>
@@ -139,9 +139,9 @@ export default function Login() {
                   <Button type="submit" className="w-full rounded-lg" disabled={loading}>
                     {loading ? 'Logging in…' : 'Log In'}
                   </Button>
-                  <Button type="button" variant="link" className="w-full text-sm text-muted-foreground" onClick={() => setResetMode(true)}>
+                  <button type="button" data-variant="link" className="w-full text-sm text-muted-foreground hover:text-foreground text-center py-1 transition-colors" onClick={() => setResetMode(true)}>
                     Forgot password?
-                  </Button>
+                  </button>
                 </form>
               </TabsContent>
               <TabsContent value="signup">

@@ -184,7 +184,7 @@
 
 /* Mobile touch targets */
 @media (max-width: 767px) {
-  input, select, textarea, button {
+  input, select, textarea, button:not([data-variant="link"]):not([data-variant="ghost"]) {
     min-height: 44px;
   }
   

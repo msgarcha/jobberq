@@ -45,6 +45,14 @@ serve(async (req) => {
       .eq("quote_id", quote_id)
       .order("sort_order", { ascending: true });
 
+    // Record viewed_at timestamp (first view only)
+    if (!quote.viewed_at) {
+      await supabaseAdmin
+        .from("quotes")
+        .update({ viewed_at: new Date().toISOString() })
+        .eq("id", quote_id);
+    }
+
     const { data: company } = await supabaseAdmin
       .from("company_settings")
       .select("company_name, logo_url, email, phone, address_line1, city, state, zip, website")
