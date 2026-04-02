@@ -160,7 +160,7 @@ export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 
               <div className="flex-1">
                 <Select
                   value={item.service_id || ""}
-                  onValueChange={(v) => selectService(i, v)}
+                  onValueChange={(v) => handleServiceChange(i, v)}
                   disabled={disabled}
                 >
                   <SelectTrigger className="h-11 text-sm">
@@ -170,6 +170,9 @@ export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 
                     {services?.map((s) => (
                       <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                     ))}
+                    <SelectItem value="__new__" className="text-primary font-medium">
+                      <span className="flex items-center gap-1.5"><Plus className="h-3.5 w-3.5" /> Add New Service</span>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
