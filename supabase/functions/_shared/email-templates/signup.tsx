@@ -38,8 +38,6 @@ export const SignupEmail = ({
           <Link href={`mailto:${recipient}`} style={link}>
             {recipient}
           </Link>
-          ) to get started.
-        </Text>
         </Text>
         <Button style={button} href={confirmationUrl}>
           Verify Email
