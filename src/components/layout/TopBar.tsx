@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Bell, Plus, Search, Users, FileText, Receipt, Briefcase, Settings, KeyRound, LogOut } from "lucide-react";
+import QuickLinqLogo from "@/components/QuickLinqLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
