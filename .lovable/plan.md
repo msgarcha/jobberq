@@ -1,44 +1,56 @@
 
 
-## Replace "QL" Text Logo with Uploaded Logo Image
+## Logo Variant System: White + Green Versions
 
-The uploaded image is a geometric interlocking logo mark (white on dark navy). It will replace every instance of the "QL" text block used as the logo across the app.
+### What We're Doing
+The uploaded logo (white, transparent background) will be used on dark backgrounds. A green-tinted version (using the brand teal `hsl(170, 50%, 55%)`) will be created for light/white backgrounds. The `QuickLinqLogo` component gets a `variant` prop to switch between them.
 
-### Approach
+### Assets
+1. Copy uploaded white logo to `src/assets/quicklinq-logo-white.png`
+2. Keep existing `src/assets/quicklinq-logo.png` as-is (fallback)
+3. Upload the white logo to `public/images/quicklinq-logo-white.png` (for emails on dark sections)
 
-1. **Copy the uploaded logo** to `src/assets/quicklinq-logo.png`
+### Component Update: `QuickLinqLogo.tsx`
+Add a `variant` prop (`"white"` | `"green"`) that applies a CSS filter to tint the logo green when on light backgrounds. Since the logo is white, we use CSS `filter` with `hue-rotate`, `saturate`, and `brightness` to shift it to the brand teal-green. This avoids needing a separate image file for the green version.
 
-2. **Create an SVG version** for flexibility — trace the logo as a simple SVG component (`src/components/QuickLinqLogo.tsx`) that accepts `className`, `size`, and `variant` props:
-   - `variant="light"` — white logo (for dark backgrounds: sidebar, hero, landing nav dark sections)
-   - `variant="dark"` — dark navy logo (for light backgrounds: login page, email templates)
-   - `variant="primary"` — uses the app's primary/teal color (for accents)
+```
+variant="white" → original white logo (for dark backgrounds)
+variant="green" → CSS-filtered to brand teal-green (for light backgrounds)
+```
 
-3. **Replace "QL" text blocks** in these files:
+### Where Each Variant Goes
 
-| File | Current | Replacement |
-|------|---------|-------------|
-| `AppSidebar.tsx` (line 67-69) | `<div>QL</div>` | `<QuickLinqLogo size={36} variant="light" />` |
-| `LandingNav.tsx` (line 16-18) | `<div>QL</div>` | `<QuickLinqLogo size={36} variant="dark" />` |
-| `LandingFooter.tsx` (line 8) | `<div>QL</div>` | `<QuickLinqLogo size={32} variant="dark" />` |
-| `TopBar.tsx` (line 77-79) | `<div>QL</div>` | `<QuickLinqLogo size={32} variant="dark" />` |
-| `Login.tsx` (lines 81, 115) | `<Link>QL</Link>` | `<Link><QuickLinqLogo size={56} variant="dark" /></Link>` |
-| `Onboarding.tsx` (line 84-86) | `<div>QL</div>` | `<QuickLinqLogo size={36} variant="dark" />` |
-| `HeroSection.tsx` | No QL text, but hero uses sidebar bg | No change needed |
+| Location | Background | Variant | Size |
+|----------|-----------|---------|------|
+| `AppSidebar.tsx` | Dark navy sidebar | `white` | 32 |
+| `HeroSection.tsx` (fade area) | Dark | No logo currently, no change |  |
+| `LandingNav.tsx` | Light (`bg-background`) | `green` | 28 |
+| `LandingFooter.tsx` | Light (`bg-background`) | `green` | 24 |
+| `TopBar.tsx` (mobile) | Light (`bg-card`) | `green` | 28 |
+| `Login.tsx` | Light (`bg-background`) | `green` | 44 |
+| `Onboarding.tsx` | Light (`bg-background`) | `green` | 32 |
+| Email templates (all 6 auth + transactional) | White background | Green version hosted URL | 48px |
 
-4. **Update email templates** — Since email templates render in Deno/React Email (not browser React), the logo will be embedded as a hosted image URL. Copy the logo to `public/images/quicklinq-logo-dark.png` and reference it via the published URL in all 6 auth email templates and the transactional email template.
+### Email Template Updates
+Upload the logo to the `email-assets` storage bucket. For emails (white background), the logo needs to appear in the brand teal-green color. Since CSS filters don't work in emails, we'll reference the white logo and wrap it in a container with a dark background circle/badge so it's visible on white email backgrounds -- OR we use the white version with a small dark circular background behind it in the email HTML.
 
-### Files Created
-- `src/components/QuickLinqLogo.tsx` — Reusable logo component with size/variant props
-- `src/assets/quicklinq-logo.png` — Source image asset
-- `public/images/quicklinq-logo-dark.png` — For email template use (dark variant)
+Better approach for emails: Since CSS filters aren't available in email clients, we'll keep the current hosted logo but add a small dark navy circular background behind it in the email template styles so the white logo is visible on the white email background. This matches the brand aesthetic.
 
 ### Files Modified
-- `src/components/layout/AppSidebar.tsx`
-- `src/components/landing/LandingNav.tsx`
-- `src/components/landing/LandingFooter.tsx`
-- `src/components/layout/TopBar.tsx`
-- `src/pages/Login.tsx`
-- `src/pages/Onboarding.tsx`
-- 6 auth email templates in `supabase/functions/_shared/email-templates/`
-- `supabase/functions/_shared/transactional-email-templates/document-email.tsx`
+- `src/assets/quicklinq-logo-white.png` (new - copy of uploaded file)
+- `src/components/QuickLinqLogo.tsx` (add variant prop with CSS filter)
+- `src/components/layout/AppSidebar.tsx` (variant="white", size=32)
+- `src/components/landing/LandingNav.tsx` (variant="green", size=28)
+- `src/components/landing/LandingFooter.tsx` (variant="green", size=24)
+- `src/components/layout/TopBar.tsx` (variant="green", size=28)
+- `src/pages/Login.tsx` (variant="green", size=44)
+- `src/pages/Onboarding.tsx` (variant="green", size=32)
+- 6 auth email templates + `document-email.tsx` (add dark navy circle behind white logo)
+
+### Technical Detail: CSS Filter for Green Tint
+The white logo pixels will be shifted to the brand teal-green using:
+```css
+filter: brightness(0) saturate(100%) invert(58%) sepia(32%) saturate(600%) hue-rotate(115deg) brightness(92%) contrast(87%)
+```
+This produces a color close to `hsl(170, 50%, 55%)` from the white source. The exact filter values will be tuned to match.
 
