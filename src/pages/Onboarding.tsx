@@ -82,13 +82,13 @@ export default function Onboarding() {
       <div className="border-b border-border/50 bg-background">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            SP
+            QL
           </div>
           <div>
             <h1 className="font-bold text-lg" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               Welcome to QuickLinq
             </h1>
-            <p className="text-xs text-muted-foreground">Let's set up your business in under 2 minutes.</p>
+            <p className="text-xs text-muted-foreground">Send Quotes. Win Jobs. Get Paid.</p>
           </div>
         </div>
       </div>

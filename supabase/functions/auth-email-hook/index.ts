@@ -36,7 +36,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "jobberq"
+const SITE_NAME = "QuickLinq"
 const SENDER_DOMAIN = "notify.quicklinq.ca"
 const ROOT_DOMAIN = "quicklinq.ca"
 const FROM_DOMAIN = "quicklinq.ca" // Domain shown in From address (may be root or sender subdomain)

@@ -114,7 +114,7 @@ export default function Login() {
           <CardHeader className="text-center pb-2 px-5">
             <Link to="/landing" className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-bold text-xl hover:opacity-90 transition-opacity">QL</Link>
             <CardTitle className="text-2xl">QuickLinq</CardTitle>
-            <CardDescription>Manage your service business with ease.</CardDescription>
+            <CardDescription>Send Quotes. Win Jobs. Get Paid.</CardDescription>
           </CardHeader>
           <CardContent className="px-5">
             <Tabs defaultValue="login">

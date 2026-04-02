@@ -6,10 +6,10 @@ export default function LandingFooter() {
           <div className="col-span-2 sm:col-span-1">
             <div className="flex items-center gap-2 mb-3">
               <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-xs font-display">QL</div>
-              <span className="font-bold font-display">ServicePro</span>
+              <span className="font-bold font-display">QuickLinq</span>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              The all-in-one platform for service businesses. Clients, quotes, invoices, scheduling, and payments.
+              Send Quotes. Win Jobs. Get Paid. The all-in-one platform for service businesses.
             </p>
           </div>
           <div>
