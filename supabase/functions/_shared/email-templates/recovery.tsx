@@ -30,7 +30,7 @@ export const RecoveryEmail = ({
     <Preview>Reset your password for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src={LOGO_URL} alt="QuickLinq" width="48" height="48" style={logo} />
+        <div style={logoBadge}><Img src={LOGO_URL} alt="QuickLinq" width="28" height="28" style={logoImg} /></div>
         <Heading style={h1}>Reset your password</Heading>
         <Text style={tagline}>Send Quotes. Win Jobs. Get Paid.</Text>
         <Text style={text}>
