@@ -258,9 +258,9 @@ export default function PublicQuoteView() {
             </div>
           )}
 
-          {/* Approve CTA */}
-          {canApprove && (
-            <div className="px-6 py-5 bg-[hsl(40,23%,96%)] border-t border-[hsl(40,15%,88%)]">
+          {/* Action buttons */}
+          <div className="px-6 py-5 bg-[hsl(40,23%,96%)] border-t border-[hsl(40,15%,88%)] space-y-3">
+            {canApprove && (
               <Button
                 onClick={handleApprove}
                 disabled={approving}
@@ -273,8 +273,15 @@ export default function PublicQuoteView() {
                   <><CheckCircle2 className="h-5 w-5" /> Approve Estimate</>
                 )}
               </Button>
-            </div>
-          )}
+            )}
+            <Button
+              variant="outline"
+              onClick={() => window.print()}
+              className="w-full h-10 gap-2 text-sm"
+            >
+              <Download className="h-4 w-4" /> Download PDF
+            </Button>
+          </div>
         </div>
 
         {/* Company Footer */}

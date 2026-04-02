@@ -348,6 +348,17 @@ export default function PublicInvoicePay() {
               Online payment is not available for this invoice. Please contact {company?.company_name || "the business"} directly.
             </div>
           ) : null}
+
+          {/* Download PDF */}
+          <div className="px-6 py-4 border-t border-[hsl(40,15%,88%)]">
+            <Button
+              variant="outline"
+              onClick={() => window.print()}
+              className="w-full h-10 gap-2 text-sm"
+            >
+              <Download className="h-4 w-4" /> Download PDF
+            </Button>
+          </div>
         </div>
 
         {/* Company Footer */}
