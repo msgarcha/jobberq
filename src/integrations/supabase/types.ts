@@ -934,6 +934,7 @@ export type Database = {
           updated_at: string
           user_id: string
           valid_until: string | null
+          viewed_at: string | null
         }
         Insert: {
           approved_at?: string | null
@@ -955,6 +956,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           valid_until?: string | null
+          viewed_at?: string | null
         }
         Update: {
           approved_at?: string | null
@@ -976,6 +978,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           valid_until?: string | null
+          viewed_at?: string | null
         }
         Relationships: [
           {
