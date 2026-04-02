@@ -359,4 +359,39 @@ export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 
       </div>
     </div>
   );
+
+  return (
+    <>
+      {content}
+      <Dialog open={newServiceOpen} onOpenChange={setNewServiceOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Service</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Service Name *</Label>
+              <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Lawn Mowing" autoFocus />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Default Price</Label>
+                <Input type="number" min={0} step="0.01" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder="0.00" />
+              </div>
+              <div className="space-y-2">
+                <Label>Tax Rate %</Label>
+                <Input type="number" min={0} step="0.01" value={newTax} onChange={(e) => setNewTax(e.target.value)} placeholder="0" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewServiceOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateService} disabled={!newName.trim() || createService.isPending}>
+              {createService.isPending ? "Creating…" : "Create & Select"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
