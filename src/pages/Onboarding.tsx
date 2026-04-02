@@ -69,6 +69,17 @@ export default function Onboarding() {
       {
         onSuccess: async () => {
           await qc.invalidateQueries({ queryKey: ["company-settings"] });
+          // Send welcome email (fire-and-forget)
+          if (user?.email) {
+            supabase.functions.invoke('send-transactional-email', {
+              body: {
+                templateName: 'welcome-email',
+                recipientEmail: user.email,
+                idempotencyKey: `welcome-${user.id}`,
+                templateData: { companyName: companyName || undefined },
+              },
+            }).catch(console.error);
+          }
           navigate("/");
         },
       }
