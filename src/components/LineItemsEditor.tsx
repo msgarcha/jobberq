@@ -146,135 +146,42 @@ export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 
 
   const fmt = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
-  if (isMobile) {
-    return (
-      <div className="space-y-3">
-        {items.length === 0 && (
-          <p className="text-center text-muted-foreground py-6 text-sm">
-            No line items yet. Tap "Add Line" to get started.
-          </p>
-        )}
-        {items.map((item, i) => (
-          <div key={i} className="rounded-xl border bg-card p-4 space-y-3">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <Select
-                  value={item.service_id || ""}
-                  onValueChange={(v) => handleServiceChange(i, v)}
-                  disabled={disabled}
-                >
-                  <SelectTrigger className="h-11 text-sm">
-                    <SelectValue placeholder="Select service…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {services?.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                    ))}
-                    <SelectItem value="__new__" className="text-primary font-medium">
-                      <span className="flex items-center gap-1.5"><Plus className="h-3.5 w-3.5" /> Add New Service</span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 ml-2 text-destructive"
-                onClick={() => removeRow(i)}
-                disabled={disabled}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+  const newServiceDialog = (
+    <Dialog open={newServiceOpen} onOpenChange={setNewServiceOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add New Service</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label>Service Name *</Label>
+            <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g. Lawn Mowing" autoFocus />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Default Price</Label>
+              <Input type="number" min={0} step="0.01" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder="0.00" />
             </div>
-            <Input
-              value={item.description}
-              onChange={(e) => update(i, { description: e.target.value })}
-              disabled={disabled}
-              placeholder="Description"
-              className="h-11"
-            />
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <Label className="text-[11px] text-muted-foreground">Qty</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={item.quantity}
-                  onChange={(e) => update(i, { quantity: parseFloat(e.target.value) || 0 })}
-                  disabled={disabled}
-                  className="h-11 text-center"
-                />
-              </div>
-              <div>
-                <Label className="text-[11px] text-muted-foreground">Price</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={item.unit_price}
-                  onChange={(e) => update(i, { unit_price: parseFloat(e.target.value) || 0 })}
-                  disabled={disabled}
-                  className="h-11 text-center"
-                />
-              </div>
-              <div>
-                <Label className="text-[11px] text-muted-foreground">Total</Label>
-                <div className="h-11 flex items-center justify-center rounded-md bg-muted text-sm font-medium">
-                  {fmt(item.line_total)}
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-[11px] text-muted-foreground">Tax %</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={item.tax_rate}
-                  onChange={(e) => update(i, { tax_rate: parseFloat(e.target.value) || 0 })}
-                  disabled={disabled}
-                  className="h-11 text-center"
-                />
-              </div>
-              <div>
-                <Label className="text-[11px] text-muted-foreground">Disc %</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  step="0.01"
-                  value={item.discount_percent}
-                  onChange={(e) => update(i, { discount_percent: parseFloat(e.target.value) || 0 })}
-                  disabled={disabled}
-                  className="h-11 text-center"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label>Tax Rate %</Label>
+              <Input type="number" min={0} step="0.01" value={newTax} onChange={(e) => setNewTax(e.target.value)} placeholder="0" />
             </div>
           </div>
-        ))}
-
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={addRow} disabled={disabled} className="flex-1 h-12 gap-2 rounded-xl">
-            <Plus className="h-4 w-4" /> Add Line Item
-          </Button>
-          <Button variant="ghost" onClick={() => navigate("/services")} className="h-12 gap-2 rounded-xl text-muted-foreground">
-            <Settings2 className="h-4 w-4" /> Manage Services
-          </Button>
         </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setNewServiceOpen(false)}>Cancel</Button>
+          <Button onClick={handleCreateService} disabled={!newName.trim() || createService.isPending}>
+            {createService.isPending ? "Creating…" : "Create & Select"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 
-        <div className="text-sm space-y-1.5 pt-2">
-          <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{fmt(totals.subtotal)}</span></div>
-          {totals.discount_amount > 0 && (
-            <div className="flex justify-between"><span className="text-muted-foreground">Discount</span><span className="text-destructive">-{fmt(totals.discount_amount)}</span></div>
-          )}
-          <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>{fmt(totals.tax_amount)}</span></div>
-          <div className="flex justify-between font-semibold border-t pt-2 text-base"><span>Total</span><span>{fmt(totals.total)}</span></div>
-        </div>
-      </div>
-    );
-  }
+  if (isMobile) {
+    return (
+      <>
+      <div className="space-y-3">
 
   // Desktop table layout
   return (
