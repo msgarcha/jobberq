@@ -360,6 +360,7 @@ const InvoiceDetail = () => {
                   <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span>{format(new Date(invoice.created_at), "MMM d, yyyy")}</span></div>
                   {invoice.due_date && <div className="flex justify-between"><span className="text-muted-foreground">Due</span><span>{format(new Date(invoice.due_date), "MMM d, yyyy")}</span></div>}
                   {invoice.sent_at && <div className="flex justify-between"><span className="text-muted-foreground">Sent</span><span>{format(new Date(invoice.sent_at), "MMM d, yyyy")}</span></div>}
+                  {invoice.viewed_at && <div className="flex justify-between"><span className="text-muted-foreground">Viewed</span><span>{format(new Date(invoice.viewed_at), "MMM d, yyyy h:mm a")}</span></div>}
                   {invoice.paid_at && <div className="flex justify-between"><span className="text-muted-foreground">Paid</span><span>{format(new Date(invoice.paid_at), "MMM d, yyyy")}</span></div>}
                   {invoice.is_recurring && (
                     <>
