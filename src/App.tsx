@@ -40,6 +40,7 @@ import SuperAdmin from "./pages/SuperAdmin";
 import NotFound from "./pages/NotFound";
 import PublicInvoicePay from "./pages/PublicInvoicePay";
 import PublicQuoteView from "./pages/PublicQuoteView";
+import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
 
