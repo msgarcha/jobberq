@@ -4,7 +4,7 @@ import { Elements, CardElement, useStripe, useElements } from "@stripe/react-str
 import { getStripe } from "@/lib/stripe";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, CreditCard, Lock, CheckCircle2, AlertCircle, FileText, Phone, Mail, Globe } from "lucide-react";
+import { Loader2, CreditCard, Lock, CheckCircle2, AlertCircle, FileText, Phone, Mail, Globe, Download } from "lucide-react";
 
 interface InvoiceData {
   invoice: {
