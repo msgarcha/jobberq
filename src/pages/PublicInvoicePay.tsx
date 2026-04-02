@@ -331,7 +331,7 @@ export default function PublicInvoicePay() {
 
           {/* Payment Section */}
           {balanceDue > 0 && company?.stripe_charges_enabled && stripePromise ? (
-            <div className="px-6 py-5 bg-[hsl(40,23%,96%)] border-t border-[hsl(40,15%,88%)]">
+            <div className="px-6 py-5 bg-[hsl(40,23%,96%)] border-t border-[hsl(40,15%,88%)] no-print">
               <h3 className="text-sm font-semibold text-[hsl(200,30%,14%)] mb-3 flex items-center gap-2">
                 <CreditCard className="h-4 w-4" /> Pay Now
               </h3>
