@@ -1,10 +1,11 @@
 import * as React from 'npm:react@18.3.1'
 import {
-  Body, Container, Head, Heading, Html, Preview, Text, Button, Hr, Section,
+  Body, Container, Head, Heading, Html, Img, Preview, Text, Button, Hr, Section,
 } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
 
 const SITE_NAME = "QuickLinq"
+const LOGO_URL = 'https://bfnlvdbswhjlpzdfwznz.supabase.co/storage/v1/object/public/email-assets/quicklinq-logo.png'
 
 interface DocumentEmailProps {
   companyName?: string
@@ -30,8 +31,9 @@ const DocumentEmail = ({
     <Preview>{`${documentType} ${documentNumber} from ${companyName}`}</Preview>
     <Body style={main}>
       <Container style={container}>
-        {/* Company header */}
+        {/* Logo + Company header */}
         <Section style={headerSection}>
+          <Img src={LOGO_URL} alt="QuickLinq" width="40" height="40" style={logo} />
           <Text style={companyNameStyle}>{companyName}</Text>
         </Section>
 
@@ -85,6 +87,7 @@ export const template = {
 const main = { backgroundColor: '#ffffff', fontFamily: "'Poppins', Arial, sans-serif" }
 const container = { padding: '30px 25px', maxWidth: '560px', margin: '0 auto' }
 const headerSection = { paddingBottom: '8px' }
+const logo = { margin: '0 0 8px' }
 const companyNameStyle = { fontSize: '18px', fontWeight: '700' as const, color: '#1a3a3a', margin: '0' }
 const divider = { borderColor: '#e8e5e0', margin: '16px 0' }
 const bodySection = { padding: '8px 0' }
