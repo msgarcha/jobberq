@@ -126,11 +126,15 @@ export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 
     onChange(items.filter((_, i) => i !== index));
   };
 
-  const selectService = (index: number, serviceId: string) => {
-    const service = services?.find((s) => s.id === serviceId);
+  const handleServiceChange = (index: number, value: string) => {
+    if (value === "__new__") {
+      openNewServiceDialog(index);
+      return;
+    }
+    const service = services?.find((s) => s.id === value);
     if (service) {
       update(index, {
-        service_id: serviceId,
+        service_id: value,
         description: service.name + (service.description ? ` – ${service.description}` : ""),
         unit_price: Number(service.default_price),
         tax_rate: service.tax_rate != null ? Number(service.tax_rate) : 0,
