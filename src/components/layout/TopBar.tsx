@@ -74,10 +74,7 @@ export function TopBar() {
   if (isMobile) {
     return (
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-card/80 backdrop-blur-sm px-4 border-b">
-        <div className="flex items-center gap-2">
-          <QuickLinqLogo size={28} variant="green" />
-          <span className="font-display font-bold text-base tracking-tight">QuickLinq</span>
-        </div>
+        <QuickLinqLogo size={28} type="full" variant="dark" />
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="relative rounded-lg h-9 w-9" onClick={handleNotifications}>
             <Bell className="h-4 w-4" />
