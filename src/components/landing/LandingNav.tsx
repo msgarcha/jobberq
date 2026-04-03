@@ -18,6 +18,7 @@ export default function LandingNav() {
           <button onClick={() => scrollTo("features")} className="hover:text-foreground transition-colors">Features</button>
           <button onClick={() => scrollTo("industries")} className="hover:text-foreground transition-colors">Industries</button>
           <button onClick={() => scrollTo("pricing")} className="hover:text-foreground transition-colors">Pricing</button>
+          <button onClick={() => navigate("/how-it-works")} className="hover:text-foreground transition-colors">How It Works</button>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate("/login")}>

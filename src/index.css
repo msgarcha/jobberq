@@ -166,12 +166,21 @@
 
 .animate-scroll-up {
   animation: scroll-up 30s linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 .animate-scroll-down {
   animation: scroll-down 30s linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 .animate-scroll-horizontal {
   animation: scroll-horizontal 40s linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 .animate-ken-burns {
   animation: ken-burns 10s ease-in-out infinite;

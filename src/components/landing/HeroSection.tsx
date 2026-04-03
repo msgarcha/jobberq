@@ -3,19 +3,19 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield, Star } from "lucide-react";
 
 const columnOneImages = [
-  { src: "https://images.unsplash.com/photo-1589923188900-85dae523342b?w=600&h=800&fit=crop&crop=center", label: "Landscaping", name: "Marcus T." },
-  { src: "https://images.unsplash.com/photo-1632759145351-1d592919f522?w=600&h=800&fit=crop&crop=center", label: "Roofing", name: "Chris W." },
-  { src: "https://images.unsplash.com/photo-1585704032915-c3400ca199e7?w=600&h=800&fit=crop&crop=center", label: "Plumbing", name: "Sarah K." },
-  { src: "https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?w=600&h=800&fit=crop&crop=center", label: "Cleaning", name: "Maria G." },
+  { src: "https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?w=600&h=800&fit=crop&crop=center", label: "Landscaping", name: "Marcus T." },
+  { src: "https://images.unsplash.com/photo-1632823469850-2f77dd9c7f93?w=600&h=800&fit=crop&crop=center", label: "Roofing", name: "Chris W." },
+  { src: "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=600&h=800&fit=crop&crop=center", label: "Plumbing", name: "Sarah K." },
+  { src: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=800&fit=crop&crop=center", label: "Cleaning", name: "Maria G." },
   { src: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=800&fit=crop&crop=center", label: "Carpentry", name: "Tom B." },
 ];
 
 const columnTwoImages = [
   { src: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&h=800&fit=crop&crop=center", label: "Electrical", name: "James R." },
-  { src: "https://images.unsplash.com/photo-1562259929-b4e1fd3aef09?w=600&h=800&fit=crop&crop=center", label: "Painting", name: "David L." },
-  { src: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=800&fit=crop&crop=center", label: "HVAC", name: "Kevin P." },
-  { src: "https://images.unsplash.com/photo-1590846083693-f23fdede555c?w=600&h=800&fit=crop&crop=center", label: "Concrete", name: "Lisa H." },
-  { src: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=800&fit=crop&crop=center", label: "Pressure Wash", name: "Ryan S." },
+  { src: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&h=800&fit=crop&crop=center", label: "Painting", name: "David L." },
+  { src: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=600&h=800&fit=crop&crop=center", label: "HVAC", name: "Kevin P." },
+  { src: "https://images.unsplash.com/photo-1590496793929-36417d3117de?w=600&h=800&fit=crop&crop=center", label: "Concrete", name: "Lisa H." },
+  { src: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=800&fit=crop&crop=center", label: "Pressure Wash", name: "Ryan S." },
 ];
 
 function ScrollColumn({ images, direction }: { images: typeof columnOneImages; direction: "up" | "down" }) {
@@ -24,19 +24,17 @@ function ScrollColumn({ images, direction }: { images: typeof columnOneImages; d
 
   return (
     <div className="relative h-[520px] overflow-hidden rounded-2xl">
-      {/* Top fade */}
-      <div className="absolute top-0 left-0 right-0 h-16 z-10" style={{ background: "linear-gradient(to bottom, hsl(195 55% 10%), transparent)" }} />
-      {/* Bottom fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 z-10" style={{ background: "linear-gradient(to top, hsl(195 55% 10%), transparent)" }} />
+      <div className="absolute top-0 left-0 right-0 h-16 z-10 pointer-events-none" style={{ background: "linear-gradient(to bottom, hsl(195 55% 10%), transparent)" }} />
+      <div className="absolute bottom-0 left-0 right-0 h-16 z-10 pointer-events-none" style={{ background: "linear-gradient(to top, hsl(195 55% 10%), transparent)" }} />
 
-      <div className={`flex flex-col gap-4 ${animClass} ticker-pause`}>
+      <div className={`flex flex-col gap-4 ${animClass} ticker-pause`} style={{ willChange: "transform", transform: "translateZ(0)" }}>
         {doubled.map((img, i) => (
           <div key={i} className="relative w-full h-[320px] rounded-2xl overflow-hidden flex-shrink-0 ring-1 ring-white/10">
             <img
               src={img.src}
               alt={img.label}
               className="w-full h-full object-cover"
-              loading={i < 3 ? "eager" : "lazy"}
+              loading={i < 2 ? "eager" : "lazy"}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
             <div className="absolute bottom-4 left-4 right-4">
@@ -55,12 +53,13 @@ export default function HeroSection() {
 
   return (
     <section className="relative overflow-hidden" style={{ background: "hsl(var(--sidebar-background))" }}>
-      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "radial-gradient(hsl(var(--sidebar-primary)) 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
+      {/* Dot pattern overlay - pointer-events-none so buttons are clickable */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "radial-gradient(hsl(var(--sidebar-primary)) 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-24 lg:py-28">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left – Copy */}
-          <div className="space-y-8 text-center lg:text-left">
+          <div className="space-y-8 text-center lg:text-left relative z-10">
             <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium border border-sidebar-primary/40 bg-sidebar-primary/15" style={{ color: "hsl(var(--sidebar-primary))" }}>
               <Star className="h-3 w-3 fill-current" /> Rated 4.9/5 by 2,000+ service pros
             </div>
@@ -81,7 +80,7 @@ export default function HeroSection() {
               <Button
                 size="lg"
                 variant="outline"
-                onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}
+                onClick={() => navigate("/how-it-works")}
                 className="text-base px-8 h-12 rounded-xl border-white/30 bg-white/10 hover:bg-white/20 text-white font-medium"
               >
                 See How It Works
@@ -99,8 +98,7 @@ export default function HeroSection() {
 
           {/* Right – Scrolling Mosaic (desktop) */}
           <div className="hidden lg:block relative">
-            {/* Teal glow behind columns */}
-            <div className="absolute -inset-4 rounded-3xl" style={{ background: "radial-gradient(ellipse at center, hsl(170 50% 55% / 0.12), transparent 70%)" }} />
+            <div className="absolute -inset-4 rounded-3xl pointer-events-none" style={{ background: "radial-gradient(ellipse at center, hsl(170 50% 55% / 0.12), transparent 70%)" }} />
             <div className="relative grid grid-cols-2 gap-4">
               <ScrollColumn images={columnOneImages} direction="up" />
               <ScrollColumn images={columnTwoImages} direction="down" />
@@ -109,7 +107,7 @@ export default function HeroSection() {
 
           {/* Mobile horizontal scroll */}
           <div className="flex lg:hidden gap-3 overflow-hidden">
-            <div className="flex gap-3 animate-scroll-horizontal ticker-pause">
+            <div className="flex gap-3 animate-scroll-horizontal ticker-pause" style={{ willChange: "transform", transform: "translateZ(0)" }}>
               {[...columnOneImages, ...columnTwoImages, ...columnOneImages, ...columnTwoImages].map((img, i) => (
                 <div key={i} className="relative flex-shrink-0 w-[200px] h-[260px] rounded-2xl overflow-hidden ring-1 ring-white/10">
                   <img src={img.src} alt={img.label} className="w-full h-full object-cover" loading="lazy" />

@@ -43,6 +43,7 @@ import PublicQuoteView from "./pages/PublicQuoteView";
 import Unsubscribe from "./pages/Unsubscribe";
 import ConnectDashboard from "./pages/ConnectDashboard";
 import ConnectSuccess from "./pages/ConnectSuccess";
+import HowItWorks from "./pages/HowItWorks";
 
 const queryClient = new QueryClient();
 
