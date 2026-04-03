@@ -1,29 +1,34 @@
-import logoWhite from "@/assets/quicklinq-logo-white.png";
+import logoIcon from "@/assets/quicklinq-icon.png";
+import logoFull from "@/assets/quicklinq-logo-full.png";
 
 interface QuickLinqLogoProps {
   size?: number;
   className?: string;
-  variant?: "white" | "green";
+  variant?: "dark" | "white";
+  type?: "icon" | "full";
 }
 
-const GREEN_FILTER =
-  "brightness(0) saturate(100%) invert(58%) sepia(32%) saturate(600%) hue-rotate(115deg) brightness(92%) contrast(87%)";
+const WHITE_FILTER = "brightness(0) invert(1)";
 
 export default function QuickLinqLogo({
   size = 36,
   className = "",
-  variant = "white",
+  variant = "dark",
+  type = "icon",
 }: QuickLinqLogoProps) {
+  const src = type === "full" ? logoFull : logoIcon;
+
   return (
     <img
-      src={logoWhite}
+      src={src}
       alt="QuickLinq"
-      width={size}
+      width={type === "full" ? undefined : size}
       height={size}
       className={className}
       style={{
         objectFit: "contain",
-        ...(variant === "green" ? { filter: GREEN_FILTER } : {}),
+        ...(type === "full" ? { height: size } : {}),
+        ...(variant === "white" ? { filter: WHITE_FILTER } : {}),
       }}
     />
   );

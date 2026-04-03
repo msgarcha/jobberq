@@ -13,10 +13,7 @@ export default function LandingNav() {
   return (
     <nav className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <QuickLinqLogo size={28} variant="green" />
-          <span className="font-bold text-lg font-display">QuickLinq</span>
-        </div>
+        <QuickLinqLogo size={28} type="full" variant="dark" />
         <div className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
           <button onClick={() => scrollTo("features")} className="hover:text-foreground transition-colors">Features</button>
           <button onClick={() => scrollTo("industries")} className="hover:text-foreground transition-colors">Industries</button>

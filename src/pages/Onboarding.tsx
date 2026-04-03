@@ -94,7 +94,7 @@ export default function Onboarding() {
       {/* Header */}
       <div className="border-b border-border/50 bg-background">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <QuickLinqLogo size={32} variant="green" />
+          <QuickLinqLogo size={32} type="full" variant="dark" />
           <div>
             <h1 className="font-bold text-lg" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               Welcome to QuickLinq

@@ -65,14 +65,10 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2.5">
-          <QuickLinqLogo size={32} variant="white" />
-          {!collapsed && (
-            <div className="flex flex-col">
-              <span className="font-display font-bold text-lg text-sidebar-accent-foreground tracking-tight leading-tight">
-                QuickLinq
-              </span>
-              <span className="text-[9px] text-sidebar-foreground/40 tracking-wide">Send Quotes. Win Jobs. Get Paid.</span>
-            </div>
+          {collapsed ? (
+            <QuickLinqLogo size={32} type="icon" variant="white" />
+          ) : (
+            <QuickLinqLogo size={32} type="full" variant="white" />
           )}
         </div>
       </SidebarHeader>
