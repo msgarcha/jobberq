@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { Bell, Plus, Search, Users, FileText, Receipt, Briefcase, Settings, KeyRound, LogOut } from "lucide-react";
+import { Bell, Plus, Search, Users, FileText, Receipt, Briefcase, Settings, KeyRound, LogOut, ChevronRight } from "lucide-react";
 import QuickLinqLogo from "@/components/QuickLinqLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,14 +15,14 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useToast } from "@/hooks/use-toast";
+import { useRecentActivity, formatRelativeTime } from "@/hooks/useInvoices";
 
 export function TopBar() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
-  const { toast } = useToast();
+  const { data: activity } = useRecentActivity();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -36,10 +37,54 @@ export function TopBar() {
 
   const displayName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "U";
   const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+  const hasActivity = !!activity?.length;
 
-  const handleNotifications = () => {
-    toast({ title: "Notifications", description: "Notifications coming soon!" });
-  };
+  const NotificationDropdown = () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative rounded-lg h-9 w-9">
+          <Bell className="h-4 w-4" />
+          {hasActivity && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-status-danger" />}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto">
+        <div className="px-3 py-2 border-b">
+          <p className="text-sm font-semibold">Recent Activity</p>
+        </div>
+        {!hasActivity ? (
+          <div className="px-3 py-6 text-center">
+            <Bell className="h-6 w-6 text-muted-foreground/30 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">No recent activity</p>
+          </div>
+        ) : (
+          activity.slice(0, 6).map((item) => {
+            const Icon = item.type === "quote" ? FileText : Receipt;
+            const path = item.type === "quote" ? `/quotes/${item.id}` : `/invoices/${item.id}`;
+            return (
+              <DropdownMenuItem
+                key={`${item.type}-${item.id}`}
+                onClick={() => navigate(path)}
+                className="flex items-start gap-3 py-3 cursor-pointer"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary mt-0.5">
+                  <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{item.text}</p>
+                  <p className="text-xs text-muted-foreground truncate">{item.detail}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{formatRelativeTime(item.time)}</p>
+                </div>
+              </DropdownMenuItem>
+            );
+          })
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => navigate("/invoices")} className="justify-center text-xs text-primary">
+          View All Activity <ChevronRight className="h-3 w-3 ml-1" />
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   const AvatarDropdown = () => (
     <DropdownMenu>
@@ -76,10 +121,7 @@ export function TopBar() {
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-card/80 backdrop-blur-sm px-4 border-b">
         <QuickLinqLogo size={28} type="full" variant="dark" />
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="relative rounded-lg h-9 w-9" onClick={handleNotifications}>
-            <Bell className="h-4 w-4" />
-            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-status-danger" />
-          </Button>
+          <NotificationDropdown />
           <AvatarDropdown />
         </div>
       </header>
@@ -126,11 +168,7 @@ export function TopBar() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button variant="ghost" size="icon" className="relative rounded-lg" onClick={handleNotifications}>
-          <Bell className="h-4 w-4" />
-          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-status-danger" />
-        </Button>
-
+        <NotificationDropdown />
         <AvatarDropdown />
       </div>
     </header>
