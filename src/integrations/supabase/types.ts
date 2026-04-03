@@ -279,6 +279,94 @@ export type Database = {
           },
         ]
       }
+      connect_products: {
+        Row: {
+          connected_account_id: string
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          name: string
+          price_cents: number
+          stripe_price_id: string | null
+          stripe_product_id: string
+          team_id: string | null
+          user_id: string
+        }
+        Insert: {
+          connected_account_id: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          name: string
+          price_cents?: number
+          stripe_price_id?: string | null
+          stripe_product_id: string
+          team_id?: string | null
+          user_id: string
+        }
+        Update: {
+          connected_account_id?: string
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          name?: string
+          price_cents?: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string
+          team_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connect_products_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connected_accounts: {
+        Row: {
+          contact_email: string | null
+          created_at: string
+          display_name: string
+          id: string
+          stripe_account_id: string
+          team_id: string | null
+          user_id: string
+        }
+        Insert: {
+          contact_email?: string | null
+          created_at?: string
+          display_name: string
+          id?: string
+          stripe_account_id: string
+          team_id?: string | null
+          user_id: string
+        }
+        Update: {
+          contact_email?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          stripe_account_id?: string
+          team_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connected_accounts_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string
