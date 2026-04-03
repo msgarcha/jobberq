@@ -1,56 +1,48 @@
 
 
-## Two Issues: Quote Deposit System + Stripe Connect 401 Fix
+## Replace All Logos/Icons with New Brand Assets
 
-### Issue 1: Stripe Connect Returns 401
+### What's Changing
+The new uploaded images replace all existing logo usage:
+- **`2.png`** = Icon mark (the interlinked Q symbol) -- used as favicon, small icon contexts, and sidebar collapsed state
+- **`1.png`** = Full logo (icon + "Quicklinq" wordmark) -- used where logo + text appears together (landing nav, footer, login, etc.)
 
-**Root cause:** The `connect-stripe-account` edge function is NOT listed in `supabase/config.toml`, so the Supabase gateway enforces JWT verification at the gateway level and rejects the request before it reaches the function. The function has its own auth logic inside but never gets to run it.
+On dark surfaces (sidebar, email dark badges), the logos will be inverted to white using a CSS filter.
 
-Additionally, many other edge functions are missing from config.toml and will also fail: `charge-saved-card`, `check-subscription`, `create-invoice-checkout`, `create-payment-intent`, `create-subscription-checkout`, `customer-portal`, `generate-recurring-invoices`, `save-card-setup`, `send-team-invite`, `stripe-webhook`.
-
-**Fix:** Add all missing functions to `supabase/config.toml` with `verify_jwt = false`. Each function already handles auth internally via Authorization header parsing. The `stripe-webhook` function validates via Stripe signature, not JWT.
-
-**File:** `supabase/config.toml`
-
-### Issue 2: Quote Deposit Option
-
-**What's needed:** When creating/editing a quote, the user should be able to set a required deposit as either a percentage of the total or a fixed dollar amount. When the client views the public quote and approves it, they should see and pay the deposit. When the quote is converted to an invoice, the deposit payment should be reflected as `amount_paid` on the invoice.
-
-**Implementation:**
-
-#### Database migration
-Add three columns to the `quotes` table:
-- `deposit_type` (text, nullable) -- `'percent'` or `'fixed'` or null (no deposit)
-- `deposit_value` (numeric, default 0) -- the percentage or dollar amount
-- `deposit_amount` (numeric, default 0) -- the calculated deposit in dollars (computed on save)
-
-#### Quote Form (`src/pages/QuoteForm.tsx`)
-Add a "Deposit Required" section below the line items card:
-- Toggle switch to enable deposit
-- Radio group: "Percentage" or "Fixed Amount"
-- Input field for the value (% or $)
-- Display the calculated deposit amount
-
-#### Quote Detail (`src/pages/QuoteDetail.tsx`)
-- Show deposit info in the summary if set
-- When converting to invoice: set `amount_paid = deposit_amount` and `balance_due = total - deposit_amount` if deposit was collected
-
-#### Public Quote View (`src/pages/PublicQuoteView.tsx`)
-- Show deposit amount required below the total
-- After approving, show a "Pay Deposit" button that initiates a Stripe payment for the deposit amount (using the existing `create-payment-intent` flow)
-
-#### Public Quote Edge Function (`supabase/functions/public-quote/index.ts`)
-- Include deposit fields in the response
-
-### Summary of Changes
+### Files to Change
 
 | # | File | Change |
 |---|------|--------|
-| 1 | `supabase/config.toml` | Add all missing edge functions with `verify_jwt = false` |
-| 2 | Database migration | Add `deposit_type`, `deposit_value`, `deposit_amount` to quotes |
-| 3 | `src/pages/QuoteForm.tsx` | Add deposit configuration UI |
-| 4 | `src/hooks/useQuotes.ts` | Include deposit fields in create/update |
-| 5 | `src/pages/QuoteDetail.tsx` | Display deposit info, account for deposit when converting to invoice |
-| 6 | `src/pages/PublicQuoteView.tsx` | Show deposit, add "Pay Deposit" button after approval |
-| 7 | `supabase/functions/public-quote/index.ts` | Return deposit fields |
+| 1 | `public/favicon.png` | Replace with `2.png` (icon mark) |
+| 2 | `src/assets/quicklinq-icon.png` | Copy `2.png` here (dark/green icon) |
+| 3 | `src/assets/quicklinq-logo-full.png` | Copy `1.png` here (dark/green full logo) |
+| 4 | `src/components/QuickLinqLogo.tsx` | Refactor: add `type` prop (`icon` vs `full`). `icon` uses the icon mark, `full` uses the wordmark logo. Keep `variant` prop: `dark` (original green) and `white` (CSS filter invert to white). Remove old CSS green filter, replace with white filter for dark surfaces. |
+| 5 | `src/components/layout/AppSidebar.tsx` | Use `type="icon"` `variant="white"` (sidebar is dark). Remove the separate "QuickLinq" text span since the full logo includes wordmark -- or keep icon-only in collapsed, full logo when expanded. |
+| 6 | `src/components/layout/TopBar.tsx` | Use `type="icon"` `variant="dark"` + remove the separate text "QuickLinq" span, or use `type="full"`. |
+| 7 | `src/components/landing/LandingNav.tsx` | Use `type="icon"` `variant="dark"` (light bg). Keep text span "QuickLinq" or switch to `type="full"`. |
+| 8 | `src/components/landing/LandingFooter.tsx` | Same as nav. |
+| 9 | `src/pages/Login.tsx` | Use `type="full"` `variant="dark"` to show the full branded logo. Remove the separate "QuickLinq" CardTitle text. |
+| 10 | `src/pages/Onboarding.tsx` | Use `type="full"` `variant="dark"`. |
+| 11 | 6 auth email templates + `document-email.tsx` + `welcome-email.tsx` | Update `LOGO_URL` to point to new icon uploaded to storage. Note: the new icon/logo PNGs need to be uploaded to the `email-assets` storage bucket. Will update URLs to reference new filenames. |
+| 12 | Delete old `src/assets/quicklinq-logo-white.png` and `src/assets/quicklinq-logo.png` | Clean up old assets |
+
+### CSS Filter for White Version (Dark Surfaces)
+The uploaded logos are dark teal/green on transparent background. For dark surfaces (sidebar, email badges), invert to white:
+```css
+filter: brightness(0) invert(1);
+```
+This converts any colored pixels to pure white.
+
+### QuickLinqLogo Component API
+```tsx
+interface QuickLinqLogoProps {
+  size?: number;
+  className?: string;
+  variant?: "dark" | "white";  // dark = original teal, white = inverted
+  type?: "icon" | "full";      // icon = mark only, full = icon+wordmark
+}
+```
+
+### Email Asset Note
+The email templates reference logos hosted in cloud storage (`email-assets` bucket). The new icon and logo files will need to be uploaded there. The URLs in the templates will be updated to reference the new filenames (`quicklinq-icon.png` and `quicklinq-logo-full.png`).
 
