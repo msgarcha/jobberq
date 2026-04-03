@@ -47,26 +47,6 @@ interface QuoteData {
     website: string | null;
   } | null;
 }
-  line_items: Array<{
-    description: string;
-    quantity: number;
-    unit_price: number;
-    line_total: number;
-    tax_rate: number;
-    discount_percent: number;
-  }>;
-  company: {
-    company_name: string | null;
-    logo_url: string | null;
-    email: string | null;
-    phone: string | null;
-    address_line1: string | null;
-    city: string | null;
-    state: string | null;
-    zip: string | null;
-    website: string | null;
-  } | null;
-}
 
 export default function PublicQuoteView() {
   const { quoteId } = useParams<{ quoteId: string }>();
