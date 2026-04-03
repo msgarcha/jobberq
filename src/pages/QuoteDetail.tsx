@@ -46,19 +46,21 @@ const QuoteDetail = () => {
   const handleConvert = async () => {
     if (!quote || !lineItems) return;
     const invoiceNumber = nextInvNumber?.formatted || `INV-${Date.now()}`;
-    const inv = await createInvoice.mutateAsync({
-      invoice_number: invoiceNumber,
-      client_id: quote.client_id,
-      quote_id: quote.id,
-      title: quote.title,
-      subtotal: quote.subtotal,
-      tax_amount: quote.tax_amount,
-      discount_amount: quote.discount_amount,
-      total: quote.total,
-      balance_due: quote.total,
-      client_notes: quote.client_notes,
-      internal_notes: quote.internal_notes,
-    });
+      const depositPaid = Number((quote as any).deposit_amount) || 0;
+      const inv = await createInvoice.mutateAsync({
+        invoice_number: invoiceNumber,
+        client_id: quote.client_id,
+        quote_id: quote.id,
+        title: quote.title,
+        subtotal: quote.subtotal,
+        tax_amount: quote.tax_amount,
+        discount_amount: quote.discount_amount,
+        total: quote.total,
+        amount_paid: depositPaid,
+        balance_due: Number(quote.total) - depositPaid,
+        client_notes: quote.client_notes,
+        internal_notes: quote.internal_notes,
+      });
     await saveInvoiceLineItems.mutateAsync({
       invoiceId: inv.id,
       items: lineItems.map((li) => ({
@@ -340,6 +342,12 @@ const QuoteDetail = () => {
                 )}
                 <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>${Number(quote.tax_amount).toFixed(2)}</span></div>
                 <div className="flex justify-between font-semibold border-t pt-1"><span>Total</span><span>${Number(quote.total).toFixed(2)}</span></div>
+                {Number((quote as any).deposit_amount) > 0 && (
+                  <div className="flex justify-between text-primary font-medium pt-1">
+                    <span>Deposit Required ({(quote as any).deposit_type === "percent" ? `${(quote as any).deposit_value}%` : "Fixed"})</span>
+                    <span>${Number((quote as any).deposit_amount).toFixed(2)}</span>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

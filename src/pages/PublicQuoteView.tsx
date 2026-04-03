@@ -17,6 +17,9 @@ interface QuoteData {
     valid_until: string | null;
     created_at: string;
     client_notes: string | null;
+    deposit_type: string | null;
+    deposit_value: number;
+    deposit_amount: number;
     clients: {
       first_name: string;
       last_name: string;
@@ -246,6 +249,18 @@ export default function PublicQuoteView() {
                   <span>Total</span>
                   <span>${Number(quote.total).toFixed(2)} CAD</span>
                 </div>
+                {Number(quote.deposit_amount) > 0 && (
+                  <>
+                    <div className="flex justify-between text-sm font-medium text-[hsl(192,60%,22%)] pt-1">
+                      <span>Deposit Required {quote.deposit_type === "percent" ? `(${quote.deposit_value}%)` : ""}</span>
+                      <span>${Number(quote.deposit_amount).toFixed(2)} CAD</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-[hsl(200,10%,46%)]">
+                      <span>Balance after deposit</span>
+                      <span>${(Number(quote.total) - Number(quote.deposit_amount)).toFixed(2)} CAD</span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

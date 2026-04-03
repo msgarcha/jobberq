@@ -919,6 +919,9 @@ export type Database = {
           client_id: string | null
           client_notes: string | null
           created_at: string
+          deposit_amount: number | null
+          deposit_type: string | null
+          deposit_value: number | null
           discount_amount: number
           id: string
           internal_notes: string | null
@@ -941,6 +944,9 @@ export type Database = {
           client_id?: string | null
           client_notes?: string | null
           created_at?: string
+          deposit_amount?: number | null
+          deposit_type?: string | null
+          deposit_value?: number | null
           discount_amount?: number
           id?: string
           internal_notes?: string | null
@@ -963,6 +969,9 @@ export type Database = {
           client_id?: string | null
           client_notes?: string | null
           created_at?: string
+          deposit_amount?: number | null
+          deposit_type?: string | null
+          deposit_value?: number | null
           discount_amount?: number
           id?: string
           internal_notes?: string | null
