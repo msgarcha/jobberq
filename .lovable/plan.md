@@ -1,74 +1,56 @@
 
 
-## Mobile UI/UX Fixes -- 6 Issues + General Polish
+## Two Issues: Quote Deposit System + Stripe Connect 401 Fix
 
-### 1. Login Page -- Button Outside Container (IMG_2180)
-The "Forgot password?" button renders outside the card on small screens due to the `min-height: 44px` CSS rule applying to all buttons on mobile. Fix: scope the `min-height` rule to exclude link-variant buttons, and ensure the login card has proper bottom padding.
+### Issue 1: Stripe Connect Returns 401
 
-**File:** `src/index.css` -- adjust the mobile `min-height` rule to exclude `variant="link"` buttons
-**File:** `src/pages/Login.tsx` -- add `pb-6` to CardContent, ensure the forgot password button sits inside the card
+**Root cause:** The `connect-stripe-account` edge function is NOT listed in `supabase/config.toml`, so the Supabase gateway enforces JWT verification at the gateway level and rejects the request before it reaches the function. The function has its own auth logic inside but never gets to run it.
 
-### 2. Dashboard KPI Cards -- Make Clickable (IMG_2183)
-The 4 KPI cards (Revenue, Outstanding, Overdue, Active Quotes) are not clickable. Each should navigate to the relevant page.
+Additionally, many other edge functions are missing from config.toml and will also fail: `charge-saved-card`, `check-subscription`, `create-invoice-checkout`, `create-payment-intent`, `create-subscription-checkout`, `customer-portal`, `generate-recurring-invoices`, `save-card-setup`, `send-team-invite`, `stripe-webhook`.
 
-**File:** `src/pages/Index.tsx`
-- Revenue (MTD) → `/invoices?status=paid`
-- Outstanding → `/invoices?status=sent`
-- Overdue → `/invoices?status=overdue`
-- Active Quotes → `/quotes`
-- Add `cursor-pointer` and `onClick` to each KPI card
+**Fix:** Add all missing functions to `supabase/config.toml` with `verify_jwt = false`. Each function already handles auth internally via Authorization header parsing. The `stripe-webhook` function validates via Stripe signature, not JWT.
 
-### 3. Quote Detail -- Mobile-Friendly Layout
-The quote detail page (QuoteDetail.tsx) has a horizontal button row that overflows on mobile. Needs the same mobile treatment as InvoiceDetail.
+**File:** `supabase/config.toml`
 
-**File:** `src/pages/QuoteDetail.tsx`
-- Replace the desktop-only `flex gap-2` action bar with a mobile-responsive layout
-- On mobile: stack action buttons as full-width rows inside the card (like InvoiceDetail's hero card pattern)
-- On desktop: keep the horizontal button row
-- Add mobile line items view (stacked cards instead of table) matching InvoiceDetail's `sm:hidden` pattern
-- Add `pb-24` to the container for bottom nav clearance
+### Issue 2: Quote Deposit Option
 
-### 4. Recent Activity -- Include Quotes + Meaningful Descriptions
-Currently `useRecentActivity` only fetches invoices. It should also include quotes and show descriptive activity text (e.g., "Invoice INV-001 marked as paid", "Quote QT-005 approved by client").
+**What's needed:** When creating/editing a quote, the user should be able to set a required deposit as either a percentage of the total or a fixed dollar amount. When the client views the public quote and approves it, they should see and pay the deposit. When the quote is converted to an invoice, the deposit payment should be reflected as `amount_paid` on the invoice.
 
-**File:** `src/hooks/useInvoices.ts` -- update `useRecentActivity`:
-- Fetch recent quotes alongside invoices
-- Map status to human-readable descriptions: draft→"created", sent→"sent to client", paid→"marked as paid", approved→"approved by client", viewed→"viewed by client", overdue→"is overdue"
-- Merge and sort both lists by `updated_at` descending
-- Include timestamp in the activity item
+**Implementation:**
 
-**File:** `src/pages/Index.tsx` -- update activity item rendering:
-- Use different icons for invoices vs quotes (Receipt vs FileText)
-- Navigate to correct detail page based on type
-- Show relative time (e.g., "2h ago", "Yesterday")
+#### Database migration
+Add three columns to the `quotes` table:
+- `deposit_type` (text, nullable) -- `'percent'` or `'fixed'` or null (no deposit)
+- `deposit_value` (numeric, default 0) -- the percentage or dollar amount
+- `deposit_amount` (numeric, default 0) -- the calculated deposit in dollars (computed on save)
 
-### 5. Client Viewed Timestamp
-Invoices already have `viewed_at`. Quotes do not.
+#### Quote Form (`src/pages/QuoteForm.tsx`)
+Add a "Deposit Required" section below the line items card:
+- Toggle switch to enable deposit
+- Radio group: "Percentage" or "Fixed Amount"
+- Input field for the value (% or $)
+- Display the calculated deposit amount
 
-**Database migration:** Add `viewed_at` column to the `quotes` table.
+#### Quote Detail (`src/pages/QuoteDetail.tsx`)
+- Show deposit info in the summary if set
+- When converting to invoice: set `amount_paid = deposit_amount` and `balance_due = total - deposit_amount` if deposit was collected
 
-**File:** `supabase/functions/public-quote/index.ts` -- record `viewed_at` when the public quote is accessed (same pattern as public-invoice)
-**File:** `src/pages/QuoteDetail.tsx` -- display "Viewed" timestamp in the Details card
-**File:** `src/pages/InvoiceDetail.tsx` -- display "Viewed" timestamp in the Details card (check if already shown)
+#### Public Quote View (`src/pages/PublicQuoteView.tsx`)
+- Show deposit amount required below the total
+- After approving, show a "Pay Deposit" button that initiates a Stripe payment for the deposit amount (using the existing `create-payment-intent` flow)
 
-### 6. FAB Toggle (Center + Button)
-Looking at the code, the FAB already toggles correctly (`setFabOpen((p) => !p)`). The X icon shows when open and clicking it closes. This appears to already work. Will verify and ensure the overlay click also closes it (it does via `onClick={() => setFabOpen(false)}`). No changes needed unless testing reveals a bug.
-
-### Additional Mobile Polish
-- **All detail pages**: Ensure `pb-24` padding bottom for bottom nav clearance
-- **Quote detail mobile actions**: Add Copy Link, Email, Edit, Send as stacked buttons in a hero card (matching InvoiceDetail pattern)
-- **Relative timestamps**: Add a `formatRelativeTime` utility for "2h ago", "Yesterday" style times in activity feed
+#### Public Quote Edge Function (`supabase/functions/public-quote/index.ts`)
+- Include deposit fields in the response
 
 ### Summary of Changes
 
 | # | File | Change |
 |---|------|--------|
-| 1 | `src/index.css` | Fix mobile button min-height for link buttons |
-| 2 | `src/pages/Login.tsx` | Ensure card padding contains all elements |
-| 3 | `src/pages/Index.tsx` | Clickable KPIs, improved activity rendering with icons + relative time |
-| 4 | `src/hooks/useInvoices.ts` | Expand `useRecentActivity` to include quotes + descriptive text |
-| 5 | `src/pages/QuoteDetail.tsx` | Mobile-responsive layout with hero card, stacked actions, mobile line items |
-| 6 | Database migration | Add `viewed_at` to quotes table |
-| 7 | `supabase/functions/public-quote/index.ts` | Record viewed_at on public access |
-| 8 | `src/pages/InvoiceDetail.tsx` | Show viewed_at timestamp in Details card |
+| 1 | `supabase/config.toml` | Add all missing edge functions with `verify_jwt = false` |
+| 2 | Database migration | Add `deposit_type`, `deposit_value`, `deposit_amount` to quotes |
+| 3 | `src/pages/QuoteForm.tsx` | Add deposit configuration UI |
+| 4 | `src/hooks/useQuotes.ts` | Include deposit fields in create/update |
+| 5 | `src/pages/QuoteDetail.tsx` | Display deposit info, account for deposit when converting to invoice |
+| 6 | `src/pages/PublicQuoteView.tsx` | Show deposit, add "Pay Deposit" button after approval |
+| 7 | `supabase/functions/public-quote/index.ts` | Return deposit fields |
 
