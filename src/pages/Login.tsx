@@ -82,7 +82,7 @@ export default function Login() {
           </div>
           <Card className="shadow-warm-md border-border/50">
             <CardHeader className="text-center pb-2">
-<Link to="/landing" className="mx-auto mb-4 flex items-center justify-center hover:opacity-90 transition-opacity"><QuickLinqLogo size={44} variant="green" /></Link>
+<Link to="/landing" className="mx-auto mb-4 flex items-center justify-center hover:opacity-90 transition-opacity"><QuickLinqLogo size={44} type="full" variant="dark" /></Link>
               <CardTitle className="text-2xl">Reset Password</CardTitle>
               <CardDescription>Enter your email to receive a reset link.</CardDescription>
             </CardHeader>
