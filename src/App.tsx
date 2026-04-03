@@ -41,6 +41,8 @@ import NotFound from "./pages/NotFound";
 import PublicInvoicePay from "./pages/PublicInvoicePay";
 import PublicQuoteView from "./pages/PublicQuoteView";
 import Unsubscribe from "./pages/Unsubscribe";
+import ConnectDashboard from "./pages/ConnectDashboard";
+import ConnectSuccess from "./pages/ConnectSuccess";
 
 const queryClient = new QueryClient();
 
