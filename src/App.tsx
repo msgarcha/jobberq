@@ -43,6 +43,7 @@ import PublicQuoteView from "./pages/PublicQuoteView";
 import Unsubscribe from "./pages/Unsubscribe";
 import ConnectDashboard from "./pages/ConnectDashboard";
 import ConnectSuccess from "./pages/ConnectSuccess";
+import HowItWorks from "./pages/HowItWorks";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
           <Routes>
             {/* Public routes */}
             <Route path="/landing" element={<Landing />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/accept-invite" element={<AcceptInvite />} />
