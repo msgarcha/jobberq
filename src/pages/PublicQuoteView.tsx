@@ -17,6 +17,9 @@ interface QuoteData {
     valid_until: string | null;
     created_at: string;
     client_notes: string | null;
+    deposit_type: string | null;
+    deposit_value: number;
+    deposit_amount: number;
     clients: {
       first_name: string;
       last_name: string;
@@ -24,6 +27,26 @@ interface QuoteData {
       email: string | null;
     } | null;
   };
+  line_items: Array<{
+    description: string;
+    quantity: number;
+    unit_price: number;
+    line_total: number;
+    tax_rate: number;
+    discount_percent: number;
+  }>;
+  company: {
+    company_name: string | null;
+    logo_url: string | null;
+    email: string | null;
+    phone: string | null;
+    address_line1: string | null;
+    city: string | null;
+    state: string | null;
+    zip: string | null;
+    website: string | null;
+  } | null;
+}
   line_items: Array<{
     description: string;
     quantity: number;
