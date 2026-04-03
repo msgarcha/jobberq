@@ -41,6 +41,8 @@ import NotFound from "./pages/NotFound";
 import PublicInvoicePay from "./pages/PublicInvoicePay";
 import PublicQuoteView from "./pages/PublicQuoteView";
 import Unsubscribe from "./pages/Unsubscribe";
+import ConnectDashboard from "./pages/ConnectDashboard";
+import ConnectSuccess from "./pages/ConnectSuccess";
 
 const queryClient = new QueryClient();
 
@@ -93,6 +95,9 @@ const App = () => (
             <Route path="/reviews" element={<ProtectedRoute><Reviews /></ProtectedRoute>} />
             <Route path="/import" element={<ProtectedRoute><ImportData /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/connect" element={<ProtectedRoute><ConnectDashboard /></ProtectedRoute>} />
+            <Route path="/connect/success" element={<ProtectedRoute><ConnectSuccess /></ProtectedRoute>} />
+            <Route path="/connect/storefront" element={<ProtectedRoute><ConnectDashboard /></ProtectedRoute>} />
             <Route path="/super-admin" element={<SuperAdminRoute><SuperAdmin /></SuperAdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
