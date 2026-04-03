@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ClientSelector } from "@/components/ClientSelector";
 import { LineItemsEditor, LineItem, computeTotals } from "@/components/LineItemsEditor";
 import { useQuote, useQuoteLineItems, useCreateQuote, useUpdateQuote, useSaveQuoteLineItems, useNextQuoteNumber, useIncrementQuoteNumber } from "@/hooks/useQuotes";
@@ -34,6 +36,11 @@ const QuoteForm = () => {
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [saving, setSaving] = useState(false);
 
+  // Deposit state
+  const [depositEnabled, setDepositEnabled] = useState(false);
+  const [depositType, setDepositType] = useState<"percent" | "fixed">("percent");
+  const [depositValue, setDepositValue] = useState("");
+
   useEffect(() => {
     if (existingQuote) {
       setClientId(existingQuote.client_id);
@@ -41,6 +48,13 @@ const QuoteForm = () => {
       setValidUntil(existingQuote.valid_until || "");
       setClientNotes(existingQuote.client_notes || "");
       setInternalNotes(existingQuote.internal_notes || "");
+      // Load deposit fields
+      const eq = existingQuote as any;
+      if (eq.deposit_type) {
+        setDepositEnabled(true);
+        setDepositType(eq.deposit_type);
+        setDepositValue(String(eq.deposit_value || ""));
+      }
     }
   }, [existingQuote]);
 
@@ -57,13 +71,22 @@ const QuoteForm = () => {
     }
   }, [existingLineItems]);
 
+  const totals = computeTotals(lineItems);
+  const calculatedDeposit = depositEnabled
+    ? depositType === "percent"
+      ? Math.round(totals.total * (Number(depositValue) || 0) / 100 * 100) / 100
+      : Number(depositValue) || 0
+    : 0;
+
   const handleSave = async (createAnother = false) => {
     setSaving(true);
     try {
-      const totals = computeTotals(lineItems);
-      const quoteData = {
+      const quoteData: any = {
         client_id: clientId, title: title || null, valid_until: validUntil || null,
         client_notes: clientNotes || null, internal_notes: internalNotes || null, ...totals,
+        deposit_type: depositEnabled ? depositType : null,
+        deposit_value: depositEnabled ? Number(depositValue) || 0 : 0,
+        deposit_amount: calculatedDeposit,
       };
 
       let quoteId: string;
@@ -82,6 +105,7 @@ const QuoteForm = () => {
 
       if (createAnother && !isEdit) {
         setClientId(null); setTitle(""); setValidUntil(""); setClientNotes(""); setInternalNotes(""); setLineItems([]);
+        setDepositEnabled(false); setDepositType("percent"); setDepositValue("");
       } else {
         navigate(`/quotes/${quoteId}`);
       }
@@ -129,6 +153,47 @@ const QuoteForm = () => {
         <Card className="shadow-warm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Line Items</CardTitle></CardHeader>
           <CardContent><LineItemsEditor items={lineItems} onChange={setLineItems} defaultTaxRate={defaultTaxRate} /></CardContent>
+        </Card>
+
+        {/* Deposit Section */}
+        <Card className="shadow-warm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium">Deposit Required</CardTitle>
+              <Switch checked={depositEnabled} onCheckedChange={setDepositEnabled} />
+            </div>
+          </CardHeader>
+          {depositEnabled && (
+            <CardContent className="space-y-4">
+              <RadioGroup value={depositType} onValueChange={(v) => setDepositType(v as "percent" | "fixed")} className="flex gap-4">
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="percent" id="dep-percent" />
+                  <Label htmlFor="dep-percent" className="text-sm">Percentage</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="fixed" id="dep-fixed" />
+                  <Label htmlFor="dep-fixed" className="text-sm">Fixed Amount</Label>
+                </div>
+              </RadioGroup>
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <Label className="text-xs">{depositType === "percent" ? "Percentage (%)" : "Amount ($)"}</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step={depositType === "percent" ? "1" : "0.01"}
+                    max={depositType === "percent" ? "100" : undefined}
+                    value={depositValue}
+                    onChange={(e) => setDepositValue(e.target.value)}
+                    placeholder={depositType === "percent" ? "e.g. 25" : "e.g. 500.00"}
+                  />
+                </div>
+                <div className="pb-2 text-sm font-medium text-foreground">
+                  Deposit: <span className="text-primary">${calculatedDeposit.toFixed(2)}</span>
+                </div>
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         <div className="grid gap-5 grid-cols-1 md:grid-cols-2">

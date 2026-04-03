@@ -342,6 +342,12 @@ const QuoteDetail = () => {
                 )}
                 <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>${Number(quote.tax_amount).toFixed(2)}</span></div>
                 <div className="flex justify-between font-semibold border-t pt-1"><span>Total</span><span>${Number(quote.total).toFixed(2)}</span></div>
+                {Number((quote as any).deposit_amount) > 0 && (
+                  <div className="flex justify-between text-primary font-medium pt-1">
+                    <span>Deposit Required ({(quote as any).deposit_type === "percent" ? `${(quote as any).deposit_value}%` : "Fixed"})</span>
+                    <span>${Number((quote as any).deposit_amount).toFixed(2)}</span>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

@@ -28,7 +28,7 @@ serve(async (req) => {
 
     const { data: quote, error: qErr } = await supabaseAdmin
       .from("quotes")
-      .select("id, quote_number, title, subtotal, discount_amount, tax_amount, total, status, valid_until, created_at, client_id, team_id, client_notes, viewed_at, clients(first_name, last_name, company_name, email)")
+      .select("id, quote_number, title, subtotal, discount_amount, tax_amount, total, status, valid_until, created_at, client_id, team_id, client_notes, viewed_at, deposit_type, deposit_value, deposit_amount, clients(first_name, last_name, company_name, email)")
       .eq("id", quote_id)
       .single();
 
