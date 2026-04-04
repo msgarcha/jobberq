@@ -217,6 +217,22 @@
   }
 }
 
+@keyframes fab-stagger-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+}
+
+@keyframes backdrop-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
 /* Slide up animation for more panel */
 @keyframes slide-up {
   from {
