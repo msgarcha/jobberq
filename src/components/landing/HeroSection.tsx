@@ -3,19 +3,19 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield, Star } from "lucide-react";
 
 const columnOneImages = [
-  { src: "https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?w=600&h=800&fit=crop&crop=center", label: "Landscaping", name: "Marcus T." },
-  { src: "https://images.unsplash.com/photo-1632823469850-2f77dd9c7f93?w=600&h=800&fit=crop&crop=center", label: "Roofing", name: "Chris W." },
+  { src: "https://images.unsplash.com/photo-1768268004427-6fb88cbd1605?w=600&h=800&fit=crop&crop=center", label: "Landscaping", name: "Marcus T." },
+  { src: "https://images.unsplash.com/photo-1763665814965-b5c4b3547908?w=600&h=800&fit=crop&crop=center", label: "Roofing", name: "Chris W." },
   { src: "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=600&h=800&fit=crop&crop=center", label: "Plumbing", name: "Sarah K." },
-  { src: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=800&fit=crop&crop=center", label: "Cleaning", name: "Maria G." },
-  { src: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&h=800&fit=crop&crop=center", label: "Carpentry", name: "Tom B." },
+  { src: "https://images.unsplash.com/photo-1758272421751-963195322eaa?w=600&h=800&fit=crop&crop=center", label: "Cleaning", name: "Maria G." },
+  { src: "https://images.unsplash.com/photo-1769353086138-19ee65291a04?w=600&h=800&fit=crop&crop=center", label: "Carpentry", name: "Tom B." },
 ];
 
 const columnTwoImages = [
-  { src: "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&h=800&fit=crop&crop=center", label: "Electrical", name: "James R." },
-  { src: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&h=800&fit=crop&crop=center", label: "Painting", name: "David L." },
-  { src: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=600&h=800&fit=crop&crop=center", label: "HVAC", name: "Kevin P." },
-  { src: "https://images.unsplash.com/photo-1590496793929-36417d3117de?w=600&h=800&fit=crop&crop=center", label: "Concrete", name: "Lisa H." },
-  { src: "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=800&fit=crop&crop=center", label: "Pressure Wash", name: "Ryan S." },
+  { src: "https://images.unsplash.com/photo-1741388222137-c0d3007ec173?w=600&h=800&fit=crop&crop=center", label: "Electrical", name: "James R." },
+  { src: "https://images.unsplash.com/photo-1717281234297-3def5ae3eee1?w=600&h=800&fit=crop&crop=center", label: "Painting", name: "David L." },
+  { src: "https://images.unsplash.com/photo-1558382689-c1c29cc9b37e?w=600&h=800&fit=crop&crop=center", label: "HVAC", name: "Kevin P." },
+  { src: "https://images.unsplash.com/photo-1743130940757-42d780087c3a?w=600&h=800&fit=crop&crop=center", label: "Concrete", name: "Lisa H." },
+  { src: "https://images.unsplash.com/photo-1704475386627-dcfcd97ed51a?w=600&h=800&fit=crop&crop=center", label: "Pressure Wash", name: "Ryan S." },
 ];
 
 function ScrollColumn({ images, direction }: { images: typeof columnOneImages; direction: "up" | "down" }) {
