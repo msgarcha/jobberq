@@ -49,6 +49,32 @@ export function useCreateReviewRequest() {
   });
 }
 
+export function useResendReviewRequest() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (reviewId: string) => {
+      const { data, error } = await supabase.functions.invoke("resend-review-request", {
+        body: { reviewId },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      return data;
+    },
+    onSuccess: (data: any) => {
+      qc.invalidateQueries({ queryKey: ["review-requests"] });
+      if (data?.emailed) {
+        toast({ title: "Reminder sent!", description: "We've emailed your client a fresh link." });
+      } else {
+        toast({ title: "Link refreshed", description: data?.message || "Use Copy Link to share." });
+      }
+    },
+    onError: (err: Error) => {
+      toast({ title: "Couldn't resend", description: err.message, variant: "destructive" });
+    },
+  });
+}
+
 export function useReviewStats() {
   const { user } = useAuth();
   return useQuery({

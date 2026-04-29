@@ -2,98 +2,152 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+function buildGoogleUrl(placeId: string | null, fallback: string | null): string | null {
+  if (placeId && placeId.trim()) {
+    return `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId.trim())}`;
   }
+  return fallback || null;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { token, rating, feedback } = await req.json();
-
-    if (!token || !rating || rating < 1 || rating > 5) {
-      return new Response(
-        JSON.stringify({ error: "Invalid token or rating" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const body = await req.json();
+    const { token, rating, feedback, action } = body;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Find the review request by token
+    // Find review
     const { data: review, error: findErr } = await supabase
       .from("review_requests")
       .select("*")
       .eq("token", token)
-      .eq("status", "pending")
       .single();
 
     if (findErr || !review) {
-      return new Response(
-        JSON.stringify({ error: "Review request not found or already submitted" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Review request not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Check expiry
-    if (new Date(review.expires_at) < new Date()) {
+    // Sub-action: customer confirms they posted on Google
+    if (action === "confirm_google_post") {
       await supabase
         .from("review_requests")
-        .update({ status: "expired" })
+        .update({ posted_to_google_confirmed_at: new Date().toISOString() })
         .eq("id", review.id);
-      return new Response(
-        JSON.stringify({ error: "This review request has expired" }),
-        { status: 410, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Get company settings for this team
+    // Submission validation
+    if (!token || !rating || rating < 1 || rating > 5) {
+      return new Response(JSON.stringify({ error: "Invalid token or rating" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (review.status !== "pending") {
+      return new Response(JSON.stringify({ error: "Review already submitted" }),
+        { status: 410, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (new Date(review.expires_at) < new Date()) {
+      await supabase.from("review_requests").update({ status: "expired" }).eq("id", review.id);
+      return new Response(JSON.stringify({ error: "This review request has expired" }),
+        { status: 410, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Get team settings
     const { data: settings } = await supabase
       .from("company_settings")
-      .select("google_review_url, review_min_stars, review_gating_enabled")
+      .select("google_review_url, google_place_id, review_min_stars, review_gating_enabled, notify_low_ratings, company_name")
       .eq("team_id", review.team_id)
       .single();
 
     const minStars = settings?.review_min_stars ?? 4;
     const gatingEnabled = settings?.review_gating_enabled ?? true;
-    const googleUrl = settings?.google_review_url;
+    const googleUrl = buildGoogleUrl(settings?.google_place_id ?? null, settings?.google_review_url ?? null);
 
     const shouldRedirect = gatingEnabled
       ? rating >= minStars && !!googleUrl
       : !!googleUrl;
 
-    // Update the review request
-    const { error: updateErr } = await supabase
+    const cleanFeedback = feedback?.trim() || null;
+
+    await supabase
       .from("review_requests")
       .update({
         rating,
-        feedback: feedback?.trim() || null,
+        feedback: cleanFeedback,
         status: "completed",
         submitted_at: new Date().toISOString(),
         redirected_to_google: shouldRedirect,
       })
       .eq("id", review.id);
 
-    if (updateErr) throw updateErr;
+    // Owner alert for low ratings (the "Shield" part)
+    const isLowRating = gatingEnabled && rating < minStars;
+    if (isLowRating && (settings?.notify_low_ratings ?? true)) {
+      try {
+        // Find team admin email
+        const { data: members } = await supabase
+          .from("team_members")
+          .select("user_id")
+          .eq("team_id", review.team_id)
+          .eq("role", "admin")
+          .limit(1);
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        redirect_to_google: shouldRedirect,
-        google_review_url: shouldRedirect ? googleUrl : null,
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+        let ownerEmail: string | null = null;
+        if (members && members.length > 0) {
+          const { data: userData } = await supabase.auth.admin.getUserById(members[0].user_id);
+          ownerEmail = userData?.user?.email ?? null;
+        }
+
+        // Client name
+        const { data: client } = await supabase
+          .from("clients")
+          .select("first_name, last_name")
+          .eq("id", review.client_id)
+          .maybeSingle();
+
+        if (ownerEmail) {
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "low-rating-alert",
+              recipientEmail: ownerEmail,
+              idempotencyKey: `low-rating-${review.id}`,
+              templateData: {
+                clientName: client ? `${client.first_name} ${client.last_name}` : "A client",
+                rating,
+                feedback: cleanFeedback,
+                dashboardUrl: "https://quicklinq.ca/reviews",
+              },
+            },
+          });
+
+          await supabase
+            .from("review_requests")
+            .update({ owner_notified_at: new Date().toISOString() })
+            .eq("id", review.id);
+        }
+      } catch (e) {
+        console.error("Failed to notify owner of low rating:", e);
+      }
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      redirect_to_google: shouldRedirect,
+      google_review_url: shouldRedirect ? googleUrl : null,
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: err.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: (err as Error).message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

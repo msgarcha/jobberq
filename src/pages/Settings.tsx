@@ -76,8 +76,10 @@ const Settings = () => {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [googleReviewUrl, setGoogleReviewUrl] = useState("");
+  const [googlePlaceId, setGooglePlaceId] = useState("");
   const [reviewMinStars, setReviewMinStars] = useState(4);
   const [reviewGatingEnabled, setReviewGatingEnabled] = useState(true);
+  const [notifyLowRatings, setNotifyLowRatings] = useState(true);
 
   // Stripe Connect state
   const [stripeConnectLoading, setStripeConnectLoading] = useState(false);
@@ -180,8 +182,10 @@ const Settings = () => {
       setDefaultTaxRate(Number(settings.default_tax_rate) || 0);
       setDefaultPaymentTerms(settings.default_payment_terms || "net_30");
       setGoogleReviewUrl((settings as any).google_review_url || "");
+      setGooglePlaceId((settings as any).google_place_id || "");
       setReviewMinStars((settings as any).review_min_stars ?? 4);
       setReviewGatingEnabled((settings as any).review_gating_enabled ?? true);
+      setNotifyLowRatings((settings as any).notify_low_ratings ?? true);
       setPdfPrimaryColor((settings as any).pdf_primary_color || "#1a1a1a");
       setPdfAccentColor((settings as any).pdf_accent_color || "#6366f1");
       setPdfStyle((settings as any).pdf_style || "classic");
@@ -208,8 +212,10 @@ const Settings = () => {
       default_tax_rate: defaultTaxRate,
       default_payment_terms: defaultPaymentTerms || null,
       google_review_url: googleReviewUrl || null,
+      google_place_id: googlePlaceId || null,
       review_min_stars: reviewMinStars,
       review_gating_enabled: reviewGatingEnabled,
+      notify_low_ratings: notifyLowRatings,
       pdf_primary_color: pdfPrimaryColor,
       pdf_accent_color: pdfAccentColor,
       pdf_style: pdfStyle,
@@ -845,14 +851,30 @@ const Settings = () => {
                 </div>
                 <Separator />
                 <div className="space-y-3">
-                  <Label className="text-sm font-medium">Google Review URL</Label>
+                  <Label className="text-sm font-medium">Google Place ID <span className="text-muted-foreground font-normal">(recommended)</span></Label>
+                  <Input
+                    value={googlePlaceId}
+                    onChange={(e) => setGooglePlaceId(e.target.value)}
+                    placeholder="ChIJN1t_tDeuEmsRUsoyG83frY4"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Find your Place ID with{" "}
+                    <a href="https://developers.google.com/maps/documentation/places/web-service/place-id" target="_blank" rel="noreferrer" className="underline">
+                      Google's Place ID Finder
+                    </a>
+                    . When set, customers go straight to your Google review form (no extra clicks).
+                  </p>
+                </div>
+                <Separator />
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Google Review URL <span className="text-muted-foreground font-normal">(fallback)</span></Label>
                   <Input
                     value={googleReviewUrl}
                     onChange={(e) => setGoogleReviewUrl(e.target.value)}
                     placeholder="https://g.page/r/your-business/review"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Search your business on Google Maps → click "Write a review" → copy the URL from your browser.
+                    Used only if Place ID is empty. Search your business on Google Maps → "Write a review" → copy the URL.
                   </p>
                 </div>
                 <Separator />
@@ -872,6 +894,14 @@ const Settings = () => {
                   <p className="text-xs text-muted-foreground">
                     Reviews with {reviewMinStars}+ stars will be redirected to Google. Lower ratings stay in your dashboard for private follow-up.
                   </p>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Email me when a low rating comes in</Label>
+                    <p className="text-xs text-muted-foreground">Get an instant alert so you can call the unhappy customer before they post publicly.</p>
+                  </div>
+                  <Switch checked={notifyLowRatings} onCheckedChange={setNotifyLowRatings} />
                 </div>
               </CardContent>
             </Card>
