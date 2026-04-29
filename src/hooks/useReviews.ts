@@ -75,6 +75,29 @@ export function useResendReviewRequest() {
   });
 }
 
+export function useDeleteReviewRequest() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (reviewId: string) => {
+      const { error } = await supabase
+        .from("review_requests")
+        .delete()
+        .eq("id", reviewId);
+      if (error) throw error;
+      return reviewId;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["review-requests"] });
+      qc.invalidateQueries({ queryKey: ["review-stats"] });
+      toast({ title: "Review request deleted" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Couldn't delete", description: err.message, variant: "destructive" });
+    },
+  });
+}
+
 export function useReviewStats() {
   const { user } = useAuth();
   return useQuery({
