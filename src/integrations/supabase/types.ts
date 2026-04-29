@@ -168,6 +168,7 @@ export type Database = {
           default_payment_terms: string | null
           default_tax_rate: number | null
           email: string | null
+          google_place_id: string | null
           google_review_url: string | null
           id: string
           invoice_prefix: string | null
@@ -176,6 +177,7 @@ export type Database = {
           next_invoice_number: number | null
           next_job_number: number | null
           next_quote_number: number | null
+          notify_low_ratings: boolean
           payout_schedule: string | null
           pdf_accent_color: string | null
           pdf_primary_color: string | null
@@ -205,6 +207,7 @@ export type Database = {
           default_payment_terms?: string | null
           default_tax_rate?: number | null
           email?: string | null
+          google_place_id?: string | null
           google_review_url?: string | null
           id?: string
           invoice_prefix?: string | null
@@ -213,6 +216,7 @@ export type Database = {
           next_invoice_number?: number | null
           next_job_number?: number | null
           next_quote_number?: number | null
+          notify_low_ratings?: boolean
           payout_schedule?: string | null
           pdf_accent_color?: string | null
           pdf_primary_color?: string | null
@@ -242,6 +246,7 @@ export type Database = {
           default_payment_terms?: string | null
           default_tax_rate?: number | null
           email?: string | null
+          google_place_id?: string | null
           google_review_url?: string | null
           id?: string
           invoice_prefix?: string | null
@@ -250,6 +255,7 @@ export type Database = {
           next_invoice_number?: number | null
           next_job_number?: number | null
           next_quote_number?: number | null
+          notify_low_ratings?: boolean
           payout_schedule?: string | null
           pdf_accent_color?: string | null
           pdf_primary_color?: string | null
@@ -1109,8 +1115,11 @@ export type Database = {
           feedback: string | null
           id: string
           job_id: string | null
+          owner_notified_at: string | null
+          posted_to_google_confirmed_at: string | null
           rating: number | null
           redirected_to_google: boolean
+          reminder_sent_at: string | null
           status: string
           submitted_at: string | null
           team_id: string | null
@@ -1124,8 +1133,11 @@ export type Database = {
           feedback?: string | null
           id?: string
           job_id?: string | null
+          owner_notified_at?: string | null
+          posted_to_google_confirmed_at?: string | null
           rating?: number | null
           redirected_to_google?: boolean
+          reminder_sent_at?: string | null
           status?: string
           submitted_at?: string | null
           team_id?: string | null
@@ -1139,8 +1151,11 @@ export type Database = {
           feedback?: string | null
           id?: string
           job_id?: string | null
+          owner_notified_at?: string | null
+          posted_to_google_confirmed_at?: string | null
           rating?: number | null
           redirected_to_google?: boolean
+          reminder_sent_at?: string | null
           status?: string
           submitted_at?: string | null
           team_id?: string | null
