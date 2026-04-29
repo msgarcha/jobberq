@@ -1,11 +1,16 @@
+import { useState } from "react";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, Copy, Send, ExternalLink, AlertTriangle, CheckCircle, Clock, Mail, Phone } from "lucide-react";
+import { Star, Copy, Send, ExternalLink, AlertTriangle, CheckCircle, Clock, Mail, Phone, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useResendReviewRequest } from "@/hooks/useReviews";
+import { useResendReviewRequest, useDeleteReviewRequest } from "@/hooks/useReviews";
 import { format } from "date-fns";
 import { buildReviewUrl } from "@/lib/reviewLinks";
 
@@ -18,6 +23,8 @@ interface ReviewDetailDrawerProps {
 export function ReviewDetailDrawer({ open, onOpenChange, review }: ReviewDetailDrawerProps) {
   const { toast } = useToast();
   const resend = useResendReviewRequest();
+  const del = useDeleteReviewRequest();
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!review) return null;
 
@@ -190,9 +197,47 @@ export function ReviewDetailDrawer({ open, onOpenChange, review }: ReviewDetailD
                 </a>
               </Button>
             )}
+
+            {/* Delete / Cancel */}
+            <Button
+              variant="ghost"
+              onClick={() => setConfirmDelete(true)}
+              className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 mt-1"
+            >
+              <Trash2 className="h-4 w-4" />
+              {isPending ? "Cancel & delete request" : "Remove from history"}
+            </Button>
           </div>
         </div>
       </SheetContent>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isPending ? "Cancel this review request?" : "Delete this review?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isPending
+                ? "The link will stop working immediately. You can always send a new request."
+                : "This will permanently remove this review from your history. This cannot be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep it</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                await del.mutateAsync(review.id);
+                setConfirmDelete(false);
+                onOpenChange(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 }

@@ -4,8 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, Send, ExternalLink, Clock, Copy, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { useReviewRequests, useReviewStats } from "@/hooks/useReviews";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Star, Send, ExternalLink, Clock, Copy, AlertTriangle, CheckCircle2, Trash2 } from "lucide-react";
+import { useReviewRequests, useReviewStats, useDeleteReviewRequest } from "@/hooks/useReviews";
 import { SendReviewDialog } from "@/components/review/SendReviewDialog";
 import { ReviewDetailDrawer } from "@/components/review/ReviewDetailDrawer";
 import { format } from "date-fns";
@@ -21,14 +25,21 @@ const statusStyles: Record<string, string> = {
 const Reviews = () => {
   const { data: reviews, isLoading } = useReviewRequests();
   const { data: stats } = useReviewStats();
+  const del = useDeleteReviewRequest();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedReview, setSelectedReview] = useState<any | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<any | null>(null);
   const { toast } = useToast();
 
   const copyLink = (e: React.MouseEvent, r: any) => {
     e.stopPropagation();
     navigator.clipboard.writeText(buildReviewUrl(r.short_token, r.token));
     toast({ title: "Review link copied!" });
+  };
+
+  const askDelete = (e: React.MouseEvent, r: any) => {
+    e.stopPropagation();
+    setPendingDelete(r);
   };
 
   return (
@@ -155,16 +166,27 @@ const Reviews = () => {
                               {format(new Date(r.created_at), "MMM d, yyyy")}
                             </p>
                           </div>
-                          {r.status === "pending" && (
+                          <div className="flex items-center gap-1 shrink-0">
+                            {r.status === "pending" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="gap-1 text-xs"
+                                onClick={(e) => copyLink(e, r)}
+                              >
+                                <Copy className="h-3.5 w-3.5" /> Copy
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
-                              size="sm"
-                              className="gap-1 text-xs"
-                              onClick={(e) => copyLink(e, r)}
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              onClick={(e) => askDelete(e, r)}
+                              aria-label="Delete review request"
                             >
-                              <Copy className="h-3.5 w-3.5" /> Copy
+                              <Trash2 className="h-3.5 w-3.5" />
                             </Button>
-                          )}
+                          </div>
                         </CardContent>
                       </Card>
                     );
@@ -181,6 +203,33 @@ const Reviews = () => {
         onOpenChange={(o) => !o && setSelectedReview(null)}
         review={selectedReview}
       />
+
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingDelete?.status === "pending" ? "Cancel this review request?" : "Delete this review?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete?.status === "pending"
+                ? "The link will stop working immediately. You can always send a new request."
+                : "This will permanently remove this review from your history. This cannot be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep it</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (pendingDelete) await del.mutateAsync(pendingDelete.id);
+                setPendingDelete(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
