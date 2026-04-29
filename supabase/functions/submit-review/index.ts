@@ -141,10 +141,58 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Generate AI-drafted review text (only when redirecting to Google)
+    let suggestedReviewText: string | null = null;
+    if (shouldRedirect) {
+      const companyName = settings?.company_name || "the team";
+      const fallback = `Had a great experience with ${companyName}. Highly recommend!`;
+      try {
+        const apiKey = Deno.env.get("LOVABLE_API_KEY");
+        if (apiKey) {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 3500);
+          const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+            },
+            signal: controller.signal,
+            body: JSON.stringify({
+              model: "google/gemini-3-flash-preview",
+              messages: [
+                {
+                  role: "system",
+                  content: "You write short, natural-sounding Google reviews from a customer's perspective. Output ONLY the review text — no quotes, no preamble, no emojis, no marketing language. Sound like a real person. Keep it under 280 characters and 1-2 sentences.",
+                },
+                {
+                  role: "user",
+                  content: `Write a Google review for "${companyName}" from a customer who rated ${rating} out of 5 stars. Their own words: ${cleanFeedback ? `"${cleanFeedback}"` : "(no comment provided)"}.`,
+                },
+              ],
+            }),
+          });
+          clearTimeout(timeout);
+          if (aiRes.ok) {
+            const aiData = await aiRes.json();
+            const text = aiData?.choices?.[0]?.message?.content?.trim();
+            if (text && text.length > 0 && text.length < 600) {
+              // Strip surrounding quotes if model added them
+              suggestedReviewText = text.replace(/^["'""]|["'""]$/g, "").trim();
+            }
+          }
+        }
+      } catch (e) {
+        console.error("AI draft generation failed:", e);
+      }
+      if (!suggestedReviewText) suggestedReviewText = fallback;
+    }
+
     return new Response(JSON.stringify({
       success: true,
       redirect_to_google: shouldRedirect,
       google_review_url: shouldRedirect ? googleUrl : null,
+      suggested_review_text: suggestedReviewText,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
     return new Response(JSON.stringify({ error: (err as Error).message }),
