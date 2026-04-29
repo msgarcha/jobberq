@@ -25,6 +25,7 @@ const ReviewForm = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
+  const [confirmedPosted, setConfirmedPosted] = useState(false);
   const draftRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
