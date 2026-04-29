@@ -51,6 +51,8 @@ project_id = "bfnlvdbswhjlpzdfwznz"
     verify_jwt = false
   [functions.submit-review]
     verify_jwt = false
+  [functions.resend-review-request]
+    verify_jwt = false
   [functions.stripe-connect-v2]
     verify_jwt = false
   [functions.stripe-connect-webhook-v2]
