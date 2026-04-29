@@ -1120,6 +1120,7 @@ export type Database = {
           rating: number | null
           redirected_to_google: boolean
           reminder_sent_at: string | null
+          short_token: string
           status: string
           submitted_at: string | null
           team_id: string | null
@@ -1138,6 +1139,7 @@ export type Database = {
           rating?: number | null
           redirected_to_google?: boolean
           reminder_sent_at?: string | null
+          short_token?: string
           status?: string
           submitted_at?: string | null
           team_id?: string | null
@@ -1156,6 +1158,7 @@ export type Database = {
           rating?: number | null
           redirected_to_google?: boolean
           reminder_sent_at?: string | null
+          short_token?: string
           status?: string
           submitted_at?: string | null
           team_id?: string | null
@@ -1429,6 +1432,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      gen_short_review_token: { Args: never; Returns: string }
       get_user_team_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
