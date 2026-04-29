@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, Send, ExternalLink, Clock, Copy, AlertTriangle } from "lucide-react";
+import { Star, Send, ExternalLink, Clock, Copy, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useReviewRequests, useReviewStats } from "@/hooks/useReviews";
 import { SendReviewDialog } from "@/components/review/SendReviewDialog";
 import { ReviewDetailDrawer } from "@/components/review/ReviewDetailDrawer";
