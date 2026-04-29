@@ -160,7 +160,7 @@ const Reviews = () => {
                               variant="ghost"
                               size="sm"
                               className="gap-1 text-xs"
-                              onClick={(e) => copyLink(e, r.token)}
+                              onClick={(e) => copyLink(e, r)}
                             >
                               <Copy className="h-3.5 w-3.5" /> Copy
                             </Button>
