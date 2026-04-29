@@ -7,6 +7,7 @@ import { Star, Copy, Send, ExternalLink, AlertTriangle, CheckCircle, Clock, Mail
 import { useToast } from "@/hooks/use-toast";
 import { useResendReviewRequest } from "@/hooks/useReviews";
 import { format } from "date-fns";
+import { buildReviewUrl } from "@/lib/reviewLinks";
 
 interface ReviewDetailDrawerProps {
   open: boolean;
