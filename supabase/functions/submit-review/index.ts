@@ -36,6 +36,16 @@ Deno.serve(async (req) => {
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    // Sub-action: customer clicked "Copy & Open Google" — they were actually redirected
+    if (action === "redirected_to_google") {
+      await supabase
+        .from("review_requests")
+        .update({ redirected_to_google: true })
+        .eq("id", review.id);
+      return new Response(JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // Sub-action: customer confirms they posted on Google
     if (action === "confirm_google_post") {
       await supabase
@@ -87,7 +97,8 @@ Deno.serve(async (req) => {
         feedback: cleanFeedback,
         status: "completed",
         submitted_at: new Date().toISOString(),
-        redirected_to_google: shouldRedirect,
+        // Note: redirected_to_google is only set when the customer actually
+        // clicks "Copy & Open Google" (see redirected_to_google sub-action).
       })
       .eq("id", review.id);
 

@@ -141,6 +141,9 @@ const ReviewForm = () => {
     const win = window.open(result.google_review_url, "_blank", "noopener");
     if (!win) setPopupBlocked(true);
     setCopied(copyOk);
+
+    // Record that the customer was actually redirected to Google (fire-and-forget)
+    callSubmit({ action: "redirected_to_google" }).catch(() => {});
   };
 
   const handleConfirmPosted = async () => {
