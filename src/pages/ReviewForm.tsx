@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { Star, ExternalLink, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Star, ExternalLink, CheckCircle2, ShieldCheck, Copy, Check, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
