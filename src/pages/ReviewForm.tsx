@@ -78,16 +78,41 @@ const ReviewForm = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setResult(data);
+      if (data.suggested_review_text) setDraftText(data.suggested_review_text);
     } catch (err: any) {
       setError(err.message || "Failed to submit review.");
     }
     setSubmitting(false);
   };
 
-  const handleGoogleClick = () => {
+  // Synchronous: copy + open Google in the same user gesture (required by iOS Safari)
+  const handleCopyAndOpen = () => {
     if (!result?.google_review_url) return;
-    window.open(result.google_review_url, "_blank");
-    setGoogleClicked(true);
+    const text = (draftText || "").trim();
+
+    // Try modern Clipboard API; fall back to execCommand for older iOS
+    let copyOk = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(() => {});
+        copyOk = true;
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        copyOk = document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+    } catch {
+      copyOk = false;
+    }
+
+    const win = window.open(result.google_review_url, "_blank", "noopener");
+    if (!win) setPopupBlocked(true);
+    setCopied(copyOk);
   };
 
   const handleConfirmPosted = async () => {
