@@ -10,6 +10,7 @@ import { SendReviewDialog } from "@/components/review/SendReviewDialog";
 import { ReviewDetailDrawer } from "@/components/review/ReviewDetailDrawer";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { buildReviewUrl } from "@/lib/reviewLinks";
 
 const statusStyles: Record<string, string> = {
   pending: "bg-status-warning text-status-warning-foreground",
@@ -24,11 +25,9 @@ const Reviews = () => {
   const [selectedReview, setSelectedReview] = useState<any | null>(null);
   const { toast } = useToast();
 
-  const getReviewUrl = (token: string) => `${window.location.origin}/review/${token}`;
-
-  const copyLink = (e: React.MouseEvent, token: string) => {
+  const copyLink = (e: React.MouseEvent, r: any) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(getReviewUrl(token));
+    navigator.clipboard.writeText(buildReviewUrl(r.short_token, r.token));
     toast({ title: "Review link copied!" });
   };
 
@@ -161,7 +160,7 @@ const Reviews = () => {
                               variant="ghost"
                               size="sm"
                               className="gap-1 text-xs"
-                              onClick={(e) => copyLink(e, r.token)}
+                              onClick={(e) => copyLink(e, r)}
                             >
                               <Copy className="h-3.5 w-3.5" /> Copy
                             </Button>

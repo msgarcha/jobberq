@@ -24,12 +24,12 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Find review
+    // Find review by either long token (legacy) or short_token (new)
     const { data: review, error: findErr } = await supabase
       .from("review_requests")
       .select("*")
-      .eq("token", token)
-      .single();
+      .or(`token.eq.${token},short_token.eq.${token}`)
+      .maybeSingle();
 
     if (findErr || !review) {
       return new Response(JSON.stringify({ error: "Review request not found" }),
