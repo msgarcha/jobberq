@@ -25,11 +25,9 @@ const Reviews = () => {
   const [selectedReview, setSelectedReview] = useState<any | null>(null);
   const { toast } = useToast();
 
-  const getReviewUrl = (token: string) => `${window.location.origin}/review/${token}`;
-
-  const copyLink = (e: React.MouseEvent, token: string) => {
+  const copyLink = (e: React.MouseEvent, r: any) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(getReviewUrl(token));
+    navigator.clipboard.writeText(buildReviewUrl(r.short_token, r.token));
     toast({ title: "Review link copied!" });
   };
 
