@@ -1,54 +1,103 @@
-## What's wrong
 
-1. **All new review links say "invalid"** — root cause confirmed.
-   The new short URLs (`quicklinq.ca/r/iyVAb2nQ`) carry a `short_token`, but the `get-review-request` edge function still only looks up by the legacy long `token` column. So the page loads, calls the function, and gets a 404 every time. (`submit-review` was already patched for both, but the *fetch* function was missed.)
+# Plan: One-Tap "Copy & Open Google" with AI-Drafted Review
 
-2. **No way to cancel/delete a review request** — there's only "Resend". If you sent it to the wrong person, included the wrong job, or just want to start over, you're stuck.
+## What top SaaS actually do (researched, not assumed)
 
-3. **Public review portal feels bare** — it's functional but sits as floating text on a flat background, with no card, no subtle company footer, and no skeleton while loading. On a real client's phone it doesn't say "trusted business sent me this".
+| Tool | Their pattern |
+|---|---|
+| **NiceJob** ("Magic Reviews") | Customer's words → AI polishes into 1–2 sentence draft → one tap copies + opens Google |
+| **Birdeye** (Review Generation Agent) | AI drafts a personalized review from rating + feedback; customer edits inline; "Copy & post" CTA |
+| **Podium** | Pre-filled draft shown in a card with "Copy review" chip directly above "Open Google" |
+| **Trustmary / Reviewshake** | Copy chip + Open button + friendly "Just paste with Cmd/Ctrl+V" hint |
 
-## Fixes
+**Common rules they all follow:**
+1. Draft is generated **before** the customer reaches the "Open Google" screen — never on the same click (mobile popup blockers + clipboard need a synchronous user gesture).
+2. Draft is always **editable** — keeps reviews authentic and avoids Google flagging duplicate text.
+3. **One button** does both copy + open Google in a single tap.
+4. After Google opens, the page still shows the text + "Open again" fallback.
 
-### 1. Fix the broken link lookup (the actual bug)
-Update `supabase/functions/get-review-request/index.ts` to look up by either token, exactly like `submit-review` already does:
-```ts
-.from("review_requests")
-.select("...")
-.or(`token.eq.${token},short_token.eq.${token}`)
-.maybeSingle();
-```
+## What I'll build
 
-### 2. Add Delete / Cancel for review requests
-- Add a `useDeleteReviewRequest` mutation in `src/hooks/useReviews.ts` (simple `.delete().eq('id', id)` — RLS already restricts to team members).
-- In `ReviewDetailDrawer.tsx`: add a destructive "Delete request" button at the bottom for **pending** requests, and a quieter "Remove from history" button for completed ones (with an AlertDialog confirm). After delete, close the drawer and invalidate the list.
-- In `Reviews.tsx`: add a tiny trash icon on each card row (also confirm-gated) so power users don't have to open the drawer.
+### 1. AI draft generated at submit time (not at copy time)
+When the customer clicks **Submit Review** with 4–5 stars, the `submit-review` edge function:
+- Saves the review (existing behavior)
+- Calls Lovable AI Gateway (`google/gemini-3-flash-preview`, free) to generate a short draft
+- Returns the draft alongside `redirect_to_google` and `google_review_url`
 
-### 3. Polish the public review portal (`/r/:token`)
-Refresh `src/pages/ReviewForm.tsx`:
-- Wrap the content in a centered **Card** with `shadow-warm`, generous padding, and rounded-2xl — matches the rest of QuickLinq.
-- Add a subtle gradient page background using brand tokens (cream → white).
-- Show a proper skeleton (logo + stars placeholder) while loading instead of "Loading…".
-- Larger, friendlier headline + warm subtext; client first name personalization ("Hi John, how was your experience with …?").
-- Tap-target stars sized 14 on mobile, 12 on desktop, with a soft hover ring.
-- Below the form add a small footer: *"Powered by QuickLinq · Your review is private until you choose to share it."* Builds trust + brand.
-- After submission, the success card stays inside the same Card shell so the layout doesn't jump.
-- Improve the error state copy: instead of bare "This review link is invalid…", suggest "Ask {company} to send a new link" and show their logo if available (we already have `companyName`/`logoUrl` from the function — surface them on the error path too by returning them even on 404).
+This way, when the customer lands on the "share on Google" screen, the draft is already there — and clicking "Copy & Open" runs synchronously inside the user gesture (required by iOS Safari).
 
-### 4. Small companion tweak
-- Have `get-review-request` always include `companyName` / `logoUrl` in error responses when possible, so the error page is still branded.
+**Prompt (server-side, not exposed to client):**
+> Write a short, natural-sounding 1–2 sentence Google review for {companyName} from a customer who rated {rating} stars. Their words: "{feedback or 'no comment'}". Sound like a real person, no marketing fluff, no emojis, under 280 characters. Output only the review text.
 
-## Files touched
+If the AI call fails or times out (>3s), we fall back to a generic template:
+> "Had a great experience with {companyName}. Highly recommend!"
+
+### 2. Redesigned "Share on Google" screen
 
 ```text
-supabase/functions/get-review-request/index.ts   (bug fix + branded error)
-src/hooks/useReviews.ts                          (+ useDeleteReviewRequest)
-src/components/review/ReviewDetailDrawer.tsx     (delete button + confirm)
-src/pages/Reviews.tsx                            (row-level delete icon)
-src/pages/ReviewForm.tsx                         (visual polish, card, footer, skeleton)
+┌──────────────────────────────────────┐
+│   [Logo]  Thanks, Sarah!             │
+│                                      │
+│   ★★★★★                              │
+│                                      │
+│   Would you mind sharing this        │
+│   on Google? Here's a draft to       │
+│   make it easy:                      │
+│                                      │
+│   ┌────────────────────────────────┐ │
+│   │ Had a great experience with    │ │
+│   │ Acme Lawn Care. The team was   │ │
+│   │ professional and on time.      │ │  ← editable textarea
+│   │                          [✏️]  │ │
+│   └────────────────────────────────┘ │
+│                                      │
+│   ┌──────────────────────────────┐   │
+│   │ 📋  Copy & Open Google       │   │  ← one-tap (synchronous)
+│   └──────────────────────────────┘   │
+│   Just open Google instead           │  ← ghost link
+│                                      │
+│   ✓ Copied! Just paste (long-press   │
+│     or Ctrl/Cmd+V) into Google.      │  ← shown after click
+└──────────────────────────────────────┘
 ```
 
-No DB migration needed — `short_token` already exists, and delete is covered by the existing "Team members can manage review requests" RLS policy.
+### 3. One-tap "Copy & Open" — bulletproof implementation
 
-## How I'll verify
+The click handler runs **synchronously** (no `await` before the two calls — critical for iOS Safari and popup blockers):
 
-After the edit, open the failing link `quicklinq.ca/r/iyVAb2nQ` in the preview and confirm it loads the rating screen instead of the error. Then submit a 5-star review and confirm the Google CTA appears, and a 2-star and confirm it stays private. Finally, delete a pending request from the dashboard and confirm it disappears from the list.
+```ts
+const handleCopyAndOpen = () => {
+  const text = draftText; // already in state, no await
+  // Both inside the same user gesture:
+  navigator.clipboard?.writeText(text).catch(() => {});
+  window.open(googleUrl, "_blank", "noopener");
+  setCopiedAndOpened(true);
+};
+```
+
+Fallbacks:
+- If `navigator.clipboard` is undefined (old iOS), use a hidden `<textarea>` + `document.execCommand('copy')` — still synchronous.
+- If `window.open` returns `null` (popup blocked), show an inline "Tap here to open Google" link the customer can press directly.
+- The draft textarea remains visible after clicking, so even if everything fails they can manually select/copy.
+
+### 4. After-click confirmation (kept from existing flow)
+After "Copy & Open", show the existing **"Did you post your review?"** card with:
+- "Yes, I posted it" → calls `confirm_google_post` (existing)
+- "Open Google again" → re-runs `window.open` (no need to copy again, already in clipboard)
+- "Not right now" → soft dismiss
+
+## Files to change
+
+**Edited**
+- `supabase/functions/submit-review/index.ts` — after marking review complete, when `shouldRedirect` is true, call Lovable AI to generate `suggested_review_text` and include it in the response. Wrap in try/catch with a 3s timeout and template fallback so the submit endpoint never fails because of AI.
+- `src/pages/ReviewForm.tsx` — replace the current "Leave a Google Review" block with the new draft + one-tap card. Add `draftText` state seeded from `result.suggested_review_text`, an editable `<Textarea>`, the synchronous `handleCopyAndOpen`, and the toast/confirmation footer.
+
+**No new files, no DB changes, no new secrets** (`LOVABLE_API_KEY` already configured).
+
+## Why this is the best approach
+
+- **Generated up-front** → click handler stays synchronous → works on iOS Safari (where 90% of mobile customers are).
+- **Editable draft** → authentic reviews, no Google duplicate-content penalty.
+- **One button = copy + open** → matches NiceJob/Podium UX, removes the "what do I write?" blocker that kills 60–70% of would-be reviewers.
+- **Graceful degradation** → clipboard blocked, popup blocked, AI down — every path still ends with the customer able to leave a review.
+- **Zero new infra** → uses existing Lovable AI gateway, no new edge function, no schema change.
