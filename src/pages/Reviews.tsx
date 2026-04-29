@@ -10,6 +10,7 @@ import { SendReviewDialog } from "@/components/review/SendReviewDialog";
 import { ReviewDetailDrawer } from "@/components/review/ReviewDetailDrawer";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { buildReviewUrl } from "@/lib/reviewLinks";
 
 const statusStyles: Record<string, string> = {
   pending: "bg-status-warning text-status-warning-foreground",
