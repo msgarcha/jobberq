@@ -204,53 +204,126 @@ const ReviewForm = () => {
 
     return (
       <PageShell>
-        <div className="text-center space-y-5">
-          <Brand />
-          <div className="flex justify-center gap-1">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <Star
-                key={s}
-                className={`h-7 w-7 ${s <= rating ? "fill-[hsl(36,80%,50%)] text-[hsl(36,80%,50%)]" : "text-muted-foreground/30"}`}
-              />
-            ))}
+        <div className="space-y-5">
+          <div className="flex flex-col items-center gap-3">
+            <Brand />
+            <div className="flex justify-center gap-1">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <Star
+                  key={s}
+                  className={`h-6 w-6 ${s <= rating ? "fill-[hsl(36,80%,50%)] text-[hsl(36,80%,50%)]" : "text-muted-foreground/30"}`}
+                />
+              ))}
+            </div>
           </div>
+
           {result.redirect_to_google && result.google_review_url ? (
-            !googleClicked ? (
-              <>
-                <h2 className="text-xl font-display font-bold tracking-tight">
-                  Thank you{clientFirstName ? `, ${clientFirstName}` : ""}!
-                </h2>
-                <p className="text-muted-foreground text-sm">
-                  We're so glad you had a great experience. Would you mind sharing it on Google? It only takes a moment and means a lot.
-                </p>
-                <Button size="lg" className="w-full gap-2 rounded-xl" onClick={handleGoogleClick}>
-                  <ExternalLink className="h-4 w-4" /> Leave a Google Review
+            !copied && !popupBlocked ? (
+              <div className="space-y-4">
+                <div className="text-center space-y-2">
+                  <h2 className="text-xl font-display font-bold tracking-tight">
+                    Thank you{clientFirstName ? `, ${clientFirstName}` : ""}!
+                  </h2>
+                  <p className="text-muted-foreground text-sm">
+                    Would you mind sharing this on Google? We've drafted it for you — tap once and you're done.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-border/60 bg-secondary/40 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                      Suggested review
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditing(true);
+                        setTimeout(() => draftRef.current?.focus(), 50);
+                      }}
+                      className="text-[11px] inline-flex items-center gap-1 text-primary hover:underline"
+                    >
+                      <Pencil className="h-3 w-3" /> Edit
+                    </button>
+                  </div>
+                  {isEditing ? (
+                    <Textarea
+                      ref={draftRef}
+                      value={draftText}
+                      onChange={(e) => setDraftText(e.target.value)}
+                      onBlur={() => setIsEditing(false)}
+                      rows={4}
+                      maxLength={500}
+                      className="rounded-lg resize-none text-sm bg-background"
+                    />
+                  ) : (
+                    <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
+                      {draftText || "Loading…"}
+                    </p>
+                  )}
+                </div>
+
+                <Button
+                  size="lg"
+                  className="w-full gap-2 rounded-xl"
+                  onClick={handleCopyAndOpen}
+                  disabled={!draftText.trim()}
+                >
+                  <Copy className="h-4 w-4" /> Copy & Open Google
                 </Button>
-              </>
+                <p className="text-[11px] text-center text-muted-foreground">
+                  We'll copy the text — just paste it on Google with one tap.
+                </p>
+              </div>
             ) : (
-              <>
-                <h2 className="text-xl font-display font-bold tracking-tight">Did you post your review?</h2>
-                <p className="text-muted-foreground text-sm">Let us know once you're done — or come back to it any time.</p>
+              <div className="space-y-4">
+                <div className="text-center space-y-2">
+                  <div className="h-12 w-12 rounded-full bg-status-success/10 flex items-center justify-center mx-auto">
+                    <Check className="h-6 w-6 text-status-success" />
+                  </div>
+                  <h2 className="text-lg font-display font-bold tracking-tight">
+                    {copied ? "Copied! Now paste it on Google" : "Almost there!"}
+                  </h2>
+                  <p className="text-muted-foreground text-sm">
+                    {popupBlocked
+                      ? "Your browser blocked the new tab. Tap the button below to open Google."
+                      : "On Google, long-press (mobile) or Ctrl/Cmd+V (desktop) to paste your review."}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-border/60 bg-secondary/40 p-3">
+                  <p className="text-xs leading-relaxed text-foreground/80 whitespace-pre-wrap">
+                    {draftText}
+                  </p>
+                </div>
+
                 <div className="flex flex-col gap-2">
                   <Button size="lg" className="gap-2 rounded-xl" onClick={handleConfirmPosted}>
                     <CheckCircle2 className="h-4 w-4" /> Yes, I posted it
                   </Button>
-                  <Button size="lg" variant="outline" className="rounded-xl" onClick={handleGoogleClick}>
-                    Open Google again
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="gap-2 rounded-xl"
+                    onClick={() => {
+                      const win = window.open(result.google_review_url!, "_blank", "noopener");
+                      if (!win) setPopupBlocked(true);
+                    }}
+                  >
+                    <ExternalLink className="h-4 w-4" /> Open Google again
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => setConfirmedPosted(true)}>
                     Not right now
                   </Button>
                 </div>
-              </>
+              </div>
             )
           ) : (
-            <>
+            <div className="text-center space-y-3">
               <h2 className="text-xl font-display font-bold tracking-tight">Thank you for your feedback!</h2>
               <p className="text-muted-foreground text-sm">
                 We really appreciate you taking the time. {companyName || "The team"} will review your comments and use them to improve.
               </p>
-            </>
+            </div>
           )}
         </div>
       </PageShell>
