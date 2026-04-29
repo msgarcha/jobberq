@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const reviewUrl = `https://quicklinq.ca/review/${review.token}`;
+    const reviewUrl = `https://quicklinq.ca/r/${(review as any).short_token || review.token}`;
     const isReminder = !!review.reminder_sent_at || !!review.submitted_at;
 
     await supabase.functions.invoke("send-transactional-email", {
