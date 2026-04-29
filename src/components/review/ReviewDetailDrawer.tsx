@@ -23,7 +23,7 @@ export function ReviewDetailDrawer({ open, onOpenChange, review }: ReviewDetailD
 
   const client = review.clients;
   const clientName = client ? `${client.first_name} ${client.last_name}` : "Unknown";
-  const reviewUrl = `${window.location.origin}/review/${review.token}`;
+  const reviewUrl = buildReviewUrl(review.short_token, review.token);
 
   const isCompleted = review.status === "completed";
   const isPositive = isCompleted && (review.rating ?? 0) >= 4;
