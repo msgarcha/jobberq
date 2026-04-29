@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, Send, ExternalLink, Clock, CheckCircle, AlertTriangle, TrendingUp, Copy } from "lucide-react";
+import { Star, Send, ExternalLink, Clock, Copy, AlertTriangle } from "lucide-react";
 import { useReviewRequests, useReviewStats } from "@/hooks/useReviews";
 import { SendReviewDialog } from "@/components/review/SendReviewDialog";
+import { ReviewDetailDrawer } from "@/components/review/ReviewDetailDrawer";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,13 +21,13 @@ const Reviews = () => {
   const { data: reviews, isLoading } = useReviewRequests();
   const { data: stats } = useReviewStats();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedReview, setSelectedReview] = useState<any | null>(null);
   const { toast } = useToast();
 
-  const getReviewUrl = (token: string) => {
-    return `${window.location.origin}/review/${token}`;
-  };
+  const getReviewUrl = (token: string) => `${window.location.origin}/review/${token}`;
 
-  const copyLink = (token: string) => {
+  const copyLink = (e: React.MouseEvent, token: string) => {
+    e.stopPropagation();
     navigator.clipboard.writeText(getReviewUrl(token));
     toast({ title: "Review link copied!" });
   };
@@ -101,10 +102,15 @@ const Reviews = () => {
                     const clientName = client
                       ? `${client.first_name} ${client.last_name}`
                       : "Unknown";
+                    const isLowRating = r.status === "completed" && (r.rating ?? 0) <= 3;
                     return (
-                      <Card key={r.id} className="shadow-warm">
+                      <Card
+                        key={r.id}
+                        className="shadow-warm cursor-pointer hover:shadow-md transition-shadow"
+                        onClick={() => setSelectedReview(r)}
+                      >
                         <CardContent className="p-4 flex items-center gap-4">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary">
+                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isLowRating ? 'bg-status-warning/10' : 'bg-secondary'}`}>
                             {r.status === "completed" ? (
                               <div className="flex gap-0.5">
                                 {[1, 2, 3, 4, 5].map((s) => (
@@ -123,7 +129,7 @@ const Reviews = () => {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium text-sm">{clientName}</p>
                               <Badge className={`${statusStyles[r.status]} text-[10px] px-1.5 py-0`} variant="secondary">
                                 {r.status}
@@ -131,6 +137,11 @@ const Reviews = () => {
                               {r.redirected_to_google && (
                                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-0.5 border-status-success text-status-success">
                                   <ExternalLink className="h-2.5 w-2.5" /> Google
+                                </Badge>
+                              )}
+                              {isLowRating && (
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-0.5 border-status-warning text-status-warning">
+                                  <AlertTriangle className="h-2.5 w-2.5" /> Action needed
                                 </Badge>
                               )}
                             </div>
@@ -147,9 +158,9 @@ const Reviews = () => {
                               variant="ghost"
                               size="sm"
                               className="gap-1 text-xs"
-                              onClick={() => copyLink(r.token)}
+                              onClick={(e) => copyLink(e, r.token)}
                             >
-                              <Copy className="h-3.5 w-3.5" /> Copy Link
+                              <Copy className="h-3.5 w-3.5" /> Copy
                             </Button>
                           )}
                         </CardContent>
@@ -163,6 +174,11 @@ const Reviews = () => {
       </div>
 
       <SendReviewDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <ReviewDetailDrawer
+        open={!!selectedReview}
+        onOpenChange={(o) => !o && setSelectedReview(null)}
+        review={selectedReview}
+      />
     </DashboardLayout>
   );
 };
