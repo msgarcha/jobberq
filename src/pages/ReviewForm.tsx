@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Star } from "lucide-react";
+import { Star, ExternalLink, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -19,6 +19,8 @@ const ReviewForm = () => {
     redirect_to_google: boolean;
     google_review_url: string | null;
   } | null>(null);
+  const [googleClicked, setGoogleClicked] = useState(false);
+  const [confirmedPosted, setConfirmedPosted] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -51,19 +53,20 @@ const ReviewForm = () => {
     })();
   }, [token]);
 
+  const callSubmit = async (extra: Record<string, any> = {}) => {
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    return fetch(`https://${projectId}.supabase.co/functions/v1/submit-review`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, ...extra }),
+    });
+  };
+
   const handleSubmit = async () => {
     if (rating === 0) return;
     setSubmitting(true);
     try {
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/submit-review`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token, rating, feedback }),
-        }
-      );
+      const res = await callSubmit({ rating, feedback });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setResult(data);
@@ -71,6 +74,19 @@ const ReviewForm = () => {
       setError(err.message || "Failed to submit review.");
     }
     setSubmitting(false);
+  };
+
+  const handleGoogleClick = () => {
+    if (!result?.google_review_url) return;
+    window.open(result.google_review_url, "_blank");
+    setGoogleClicked(true);
+  };
+
+  const handleConfirmPosted = async () => {
+    try {
+      await callSubmit({ action: "confirm_google_post" });
+    } catch {}
+    setConfirmedPosted(true);
   };
 
   if (loading) {
@@ -94,7 +110,25 @@ const ReviewForm = () => {
     );
   }
 
+  // Success state
   if (result) {
+    // Final thank-you after confirmation
+    if (confirmedPosted) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background px-4">
+          <div className="text-center max-w-md space-y-5">
+            <div className="h-16 w-16 rounded-full bg-status-success/10 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="h-9 w-9 text-status-success" />
+            </div>
+            <h2 className="text-xl font-bold tracking-tight">You're a legend! 🙌</h2>
+            <p className="text-muted-foreground text-sm">
+              Thank you for taking the time to share your experience on Google. It really helps {companyName || "us"}.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="text-center max-w-md space-y-6">
@@ -110,17 +144,31 @@ const ReviewForm = () => {
             ))}
           </div>
           {result.redirect_to_google && result.google_review_url ? (
-            <>
-              <h2 className="text-xl font-bold tracking-tight">Thank you! We're glad you had a great experience.</h2>
-              <p className="text-muted-foreground text-sm">Would you mind sharing your experience on Google? It helps us a lot!</p>
-              <Button
-                size="lg"
-                className="gap-2"
-                onClick={() => window.open(result.google_review_url!, "_blank")}
-              >
-                <Star className="h-4 w-4" /> Leave a Google Review
-              </Button>
-            </>
+            !googleClicked ? (
+              <>
+                <h2 className="text-xl font-bold tracking-tight">Thank you! We're glad you had a great experience.</h2>
+                <p className="text-muted-foreground text-sm">Would you mind sharing your experience on Google? It only takes a moment and helps us a lot!</p>
+                <Button size="lg" className="gap-2" onClick={handleGoogleClick}>
+                  <ExternalLink className="h-4 w-4" /> Leave a Google Review
+                </Button>
+              </>
+            ) : (
+              <>
+                <h2 className="text-xl font-bold tracking-tight">Did you post your review?</h2>
+                <p className="text-muted-foreground text-sm">Let us know once you're done — or you can come back to it anytime.</p>
+                <div className="flex flex-col gap-2 max-w-xs mx-auto">
+                  <Button size="lg" className="gap-2" onClick={handleConfirmPosted}>
+                    <CheckCircle2 className="h-4 w-4" /> Yes, I posted it
+                  </Button>
+                  <Button size="lg" variant="outline" onClick={handleGoogleClick}>
+                    Open Google again
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setConfirmedPosted(true)}>
+                    Not right now
+                  </Button>
+                </div>
+              </>
+            )
           ) : (
             <>
               <h2 className="text-xl font-bold tracking-tight">Thank you for your feedback!</h2>
