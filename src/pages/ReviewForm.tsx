@@ -5,6 +5,34 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 
+// Module-scope shells: stable component identities prevent the mobile keyboard
+// from dismissing on every keystroke (which would happen if these were defined
+// inside ReviewForm and re-created on each render).
+const PageShell = ({ children }: { children: React.ReactNode }) => (
+  <div className="min-h-screen flex flex-col items-center justify-center px-4 py-10 bg-gradient-to-b from-[hsl(var(--accent))] via-background to-background">
+    <div className="w-full max-w-md">
+      <Card className="shadow-warm border-border/60 rounded-3xl overflow-hidden">
+        <CardContent className="p-7 sm:p-9">{children}</CardContent>
+      </Card>
+      <p className="text-[11px] text-center text-muted-foreground mt-5">
+        Powered by <span className="font-semibold text-foreground/80">QuickLinq</span> · Your review is private until you choose to share it
+      </p>
+    </div>
+  </div>
+);
+
+const Brand = ({ companyName, logoUrl }: { companyName: string; logoUrl: string }) => (
+  <div className="flex flex-col items-center gap-3">
+    {logoUrl ? (
+      <img src={logoUrl} alt={companyName} className="h-16 w-16 rounded-2xl object-contain bg-secondary p-2" />
+    ) : companyName ? (
+      <div className="h-16 w-16 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center font-display font-bold text-2xl shadow-warm">
+        {companyName[0]}
+      </div>
+    ) : null}
+  </div>
+);
+
 const ReviewForm = () => {
   const { token } = useParams();
   const [loading, setLoading] = useState(true);
