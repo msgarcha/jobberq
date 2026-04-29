@@ -19,9 +19,13 @@ const ReviewForm = () => {
   const [result, setResult] = useState<{
     redirect_to_google: boolean;
     google_review_url: string | null;
+    suggested_review_text?: string | null;
   } | null>(null);
-  const [googleClicked, setGoogleClicked] = useState(false);
-  const [confirmedPosted, setConfirmedPosted] = useState(false);
+  const [draftText, setDraftText] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [popupBlocked, setPopupBlocked] = useState(false);
+  const draftRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     if (!token) return;
