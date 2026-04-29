@@ -4,8 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, Send, ExternalLink, Clock, Copy, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { useReviewRequests, useReviewStats } from "@/hooks/useReviews";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Star, Send, ExternalLink, Clock, Copy, AlertTriangle, CheckCircle2, Trash2 } from "lucide-react";
+import { useReviewRequests, useReviewStats, useDeleteReviewRequest } from "@/hooks/useReviews";
 import { SendReviewDialog } from "@/components/review/SendReviewDialog";
 import { ReviewDetailDrawer } from "@/components/review/ReviewDetailDrawer";
 import { format } from "date-fns";
@@ -21,14 +25,21 @@ const statusStyles: Record<string, string> = {
 const Reviews = () => {
   const { data: reviews, isLoading } = useReviewRequests();
   const { data: stats } = useReviewStats();
+  const del = useDeleteReviewRequest();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedReview, setSelectedReview] = useState<any | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<any | null>(null);
   const { toast } = useToast();
 
   const copyLink = (e: React.MouseEvent, r: any) => {
     e.stopPropagation();
     navigator.clipboard.writeText(buildReviewUrl(r.short_token, r.token));
     toast({ title: "Review link copied!" });
+  };
+
+  const askDelete = (e: React.MouseEvent, r: any) => {
+    e.stopPropagation();
+    setPendingDelete(r);
   };
 
   return (
