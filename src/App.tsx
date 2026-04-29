@@ -62,6 +62,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/accept-invite" element={<AcceptInvite />} />
             <Route path="/review/:token" element={<ReviewForm />} />
+            <Route path="/r/:token" element={<ReviewForm />} />
             <Route path="/pay/:invoiceId" element={<PublicInvoicePay />} />
             <Route path="/quote/view/:quoteId" element={<PublicQuoteView />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
