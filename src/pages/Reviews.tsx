@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, Send, ExternalLink, Clock, Copy, AlertTriangle } from "lucide-react";
+import { Star, Send, ExternalLink, Clock, Copy, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useReviewRequests, useReviewStats } from "@/hooks/useReviews";
 import { SendReviewDialog } from "@/components/review/SendReviewDialog";
 import { ReviewDetailDrawer } from "@/components/review/ReviewDetailDrawer";
@@ -110,20 +110,9 @@ const Reviews = () => {
                         onClick={() => setSelectedReview(r)}
                       >
                         <CardContent className="p-4 flex items-center gap-4">
-                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isLowRating ? 'bg-status-warning/10' : 'bg-secondary'}`}>
+                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isLowRating ? 'bg-status-warning/10' : r.status === 'completed' ? 'bg-status-success/10' : 'bg-secondary'}`}>
                             {r.status === "completed" ? (
-                              <div className="flex gap-0.5">
-                                {[1, 2, 3, 4, 5].map((s) => (
-                                  <Star
-                                    key={s}
-                                    className={`h-3 w-3 ${
-                                      s <= (r.rating || 0)
-                                        ? "fill-[hsl(36,80%,50%)] text-[hsl(36,80%,50%)]"
-                                        : "text-muted-foreground/30"
-                                    }`}
-                                  />
-                                ))}
-                              </div>
+                              <CheckCircle2 className={`h-5 w-5 ${isLowRating ? 'text-status-warning' : 'text-status-success'}`} />
                             ) : (
                               <Clock className="h-5 w-5 text-muted-foreground" />
                             )}
@@ -131,6 +120,20 @@ const Reviews = () => {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium text-sm">{clientName}</p>
+                              {r.status === "completed" && (
+                                <div className="flex gap-0.5">
+                                  {[1, 2, 3, 4, 5].map((s) => (
+                                    <Star
+                                      key={s}
+                                      className={`h-3.5 w-3.5 ${
+                                        s <= (r.rating || 0)
+                                          ? "fill-[hsl(36,80%,50%)] text-[hsl(36,80%,50%)]"
+                                          : "text-muted-foreground/30"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                              )}
                               <Badge className={`${statusStyles[r.status]} text-[10px] px-1.5 py-0`} variant="secondary">
                                 {r.status}
                               </Badge>
