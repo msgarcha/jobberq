@@ -1,11 +1,16 @@
+import { useState } from "react";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, Copy, Send, ExternalLink, AlertTriangle, CheckCircle, Clock, Mail, Phone } from "lucide-react";
+import { Star, Copy, Send, ExternalLink, AlertTriangle, CheckCircle, Clock, Mail, Phone, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useResendReviewRequest } from "@/hooks/useReviews";
+import { useResendReviewRequest, useDeleteReviewRequest } from "@/hooks/useReviews";
 import { format } from "date-fns";
 import { buildReviewUrl } from "@/lib/reviewLinks";
 
@@ -18,6 +23,8 @@ interface ReviewDetailDrawerProps {
 export function ReviewDetailDrawer({ open, onOpenChange, review }: ReviewDetailDrawerProps) {
   const { toast } = useToast();
   const resend = useResendReviewRequest();
+  const del = useDeleteReviewRequest();
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!review) return null;
 
