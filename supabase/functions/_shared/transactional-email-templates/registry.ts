@@ -11,8 +11,12 @@ export interface TemplateEntry {
 
 import { template as documentEmail } from './document-email.tsx'
 import { template as welcomeEmail } from './welcome-email.tsx'
+import { template as lowRatingAlert } from './low-rating-alert.tsx'
+import { template as reviewRequest } from './review-request.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'document-email': documentEmail,
   'welcome-email': welcomeEmail,
+  'low-rating-alert': lowRatingAlert,
+  'review-request': reviewRequest,
 }
