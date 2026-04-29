@@ -174,7 +174,7 @@ const ReviewForm = () => {
     return (
       <PageShell>
         <div className="text-center space-y-4 py-2">
-          <Brand />
+          <Brand companyName={companyName} logoUrl={logoUrl} />
           <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center mx-auto">
             <Star className="h-7 w-7 text-muted-foreground" />
           </div>
@@ -211,7 +211,7 @@ const ReviewForm = () => {
       <PageShell>
         <div className="space-y-5">
           <div className="flex flex-col items-center gap-3">
-            <Brand />
+            <Brand companyName={companyName} logoUrl={logoUrl} />
             <div className="flex justify-center gap-1">
               {[1, 2, 3, 4, 5].map((s) => (
                 <Star
@@ -340,7 +340,7 @@ const ReviewForm = () => {
     <PageShell>
       <div className="space-y-7">
         <div className="text-center space-y-3">
-          <Brand />
+          <Brand companyName={companyName} logoUrl={logoUrl} />
           <h1 className="text-2xl font-display font-bold tracking-tight leading-tight">
             {clientFirstName ? `Hi ${clientFirstName}, how was your experience` : "How was your experience"}
             {companyName ? <> with <span className="text-primary">{companyName}</span>?</> : "?"}
