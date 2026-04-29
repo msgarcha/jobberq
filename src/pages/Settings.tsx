@@ -895,6 +895,14 @@ const Settings = () => {
                     Reviews with {reviewMinStars}+ stars will be redirected to Google. Lower ratings stay in your dashboard for private follow-up.
                   </p>
                 </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Email me when a low rating comes in</Label>
+                    <p className="text-xs text-muted-foreground">Get an instant alert so you can call the unhappy customer before they post publicly.</p>
+                  </div>
+                  <Switch checked={notifyLowRatings} onCheckedChange={setNotifyLowRatings} />
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
