@@ -97,7 +97,8 @@ Deno.serve(async (req) => {
         feedback: cleanFeedback,
         status: "completed",
         submitted_at: new Date().toISOString(),
-        redirected_to_google: shouldRedirect,
+        // Note: redirected_to_google is only set when the customer actually
+        // clicks "Copy & Open Google" (see redirected_to_google sub-action).
       })
       .eq("id", review.id);
 
