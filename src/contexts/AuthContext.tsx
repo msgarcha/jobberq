@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, ReactNode 
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { getTierByProductId, type TierKey } from '@/lib/subscriptionTiers';
+import { registerPushNotifications } from '@/lib/native/pushNotifications';
 
 interface SubscriptionState {
   subscribed: boolean;
@@ -159,6 +160,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       checkSubscription();
       loadTeam(session.user.id);
       loadSuperAdmin(session.user.id);
+      // Register for native push notifications (no-op on web)
+      registerPushNotifications(session.user.id, team.teamId).catch(() => {});
     } else {
       setSubscription({ ...defaultSubscription, loading: false });
       setTeam({ ...defaultTeam, loading: false });
