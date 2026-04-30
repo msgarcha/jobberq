@@ -78,16 +78,16 @@ const Index = () => {
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Greeting + Tip */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-display font-bold tracking-tight">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 min-w-0">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-display font-bold tracking-tight break-words">
               {getGreeting()}, {firstName} 👋
             </h1>
             <p className="text-muted-foreground text-sm mt-1">Here's what's happening today.</p>
           </div>
-          <div className="flex items-center gap-2 bg-primary/5 border border-primary/15 rounded-xl px-4 py-2.5 max-w-md">
+          <div className="flex items-center gap-2 bg-primary/5 border border-primary/15 rounded-xl px-4 py-2.5 max-w-full sm:max-w-md min-w-0">
             <Lightbulb className="h-4 w-4 text-primary shrink-0" />
-            <p className="text-xs text-foreground/80">{tipOfDay}</p>
+            <p className="text-xs text-foreground/80 min-w-0 break-words">{tipOfDay}</p>
           </div>
         </div>
 
