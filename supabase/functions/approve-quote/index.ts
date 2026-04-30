@@ -7,16 +7,54 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function verifyApprovalToken(quoteId: string, token: string): Promise<boolean> {
+  try {
+    const [expiresAtStr, sigHex] = token.split(".");
+    if (!expiresAtStr || !sigHex) return false;
+    const expiresAt = Number(expiresAtStr);
+    if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return false;
+
+    const secret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const payload = `${quoteId}.${expiresAt}`;
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+    const expectedHex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
+    // constant-time compare
+    if (expectedHex.length !== sigHex.length) return false;
+    let mismatch = 0;
+    for (let i = 0; i < expectedHex.length; i++) {
+      mismatch |= expectedHex.charCodeAt(i) ^ sigHex.charCodeAt(i);
+    }
+    return mismatch === 0;
+  } catch {
+    return false;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { quote_id } = await req.json();
-    if (!quote_id) {
-      return new Response(JSON.stringify({ error: "quote_id required" }), {
+    const { quote_id, approval_token } = await req.json();
+    if (!quote_id || !approval_token) {
+      return new Response(JSON.stringify({ error: "quote_id and approval_token required" }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const valid = await verifyApprovalToken(quote_id, approval_token);
+    if (!valid) {
+      return new Response(JSON.stringify({ error: "Invalid or expired approval token" }), {
+        status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -26,7 +64,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Only approve if currently in sent status
     const { data: quote } = await supabaseAdmin
       .from("quotes")
       .select("id, status")
@@ -65,7 +102,7 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Error approving quote:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "An internal error occurred. Please try again." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
