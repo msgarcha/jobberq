@@ -85,6 +85,11 @@ export default function PublicQuoteView() {
 
   const handleApprove = async () => {
     if (!quoteId) return;
+    const approvalToken = (data as any)?.approval_token;
+    if (!approvalToken) {
+      setError("Missing approval token. Please reload the page.");
+      return;
+    }
     setApproving(true);
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -93,7 +98,7 @@ export default function PublicQuoteView() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ quote_id: quoteId }),
+          body: JSON.stringify({ quote_id: quoteId, approval_token: approvalToken }),
         }
       );
       const result = await res.json();

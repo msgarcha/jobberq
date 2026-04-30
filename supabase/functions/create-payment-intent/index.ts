@@ -73,6 +73,31 @@ serve(async (req) => {
       });
     }
 
+    // SECURITY: For public (unauthenticated) payments, ignore client-supplied amount
+    // and always charge the actual balance_due from the database to prevent tampering.
+    // For authenticated team members, allow the supplied amount but cap it at balance_due.
+    const balanceDue = Number(invoice.balance_due) || 0;
+    let chargeAmount: number;
+    if (public_pay && !userId) {
+      chargeAmount = balanceDue;
+    } else {
+      const requested = Number(amount);
+      if (!Number.isFinite(requested) || requested <= 0) {
+        return new Response(JSON.stringify({ error: "Invalid amount" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      chargeAmount = Math.min(requested, balanceDue);
+    }
+
+    if (chargeAmount <= 0) {
+      return new Response(JSON.stringify({ error: "Invoice has no balance due" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Look up the business's connected Stripe account
     const { data: companySettings } = await serviceSupabase
       .from("company_settings")
@@ -102,7 +127,7 @@ serve(async (req) => {
       }
     }
 
-    const amountCents = Math.round(Number(amount) * 100);
+    const amountCents = Math.round(chargeAmount * 100);
 
     // Calculate platform fee
     const feePercent = Number(Deno.env.get("PLATFORM_FEE_PERCENT") || "0");
@@ -148,7 +173,7 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("Error creating payment intent:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "An internal error occurred. Please try again." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
