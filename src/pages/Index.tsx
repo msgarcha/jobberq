@@ -119,11 +119,16 @@ const Index = () => {
               onClick={() => navigate(kpi.path)}
             >
               <CardContent className="p-4 md:p-5">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1 min-w-0">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1 min-w-0 flex-1">
                     <p className="text-[10px] md:text-xs text-muted-foreground font-medium uppercase tracking-wide truncate">{kpi.label}</p>
-                    <p className="text-xl md:text-2xl font-display font-bold">{kpi.value}</p>
-                    {kpi.sub && <p className="text-[10px] md:text-xs text-muted-foreground">{kpi.sub}</p>}
+                    <p
+                      className="text-xl md:text-2xl font-display font-bold truncate leading-tight tabular-nums"
+                      title={kpi.value}
+                    >
+                      {kpi.value}
+                    </p>
+                    {kpi.sub && <p className="text-[10px] md:text-xs text-muted-foreground truncate">{kpi.sub}</p>}
                   </div>
                   <div className={`h-8 w-8 md:h-10 md:w-10 rounded-xl bg-secondary flex items-center justify-center shrink-0 ${kpi.color}`}>
                     <kpi.icon className="h-4 w-4 md:h-5 md:w-5" />
