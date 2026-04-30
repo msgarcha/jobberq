@@ -59,13 +59,30 @@ serve(async (req) => {
       .eq("team_id", quote.team_id)
       .maybeSingle();
 
+    // Generate a short-lived HMAC approval token bound to this quote_id.
+    // Client must echo it back to approve-quote, which proves the caller actually
+    // loaded the quote (not just guessed/enumerated UUIDs).
+    const secret = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const expiresAt = Date.now() + 1000 * 60 * 60 * 24; // 24h
+    const payload = `${quote.id}.${expiresAt}`;
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+    const sigHex = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
+    const approval_token = `${expiresAt}.${sigHex}`;
+
     return new Response(
-      JSON.stringify({ quote, line_items: lineItems || [], company }),
+      JSON.stringify({ quote, line_items: lineItems || [], company, approval_token }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {
     console.error("Error loading public quote:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "An internal error occurred. Please try again." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
