@@ -127,7 +127,7 @@ serve(async (req) => {
       }
     }
 
-    const amountCents = Math.round(Number(amount) * 100);
+    const amountCents = Math.round(chargeAmount * 100);
 
     // Calculate platform fee
     const feePercent = Number(Deno.env.get("PLATFORM_FEE_PERCENT") || "0");
