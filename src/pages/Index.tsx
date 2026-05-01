@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats, useRecentActivity, formatRelativeTime } from "@/hooks/useInvoices";
 import { useJobsByDate } from "@/hooks/useJobs";
+import { ReviewSuggestionsCard } from "@/components/ai/ReviewSuggestionsCard";
 import { format } from "date-fns";
 
 const getGreeting = () => {
