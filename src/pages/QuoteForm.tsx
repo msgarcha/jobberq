@@ -12,6 +12,7 @@ import { ClientSelector } from "@/components/ClientSelector";
 import { LineItemsEditor, LineItem, computeTotals } from "@/components/LineItemsEditor";
 import { useQuote, useQuoteLineItems, useCreateQuote, useUpdateQuote, useSaveQuoteLineItems, useNextQuoteNumber, useIncrementQuoteNumber } from "@/hooks/useQuotes";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
+import { SuggestionChip } from "@/components/ai/SuggestionChip";
 import { ArrowLeft, Save, Plus } from "lucide-react";
 
 const QuoteForm = () => {
@@ -152,7 +153,19 @@ const QuoteForm = () => {
 
         <Card className="shadow-warm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Line Items</CardTitle></CardHeader>
-          <CardContent><LineItemsEditor items={lineItems} onChange={setLineItems} defaultTaxRate={defaultTaxRate} /></CardContent>
+          <CardContent className="space-y-3">
+            <LineItemsEditor items={lineItems} onChange={setLineItems} defaultTaxRate={defaultTaxRate} />
+            <SuggestionChip
+              docType="quote"
+              title={title}
+              lineItems={lineItems.map((li) => ({ description: li.description, unit_price: li.unit_price, tax_rate: li.tax_rate }))}
+              enabled={companySettings?.ai_assistant_enabled !== false}
+              onAdd={(s) => setLineItems((curr) => [
+                ...curr,
+                { service_id: null, description: s.description, quantity: 1, unit_price: s.suggested_price, tax_rate: defaultTaxRate, discount_percent: 0, line_total: s.suggested_price * (1 + defaultTaxRate / 100) },
+              ])}
+            />
+          </CardContent>
         </Card>
 
         {/* Deposit Section */}
