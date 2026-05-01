@@ -3,6 +3,7 @@ import { AppSidebar } from "./AppSidebar";
 import { TopBar } from "./TopBar";
 import { MobileBottomNav } from "./MobileBottomNav";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { LinqLauncher } from "@/components/ai/LinqLauncher";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -22,6 +23,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </main>
         </div>
         {isMobile && <MobileBottomNav />}
+        <LinqLauncher />
       </div>
     </SidebarProvider>
   );
