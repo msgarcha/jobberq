@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_actions: {
+        Row: {
+          action: string
+          created_at: string
+          doc_id: string | null
+          doc_type: string | null
+          id: string
+          payload: Json
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          doc_id?: string | null
+          doc_type?: string | null
+          id?: string
+          payload?: Json
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          doc_id?: string | null
+          doc_type?: string | null
+          id?: string
+          payload?: Json
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_dismissed_suggestions: {
+        Row: {
+          created_at: string
+          dismiss_count: number
+          dismissed_until: string
+          id: string
+          suggestion_key: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dismiss_count?: number
+          dismissed_until?: string
+          id?: string
+          suggestion_key: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dismiss_count?: number
+          dismissed_until?: string
+          id?: string
+          suggestion_key?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_saved_cards: {
         Row: {
           card_brand: string | null
@@ -161,6 +224,7 @@ export type Database = {
         Row: {
           address_line1: string | null
           address_line2: string | null
+          ai_assistant_enabled: boolean
           city: string | null
           company_name: string | null
           country: string | null
@@ -171,6 +235,7 @@ export type Database = {
           google_place_id: string | null
           google_review_url: string | null
           id: string
+          industry: string | null
           invoice_prefix: string | null
           job_prefix: string | null
           logo_url: string | null
@@ -200,6 +265,7 @@ export type Database = {
         Insert: {
           address_line1?: string | null
           address_line2?: string | null
+          ai_assistant_enabled?: boolean
           city?: string | null
           company_name?: string | null
           country?: string | null
@@ -210,6 +276,7 @@ export type Database = {
           google_place_id?: string | null
           google_review_url?: string | null
           id?: string
+          industry?: string | null
           invoice_prefix?: string | null
           job_prefix?: string | null
           logo_url?: string | null
@@ -239,6 +306,7 @@ export type Database = {
         Update: {
           address_line1?: string | null
           address_line2?: string | null
+          ai_assistant_enabled?: boolean
           city?: string | null
           company_name?: string | null
           country?: string | null
@@ -249,6 +317,7 @@ export type Database = {
           google_place_id?: string | null
           google_review_url?: string | null
           id?: string
+          industry?: string | null
           invoice_prefix?: string | null
           job_prefix?: string | null
           logo_url?: string | null
@@ -1146,6 +1215,7 @@ export type Database = {
           id: string
           job_id: string | null
           owner_notified_at: string | null
+          personalized_body: string | null
           posted_to_google_confirmed_at: string | null
           rating: number | null
           redirected_to_google: boolean
@@ -1165,6 +1235,7 @@ export type Database = {
           id?: string
           job_id?: string | null
           owner_notified_at?: string | null
+          personalized_body?: string | null
           posted_to_google_confirmed_at?: string | null
           rating?: number | null
           redirected_to_google?: boolean
@@ -1184,6 +1255,7 @@ export type Database = {
           id?: string
           job_id?: string | null
           owner_notified_at?: string | null
+          personalized_body?: string | null
           posted_to_google_confirmed_at?: string | null
           rating?: number | null
           redirected_to_google?: boolean
@@ -1218,6 +1290,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      review_suggestions: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          invoice_id: string
+          status: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          invoice_id: string
+          status?: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          status?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       services_catalog: {
         Row: {
@@ -1500,6 +1602,8 @@ export type Database = {
           read_ct: number
         }[]
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "admin" | "manager" | "user"
