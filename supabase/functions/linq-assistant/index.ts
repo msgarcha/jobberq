@@ -24,6 +24,7 @@ Rules:
 - If a price is vague ("a few thousand"), ask for a number.
 - For "invoice the [thing] quote" requests, first call lookup_recent_documents to find the matching approved quote, then convert it.
 - Use the team's default tax rate when not specified. Don't add deposits unless requested.
+- BEFORE calling create_draft_quote or create_draft_invoice (when NOT converting from an existing quote), call resolve_service ONCE per line item the user mentioned. Use the returned service_id, description, unit_price, and tax_rate when building line_items. Never write your own line-item description — let resolve_service do it so it matches the team's wording and pricing history.
 - Keep replies under 25 words. Be friendly and direct.
 - After successfully creating a draft, briefly confirm what you created and stop.`;
 
@@ -49,8 +50,25 @@ const TOOLS = [
   {
     type: "function",
     function: {
+      name: "resolve_service",
+      description: "Resolve a user phrase like 'bathroom reno' into a real service from the catalog (or create a new one with a learned description and price). Call once per line item BEFORE creating a quote/invoice. Returns the service_id, description, unit_price, and tax_rate to use.",
+      parameters: {
+        type: "object",
+        properties: {
+          user_phrase: { type: "string", description: "Exactly what the user said for this item, e.g. 'bathroom reno'" },
+          hint_amount: { type: "number", description: "Price the user mentioned for THIS line, if any" },
+          quantity: { type: "number", description: "Quantity if mentioned, default 1" },
+          doc_context: { type: "string", description: "Short context, e.g. 'quote for Mark Henderson'" },
+        },
+        required: ["user_phrase"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "create_draft_quote",
-      description: "Create a DRAFT quote. Returns quote_id and quote_number.",
+      description: "Create a DRAFT quote. Returns quote_id and quote_number. Use line items returned by resolve_service.",
       parameters: {
         type: "object",
         properties: {
@@ -61,6 +79,7 @@ const TOOLS = [
             items: {
               type: "object",
               properties: {
+                service_id: { type: "string", description: "From resolve_service. Required unless this is an ad-hoc one-off." },
                 description: { type: "string" },
                 quantity: { type: "number" },
                 unit_price: { type: "number" },
@@ -79,7 +98,7 @@ const TOOLS = [
     type: "function",
     function: {
       name: "create_draft_invoice",
-      description: "Create a DRAFT invoice. Optionally from an existing quote (from_quote_id).",
+      description: "Create a DRAFT invoice. Optionally from an existing quote (from_quote_id). Use line items returned by resolve_service when not converting.",
       parameters: {
         type: "object",
         properties: {
@@ -91,6 +110,7 @@ const TOOLS = [
             items: {
               type: "object",
               properties: {
+                service_id: { type: "string" },
                 description: { type: "string" },
                 quantity: { type: "number" },
                 unit_price: { type: "number" },
@@ -135,6 +155,8 @@ async function handleTool(name: string, args: any, ctx: Ctx): Promise<any> {
   switch (name) {
     case "find_or_create_client":
       return await findOrCreateClient(args, ctx);
+    case "resolve_service":
+      return await resolveService(args, ctx);
     case "create_draft_quote":
       return await createDraftQuote(args, ctx);
     case "create_draft_invoice":
@@ -144,6 +166,240 @@ async function handleTool(name: string, args: any, ctx: Ctx): Promise<any> {
     default:
       return { error: `Unknown tool ${name}` };
   }
+}
+
+// ---------- resolve_service ----------
+// Matches a user phrase against services_catalog (and learns from past line items),
+// or creates a new service with a learned description + price.
+async function resolveService(args: any, ctx: Ctx) {
+  const { user_phrase, hint_amount, quantity, doc_context } = args;
+  if (!user_phrase || typeof user_phrase !== "string") {
+    return { error: "user_phrase required" };
+  }
+
+  // 1. Pull catalog (active services, capped)
+  const { data: catalog } = await ctx.supabase
+    .from("services_catalog")
+    .select("id, name, description, default_price, category, tax_rate")
+    .eq("is_active", true)
+    .order("updated_at", { ascending: false })
+    .limit(80);
+
+  // 2. Pull recent historical line items (for wording + pricing)
+  const [{ data: qHist }, { data: iHist }] = await Promise.all([
+    ctx.supabase
+      .from("quote_line_items")
+      .select("description, unit_price, tax_rate")
+      .order("created_at", { ascending: false })
+      .limit(40),
+    ctx.supabase
+      .from("invoice_line_items")
+      .select("description, unit_price, tax_rate")
+      .order("created_at", { ascending: false })
+      .limit(40),
+  ]);
+
+  const history = [...(qHist || []), ...(iHist || [])]
+    .filter((h) => h.description && h.description.length < 300)
+    .slice(0, 60);
+
+  const catalogText =
+    (catalog || [])
+      .map(
+        (s: any) =>
+          `[${s.id}] ${s.name} | $${s.default_price} | tax ${s.tax_rate ?? "default"} | ${s.category || "uncat"} | ${s.description?.slice(0, 120) || "(no desc)"}`
+      )
+      .join("\n") || "(empty catalog)";
+
+  const historyText =
+    history.length > 0
+      ? history.map((h: any) => `- "${h.description}" @ $${h.unit_price}`).join("\n")
+      : "(no prior line items)";
+
+  const prompt = `User said for this line: "${user_phrase}"
+Hint price (from user): ${hint_amount ?? "(none)"}
+Quantity: ${quantity ?? 1}
+Context: ${doc_context || "(none)"}
+Default tax rate: ${ctx.defaultTaxRate}%
+
+Existing services_catalog (id, name, default_price, tax_rate, category, description):
+${catalogText}
+
+Recent past line items from this team (for wording/pricing style):
+${historyText}
+
+Decide ONE of:
+A) pick_existing — if any catalog row clearly matches the user's phrase (semantic match, not just substring). Return its service_id and the unit_price/description to use. If user gave hint_amount, use it for unit_price; else use the catalog default_price.
+B) create_new — if no good match. Return name (3-6 words, Title Case), description (1-3 professional sentences modeled on the team's past wording — do NOT just echo the user's phrase), suggested_price (use hint_amount if given; otherwise infer from similar history; otherwise 0), category (one short word like 'Renovation', 'Cleaning', 'Repair'), tax_rate (default ${ctx.defaultTaxRate}).
+
+Be conservative on matching — if uncertain, create_new.`;
+
+  const RESOLVE_TOOL = {
+    type: "function" as const,
+    function: {
+      name: "resolve",
+      description: "Pick existing or create new service",
+      parameters: {
+        type: "object",
+        properties: {
+          decision: { type: "string", enum: ["pick_existing", "create_new"] },
+          service_id: { type: "string", description: "Required if pick_existing" },
+          name: { type: "string" },
+          description: { type: "string" },
+          unit_price: { type: "number" },
+          suggested_default_price: { type: "number", description: "For create_new: the price to store as default_price" },
+          tax_rate: { type: "number" },
+          category: { type: "string" },
+          confidence: { type: "number", minimum: 0, maximum: 1 },
+          reason: { type: "string" },
+        },
+        required: ["decision", "confidence"],
+      },
+    },
+  };
+
+  let parsed: any = null;
+  try {
+    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You match a user's spoken line-item phrase to a trade contractor's service catalog, or create a new service that fits their existing wording and pricing style. Be precise. Return one tool call.",
+          },
+          { role: "user", content: prompt },
+        ],
+        tools: [RESOLVE_TOOL],
+        tool_choice: { type: "function", function: { name: "resolve" } },
+      }),
+    });
+    if (aiResp.ok) {
+      const data = await aiResp.json();
+      const tc = data.choices?.[0]?.message?.tool_calls?.[0];
+      if (tc) parsed = JSON.parse(tc.function.arguments || "{}");
+    } else {
+      console.error("resolve_service gateway error", aiResp.status, await aiResp.text());
+    }
+  } catch (e) {
+    console.error("resolve_service ai error", e);
+  }
+
+  // Fallback if AI failed: dumb ILIKE match, else create minimal new service
+  if (!parsed) {
+    const phrase = user_phrase.toLowerCase();
+    const match = (catalog || []).find((s: any) =>
+      s.name?.toLowerCase().includes(phrase) || phrase.includes(s.name?.toLowerCase())
+    );
+    if (match) {
+      parsed = {
+        decision: "pick_existing",
+        service_id: match.id,
+        unit_price: hint_amount ?? Number(match.default_price),
+        description: match.description || match.name,
+        tax_rate: match.tax_rate ?? ctx.defaultTaxRate,
+        confidence: 0.5,
+      };
+    } else {
+      parsed = {
+        decision: "create_new",
+        name: user_phrase.slice(0, 80),
+        description: user_phrase,
+        suggested_default_price: hint_amount ?? 0,
+        unit_price: hint_amount ?? 0,
+        tax_rate: ctx.defaultTaxRate,
+        category: null,
+        confidence: 0.3,
+      };
+    }
+  }
+
+  // Branch: pick_existing
+  if (parsed.decision === "pick_existing" && parsed.service_id) {
+    const match = (catalog || []).find((s: any) => s.id === parsed.service_id);
+    if (match) {
+      const unit_price =
+        parsed.unit_price != null
+          ? Number(parsed.unit_price)
+          : hint_amount != null
+            ? Number(hint_amount)
+            : Number(match.default_price);
+      return {
+        was_created: false,
+        service_id: match.id,
+        name: match.name,
+        description: parsed.description || match.description || match.name,
+        unit_price,
+        tax_rate: parsed.tax_rate ?? match.tax_rate ?? ctx.defaultTaxRate,
+        match_confidence: parsed.confidence ?? 0.7,
+      };
+    }
+    // Stale id from AI — fall through to create_new
+  }
+
+  // Branch: create_new
+  const newName = (parsed.name || user_phrase).toString().slice(0, 120);
+  const newDesc = (parsed.description || user_phrase).toString().slice(0, 1000);
+  const userPrice = hint_amount != null ? Number(hint_amount) : null;
+
+  // Pricing rule: if user gave hint, use it for unit_price.
+  // Only store as default_price if confidence is reasonable AND not wildly off-history.
+  let defaultPrice = Number(parsed.suggested_default_price ?? 0);
+  if (userPrice != null) {
+    const sims = history
+      .map((h: any) => Number(h.unit_price))
+      .filter((n) => !isNaN(n) && n > 0)
+      .sort((a, b) => a - b);
+    const median = sims.length ? sims[Math.floor(sims.length / 2)] : null;
+    const within3x = median == null || (userPrice <= median * 3 && userPrice >= median / 3);
+    if ((parsed.confidence ?? 0) >= 0.7 && within3x) {
+      defaultPrice = userPrice;
+    } else if (defaultPrice <= 0) {
+      defaultPrice = userPrice; // still better than 0
+    }
+  }
+
+  const taxRate = parsed.tax_rate != null ? Number(parsed.tax_rate) : ctx.defaultTaxRate;
+
+  const { data: created, error: insErr } = await ctx.supabase
+    .from("services_catalog")
+    .insert({
+      name: newName,
+      description: newDesc,
+      default_price: defaultPrice,
+      tax_rate: taxRate,
+      category: parsed.category || null,
+      is_active: true,
+      user_id: ctx.userId,
+      team_id: ctx.teamId,
+    })
+    .select()
+    .single();
+
+  if (insErr) return { error: insErr.message };
+
+  await audit(ctx, "create_service", "service", created.id, {
+    source_phrase: user_phrase,
+    confidence: parsed.confidence,
+    reason: parsed.reason,
+    learned_from_history_count: history.length,
+  });
+
+  return {
+    was_created: true,
+    service_id: created.id,
+    name: created.name,
+    description: created.description,
+    unit_price: userPrice ?? defaultPrice,
+    tax_rate: taxRate,
+    match_confidence: parsed.confidence ?? 0.5,
+  };
 }
 
 async function audit(ctx: Ctx, action: string, doc_type: string | null, doc_id: string | null, payload: any) {
@@ -235,6 +491,7 @@ function computeLineItems(items: any[], defaultTaxRate: number) {
     subtotal += base;
     tax_amount += taxOnLine;
     return {
+      service_id: it.service_id || null,
       description: it.description,
       quantity: qty,
       unit_price: price,
@@ -270,12 +527,60 @@ async function nextDocNumber(ctx: Ctx, kind: "quote" | "invoice") {
   return formatted;
 }
 
+async function ensureServiceIds(items: any[], ctx: Ctx, docContext: string): Promise<any[]> {
+  const out: any[] = [];
+  for (const it of items) {
+    if (it.service_id) {
+      out.push(it);
+      continue;
+    }
+    // Try a quick ILIKE match first to avoid an AI call
+    const phrase = (it.description || "").trim();
+    if (phrase) {
+      const { data: m } = await ctx.supabase
+        .from("services_catalog")
+        .select("id, name, description, default_price, tax_rate")
+        .eq("is_active", true)
+        .ilike("name", `%${phrase.slice(0, 60)}%`)
+        .limit(1)
+        .maybeSingle();
+      if (m) {
+        out.push({
+          ...it,
+          service_id: m.id,
+          description: it.description || m.description || m.name,
+          tax_rate: it.tax_rate ?? m.tax_rate ?? ctx.defaultTaxRate,
+        });
+        continue;
+      }
+    }
+    // Fall back to full resolve_service (creates a new service)
+    const resolved = await resolveService(
+      { user_phrase: phrase || "Service", hint_amount: it.unit_price, quantity: it.quantity, doc_context: docContext },
+      ctx
+    );
+    if (resolved?.service_id) {
+      out.push({
+        service_id: resolved.service_id,
+        description: resolved.description || it.description,
+        quantity: it.quantity ?? 1,
+        unit_price: it.unit_price ?? resolved.unit_price ?? 0,
+        tax_rate: it.tax_rate ?? resolved.tax_rate ?? ctx.defaultTaxRate,
+      });
+    } else {
+      out.push(it); // give up gracefully
+    }
+  }
+  return out;
+}
+
 async function createDraftQuote(args: any, ctx: Ctx) {
   const { client_id, title, line_items, valid_until } = args;
   if (!line_items || line_items.length === 0) {
     return { error: "At least one line item required" };
   }
-  const totals = computeLineItems(line_items, ctx.defaultTaxRate);
+  const enriched = await ensureServiceIds(line_items, ctx, `quote: ${title || ""}`);
+  const totals = computeLineItems(enriched, ctx.defaultTaxRate);
   const number = await nextDocNumber(ctx, "quote");
 
   const { data: quote, error } = await ctx.supabase
@@ -304,7 +609,6 @@ async function createDraftQuote(args: any, ctx: Ctx) {
     user_id: ctx.userId,
     team_id: ctx.teamId,
     sort_order: i,
-    service_id: null,
   }));
   await ctx.supabase.from("quote_line_items").insert(lineRows);
 
@@ -331,7 +635,7 @@ async function createDraftInvoice(args: any, ctx: Ctx) {
 
     const { data: qItems } = await ctx.supabase
       .from("quote_line_items")
-      .select("description, quantity, unit_price, tax_rate")
+      .select("service_id, description, quantity, unit_price, tax_rate")
       .eq("quote_id", from_quote_id)
       .order("sort_order");
     items = qItems || [];
@@ -341,7 +645,9 @@ async function createDraftInvoice(args: any, ctx: Ctx) {
     return { error: "At least one line item required" };
   }
 
-  const totals = computeLineItems(items, ctx.defaultTaxRate);
+  // Resolve service_id for any ad-hoc items (skipped if from_quote_id since those already carry service_id)
+  const enriched = from_quote_id ? items : await ensureServiceIds(items, ctx, `invoice: ${title || ""}`);
+  const totals = computeLineItems(enriched, ctx.defaultTaxRate);
   const number = await nextDocNumber(ctx, "invoice");
 
   const { data: invoice, error } = await ctx.supabase
@@ -372,7 +678,6 @@ async function createDraftInvoice(args: any, ctx: Ctx) {
     user_id: ctx.userId,
     team_id: ctx.teamId,
     sort_order: i,
-    service_id: null,
   }));
   await ctx.supabase.from("invoice_line_items").insert(lineRows);
 
