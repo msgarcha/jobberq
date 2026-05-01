@@ -527,12 +527,60 @@ async function nextDocNumber(ctx: Ctx, kind: "quote" | "invoice") {
   return formatted;
 }
 
+async function ensureServiceIds(items: any[], ctx: Ctx, docContext: string): Promise<any[]> {
+  const out: any[] = [];
+  for (const it of items) {
+    if (it.service_id) {
+      out.push(it);
+      continue;
+    }
+    // Try a quick ILIKE match first to avoid an AI call
+    const phrase = (it.description || "").trim();
+    if (phrase) {
+      const { data: m } = await ctx.supabase
+        .from("services_catalog")
+        .select("id, name, description, default_price, tax_rate")
+        .eq("is_active", true)
+        .ilike("name", `%${phrase.slice(0, 60)}%`)
+        .limit(1)
+        .maybeSingle();
+      if (m) {
+        out.push({
+          ...it,
+          service_id: m.id,
+          description: it.description || m.description || m.name,
+          tax_rate: it.tax_rate ?? m.tax_rate ?? ctx.defaultTaxRate,
+        });
+        continue;
+      }
+    }
+    // Fall back to full resolve_service (creates a new service)
+    const resolved = await resolveService(
+      { user_phrase: phrase || "Service", hint_amount: it.unit_price, quantity: it.quantity, doc_context: docContext },
+      ctx
+    );
+    if (resolved?.service_id) {
+      out.push({
+        service_id: resolved.service_id,
+        description: resolved.description || it.description,
+        quantity: it.quantity ?? 1,
+        unit_price: it.unit_price ?? resolved.unit_price ?? 0,
+        tax_rate: it.tax_rate ?? resolved.tax_rate ?? ctx.defaultTaxRate,
+      });
+    } else {
+      out.push(it); // give up gracefully
+    }
+  }
+  return out;
+}
+
 async function createDraftQuote(args: any, ctx: Ctx) {
   const { client_id, title, line_items, valid_until } = args;
   if (!line_items || line_items.length === 0) {
     return { error: "At least one line item required" };
   }
-  const totals = computeLineItems(line_items, ctx.defaultTaxRate);
+  const enriched = await ensureServiceIds(line_items, ctx, `quote: ${title || ""}`);
+  const totals = computeLineItems(enriched, ctx.defaultTaxRate);
   const number = await nextDocNumber(ctx, "quote");
 
   const { data: quote, error } = await ctx.supabase
@@ -561,7 +609,6 @@ async function createDraftQuote(args: any, ctx: Ctx) {
     user_id: ctx.userId,
     team_id: ctx.teamId,
     sort_order: i,
-    service_id: null,
   }));
   await ctx.supabase.from("quote_line_items").insert(lineRows);
 
