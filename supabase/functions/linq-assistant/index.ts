@@ -491,6 +491,7 @@ function computeLineItems(items: any[], defaultTaxRate: number) {
     subtotal += base;
     tax_amount += taxOnLine;
     return {
+      service_id: it.service_id || null,
       description: it.description,
       quantity: qty,
       unit_price: price,
