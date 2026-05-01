@@ -635,7 +635,7 @@ async function createDraftInvoice(args: any, ctx: Ctx) {
 
     const { data: qItems } = await ctx.supabase
       .from("quote_line_items")
-      .select("description, quantity, unit_price, tax_rate")
+      .select("service_id, description, quantity, unit_price, tax_rate")
       .eq("quote_id", from_quote_id)
       .order("sort_order");
     items = qItems || [];
@@ -645,7 +645,9 @@ async function createDraftInvoice(args: any, ctx: Ctx) {
     return { error: "At least one line item required" };
   }
 
-  const totals = computeLineItems(items, ctx.defaultTaxRate);
+  // Resolve service_id for any ad-hoc items (skipped if from_quote_id since those already carry service_id)
+  const enriched = from_quote_id ? items : await ensureServiceIds(items, ctx, `invoice: ${title || ""}`);
+  const totals = computeLineItems(enriched, ctx.defaultTaxRate);
   const number = await nextDocNumber(ctx, "invoice");
 
   const { data: invoice, error } = await ctx.supabase
