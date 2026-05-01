@@ -34,7 +34,7 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     if (open) {
       setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" }), 50);
     }
-  }, [messages, open]);
+  }, [messages, open, latestDocs]);
 
   useEffect(() => {
     if (!open) {
@@ -81,10 +81,6 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     else if (doc.type === "invoice") navigate(`/invoices/${doc.id}/edit`);
   };
 
-  const handleExample = (text: string) => {
-    setInput(text);
-  };
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[85vh] p-0 rounded-t-3xl flex flex-col">
@@ -108,7 +104,7 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
                 {EXAMPLES.map((ex) => (
                   <button
                     key={ex}
-                    onClick={() => handleExample(ex)}
+                    onClick={() => setInput(ex)}
                     className="w-full text-left text-sm rounded-xl bg-secondary/60 px-4 py-3 hover:bg-secondary transition-colors flex items-center gap-2"
                   >
                     <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -120,13 +116,7 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
           )}
 
           {messages.map((m, i) => (
-            <div
-              key={i}
-              className={cn(
-                "flex",
-                m.role === "user" ? "justify-end" : "justify-start"
-              )}
-            >
+            <div key={i} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
               <div
                 className={cn(
                   "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap",
@@ -141,8 +131,6 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
           ))}
 
           {!isLoading &&
-            messages.length > 0 &&
-            messages[messages.length - 1].role === "assistant" &&
             latestDocs.map((doc) => (
               <button
                 key={doc.id}
