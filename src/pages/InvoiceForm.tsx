@@ -13,6 +13,7 @@ import { LineItemsEditor, LineItem, computeTotals } from "@/components/LineItems
 import { useInvoice, useInvoiceLineItems, useCreateInvoice, useUpdateInvoice, useSaveInvoiceLineItems, useNextInvoiceNumber, useIncrementInvoiceNumber } from "@/hooks/useInvoices";
 import { useClient } from "@/hooks/useClients";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
+import { SuggestionChip } from "@/components/ai/SuggestionChip";
 import { ArrowLeft, Save, RefreshCw, Plus } from "lucide-react";
 import { addDays, format } from "date-fns";
 
@@ -246,7 +247,19 @@ const InvoiceForm = () => {
 
         <Card className="shadow-warm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Line Items</CardTitle></CardHeader>
-          <CardContent><LineItemsEditor items={lineItems} onChange={setLineItems} defaultTaxRate={defaultTaxRate} /></CardContent>
+          <CardContent className="space-y-3">
+            <LineItemsEditor items={lineItems} onChange={setLineItems} defaultTaxRate={defaultTaxRate} />
+            <SuggestionChip
+              docType="invoice"
+              title={title}
+              lineItems={lineItems.map((li) => ({ description: li.description, unit_price: li.unit_price, tax_rate: li.tax_rate }))}
+              enabled={companySettings?.ai_assistant_enabled !== false}
+              onAdd={(s) => setLineItems((curr) => [
+                ...curr,
+                { service_id: null, description: s.description, quantity: 1, unit_price: s.suggested_price, tax_rate: defaultTaxRate, discount_percent: 0, line_total: s.suggested_price * (1 + defaultTaxRate / 100) },
+              ])}
+            />
+          </CardContent>
         </Card>
 
         <div className="grid gap-5 grid-cols-1 md:grid-cols-2">

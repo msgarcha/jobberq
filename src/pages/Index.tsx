@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardStats, useRecentActivity, formatRelativeTime } from "@/hooks/useInvoices";
 import { useJobsByDate } from "@/hooks/useJobs";
+import { ReviewSuggestionsCard } from "@/components/ai/ReviewSuggestionsCard";
 import { format } from "date-fns";
 
 const getGreeting = () => {
@@ -90,6 +91,9 @@ const Index = () => {
             <p className="text-xs text-foreground/80 min-w-0 break-words">{tipOfDay}</p>
           </div>
         </div>
+
+        {/* Linq Review Inbox */}
+        <ReviewSuggestionsCard />
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
