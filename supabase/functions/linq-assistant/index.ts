@@ -678,7 +678,6 @@ async function createDraftInvoice(args: any, ctx: Ctx) {
     user_id: ctx.userId,
     team_id: ctx.teamId,
     sort_order: i,
-    service_id: null,
   }));
   await ctx.supabase.from("invoice_line_items").insert(lineRows);
 
