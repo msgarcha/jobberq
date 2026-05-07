@@ -2,6 +2,7 @@
 // Returns 0-3 highly relevant suggestions based on the user's own historical line items.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { enforceAiQuota, resolveTier } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
