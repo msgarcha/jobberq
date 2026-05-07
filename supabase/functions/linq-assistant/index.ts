@@ -745,6 +745,11 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Per-user rate limiting (protects against runaway AI costs)
+    const tier = await resolveTier(admin, user.id);
+    const quota = await enforceAiQuota(admin, user.id, "linq-assistant", tier);
+    if (!quota.ok) return quotaResponse(quota, corsHeaders);
+
     const { data: cs } = await supabase
       .from("company_settings")
       .select("default_tax_rate")
