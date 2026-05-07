@@ -77,6 +77,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_usage_counters: {
+        Row: {
+          count: number
+          function_name: string
+          updated_at: string
+          user_id: string
+          window_kind: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          function_name: string
+          updated_at?: string
+          user_id: string
+          window_kind: string
+          window_start: string
+        }
+        Update: {
+          count?: number
+          function_name?: string
+          updated_at?: string
+          user_id?: string
+          window_kind?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       client_saved_cards: {
         Row: {
           card_brand: string | null
@@ -838,6 +865,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      onboarding_email_log: {
+        Row: {
+          email_kind: string
+          id: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          email_kind: string
+          id?: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          email_kind?: string
+          id?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       payments: {
         Row: {
@@ -1602,6 +1650,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_ai_usage: {
+        Args: {
+          _function_name: string
+          _user_id: string
+          _window_kind: string
+          _window_start: string
+        }
+        Returns: number
       }
       is_team_member: {
         Args: { _team_id: string; _user_id: string }

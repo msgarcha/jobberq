@@ -2,6 +2,7 @@
 // Never sends, never charges, never approves. Audit-logged via ai_actions.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { enforceAiQuota, quotaResponse, resolveTier } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -743,6 +744,11 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Per-user rate limiting (protects against runaway AI costs)
+    const tier = await resolveTier(admin, user.id);
+    const quota = await enforceAiQuota(admin, user.id, "linq-assistant", tier);
+    if (!quota.ok) return quotaResponse(quota, corsHeaders);
 
     const { data: cs } = await supabase
       .from("company_settings")

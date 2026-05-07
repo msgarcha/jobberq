@@ -40,17 +40,21 @@ export function useLinqAssistant() {
       });
 
       if (invokeErr) {
-        const errMsg = (invokeErr as any)?.context?.body
-          ? (() => {
-              try {
-                return JSON.parse((invokeErr as any).context.body).error;
-              } catch {
-                return invokeErr.message;
-              }
-            })()
-          : invokeErr.message;
+        let errMsg = invokeErr.message;
+        let upgradeRequired = false;
+        const ctxBody = (invokeErr as any)?.context?.body;
+        if (ctxBody) {
+          try {
+            const parsed = typeof ctxBody === "string" ? JSON.parse(ctxBody) : ctxBody;
+            errMsg = parsed.error || errMsg;
+            upgradeRequired = !!parsed.upgrade_required;
+          } catch { /* ignore */ }
+        }
         setError(errMsg || "Linq couldn't respond");
-        setMessages((m) => [...m, { role: "assistant", content: errMsg || "Something went wrong." }]);
+        const display = upgradeRequired
+          ? `${errMsg} Upgrade in Settings → Subscription to keep going.`
+          : errMsg || "Something went wrong.";
+        setMessages((m) => [...m, { role: "assistant", content: display }]);
         return null;
       }
 
