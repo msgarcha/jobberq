@@ -1,81 +1,126 @@
-## Goal
+## Goals
 
-Today when you say "Quote Mark $10k for bathroom reno", Linq creates a quote with a single bare line item `bathroom reno — $10,000` and no link to your service catalog.
+1. **Stop AI cost runaway** — cap how much any single user can spend on Lovable AI calls per minute and per day, tier-aware.
+2. **Improve activation** — add a Day 0 / Day 2 / Day 7 onboarding email sequence so trial signups actually return.
 
-After this change Linq will:
+> Heads-up: the platform doesn't have first-class rate-limiting primitives yet, so the AI cap will be an ad-hoc table-based counter. It's simple, effective, and easy to swap out later if Lovable ships native rate limiting.
 
-1. Always resolve every line item to a row in `services_catalog` — matching an existing service if one fits, otherwise creating a new one with a proper, professional description.
-2. Learn the description style and typical price from your past quotes/invoices and existing services, so new services it creates sound like yours and aren't priced out of thin air.
-3. Set `service_id` on every quote/invoice line item so reporting, suggestions, and future matching get smarter over time.
+---
 
-This is purely a backend (edge-function) change. No UI changes, no DB schema changes — `service_id` already exists on `quote_line_items` / `invoice_line_items`, and `services_catalog` already has `name`, `description`, `default_price`, `category`, `tax_rate`.
+## Part 1 — AI usage caps
 
-## How it will work
+### New table: `ai_usage_counters`
 
-### New tool: `resolve_service`
+| Column | Type | Notes |
+|---|---|---|
+| `user_id` | uuid | FK to auth.users |
+| `function_name` | text | e.g. `linq-assistant` |
+| `window_kind` | text | `minute` or `day` |
+| `window_start` | timestamptz | truncated to the window |
+| `count` | int | calls in window |
 
-Add a tool to `linq-assistant` that the model calls once per line item before drafting the quote/invoice:
+Primary key: `(user_id, function_name, window_kind, window_start)`. RLS: service_role only (writes happen inside edge functions).
 
-```text
-resolve_service({
-  user_phrase: "bathroom reno",        // what the user said
-  hint_amount: 10000,                  // optional — the price they mentioned
-  doc_context: "quote for Mark"        // optional context
-})
-→ {
-  service_id, name, description,
-  unit_price, tax_rate, was_created: true|false,
-  match_confidence: 0..1
-}
-```
+### New shared helper: `supabase/functions/_shared/rate-limit.ts`
 
-Internally the tool does this in one pass:
+Single function `enforceAiQuota(supabase, userId, fnName, tier)`:
 
-1. **Fetch candidates** — pull the team's `services_catalog` (active rows: `id, name, description, default_price, category, tax_rate`) plus the 30 most recent line items from `quote_line_items` + `invoice_line_items` (description, unit_price) for pricing/wording context. Capped to keep the prompt small.
-2. **Ask Gemini Flash** (cheap, fast) with one tool call to either:
-   - `pick_existing` — return `service_id` of best match + reason, or
-   - `create_new` — return `{ name, description, suggested_price, category, tax_rate, confidence }` modeled on the user's existing wording style. Description should be 1-3 sentences, professional, not just echoing the user's phrase.
-3. **Pricing rule**:
-   - If the user gave a price → use it as `unit_price`. Only use it as the new service's `default_price` if confidence ≥ 0.7 AND it's within 3× the median of similar past line items (avoids polluting the catalog with one-off jumbo numbers). Otherwise store a sensible learned `default_price` and keep the user's number as the line price.
-   - If the user gave no price → use the matched service's `default_price`, or the AI's learned suggestion, or ask the user.
-4. **Persist** — if `create_new`, insert into `services_catalog` with `team_id`, `user_id`, `is_active=true`, audit-log via `ai_actions` (`action: "create_service"`).
-5. **Return** a fully-resolved line item the model then feeds into `create_draft_quote` / `create_draft_invoice`.
+1. Look up the user's tier (`trial`, `starter`, `pro`, `super_admin`).
+2. Atomic upsert into `ai_usage_counters` for the current minute and day windows.
+3. If either count exceeds the cap, return `{ ok: false, retryAfterSec, reason }`. Otherwise `{ ok: true }`.
+4. Super admins are always uncapped.
 
-### Tweaks to existing tools
+### Default caps (tunable)
 
-`create_draft_quote` and `create_draft_invoice`:
+| Tier | Per minute | Per day |
+|---|---|---|
+| Trial | 5 | 50 |
+| Starter / Pro | 30 | 500 |
+| Super admin | ∞ | ∞ |
 
-- Each `line_items[i]` gains an optional `service_id` field.
-- The line-item insert sets `service_id` from that field instead of hard-coded `null`.
-- If the model forgets to call `resolve_service`, the function does a server-side fallback: best-effort exact/ILIKE match in `services_catalog` by description, and if nothing matches, creates a minimal service silently (so the catalog still grows, but ideally the model handles it).
+Caps live as constants in the helper so they're easy to change without a migration.
 
-### System prompt update
+### Apply the helper to all 4 AI functions
 
-Add to `SYSTEM_PROMPT`:
+- `linq-assistant` (highest priority — multi-turn + tool calls)
+- `quote-suggestions`
+- `personalize-review-email`
+- `review-suggestions-sweep` (skip user check — cron-only, restrict to `service_role`)
 
-> Before creating a quote or invoice, call `resolve_service` for **each** line item. Use the returned `service_id`, `description`, `unit_price`, and `tax_rate` when calling `create_draft_quote` / `create_draft_invoice`. Never invent a description — let `resolve_service` write it.
+On exceed: respond `429` with `{ error, retry_after }` and a `Retry-After` header.
 
-### Audit + safety
+### UI surface
 
-- Every new service creation is logged in `ai_actions` with `doc_type: "service"`, `payload: { source_phrase, confidence, reasoning }` so you can review what Linq added.
-- Hard cap: max 6 line items per turn (prevents runaway tool loops). Existing 5-iteration cap stays.
-- Total prompt size for `resolve_service` capped (~50 services + 30 history items) to keep cost on Gemini Flash near-zero.
+- `useLinqAssistant` and `useQuoteSuggestions` already return errors — toast a friendly *"You've hit today's AI limit — upgrade to keep going"* message when the function returns 429, with an upgrade CTA for trial users.
+- No quota meter in the UI for v1 (keep scope tight). We can add one later.
 
-## What changes in the codebase
+### Cleanup
 
-- **edit** `supabase/functions/linq-assistant/index.ts`
-  - Add `resolve_service` tool definition + handler
-  - Add `service_id` to line-item params of `create_draft_quote` / `create_draft_invoice`
-  - Pass `service_id` into the line-item insert (replace the hard-coded `null` on lines 308 and 375)
-  - Server-side fallback matcher when `service_id` is missing
-  - Update `SYSTEM_PROMPT`
+- A simple DB cron job once a day deletes `ai_usage_counters` rows older than 7 days so the table stays tiny.
 
-That's the entire change. No new files, no migrations, no UI work.
+---
 
-## Out of scope (not doing now)
+## Part 2 — Onboarding email drip
 
-- Bulk back-fill of historical line items with `service_id` — only new ones from Linq onwards will be linked. Can be a separate one-off script later if you want.
-- Changing the manual `LineItemsEditor` UI — it already supports picking from the catalog.
-- Multi-language/voice changes — still uses existing voice pipeline.
+### Approach
 
-Approve and I'll implement.
+Use the existing transactional email infrastructure (`send-transactional-email`, queue, templates registry). No new providers.
+
+### New scheduled edge function: `onboarding-drip-sweep`
+
+Runs once an hour via `pg_cron`. For each user in `profiles`:
+
+- **Day 0 — Welcome** *(already exists as `welcome-email`; wire it into `handle_new_user` trigger or first sign-in)*
+- **Day 2 — "Send your first quote in 60 seconds"**: highlights the Linq AI assistant + voice quote feature. Skips if the user has already created a quote.
+- **Day 7 — "How other contractors use QuickLinq"**: social proof + Stripe Connect setup nudge. Skips if Stripe is already connected.
+
+### New table: `onboarding_email_log`
+
+Tracks `(user_id, email_kind, sent_at)` so we never double-send. RLS: service_role only.
+
+### New email templates
+
+In `supabase/functions/_shared/transactional-email-templates/`:
+- `onboarding-day-2.tsx`
+- `onboarding-day-7.tsx`
+
+Both branded with the existing QuickLinq dark teal + Poppins, same components as `welcome-email`.
+
+### Skip / suppression rules
+
+- Skip if user is in `suppressed_emails`.
+- Skip if user has unsubscribed (existing token system).
+- Skip Day 2 if quotes table has any row for the user's team.
+- Skip Day 7 if `connected_accounts` row exists for the team.
+
+---
+
+## Files & technical changes
+
+**Migrations**
+- `ai_usage_counters` table + index + RLS
+- `onboarding_email_log` table + RLS
+- `pg_cron` job: hourly `onboarding-drip-sweep`
+- `pg_cron` job: daily cleanup of `ai_usage_counters`
+
+**New files**
+- `supabase/functions/_shared/rate-limit.ts`
+- `supabase/functions/onboarding-drip-sweep/index.ts`
+- `supabase/functions/_shared/transactional-email-templates/onboarding-day-2.tsx`
+- `supabase/functions/_shared/transactional-email-templates/onboarding-day-7.tsx`
+- Register both templates in `_shared/transactional-email-templates/registry.ts`
+
+**Edits**
+- `supabase/functions/linq-assistant/index.ts` — call `enforceAiQuota` early
+- `supabase/functions/quote-suggestions/index.ts` — same
+- `supabase/functions/personalize-review-email/index.ts` — same
+- `src/hooks/useLinqAssistant.ts` and `src/hooks/useQuoteSuggestions.ts` — show 429 toast with upgrade CTA
+
+---
+
+## Out of scope (intentional)
+
+- No streaming usage meter UI (can add later)
+- No A/B testing of drip copy
+- No Day 14 / Day 30 reactivation emails (add after we see Day 7 open rates)
+- No IP-based rate limiting (user-id is sufficient since all 4 functions require auth)
