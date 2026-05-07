@@ -39,6 +39,12 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Per-user rate limiting (protects against runaway AI costs)
+    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const tier = await resolveTier(admin, user.id);
+    const quota = await enforceAiQuota(admin, user.id, "personalize-review-email", tier);
+    if (!quota.ok) return quotaResponse(quota, corsHeaders);
+
     const { invoice_id, review_request_id, client_first_name, work_summary, company_name } = await req.json();
 
     // Check cache

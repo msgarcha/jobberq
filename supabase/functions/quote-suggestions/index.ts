@@ -88,6 +88,16 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Per-user rate limiting — silent fail (non-critical UX feature)
+    const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const tier = await resolveTier(admin, user.id);
+    const quota = await enforceAiQuota(admin, user.id, "quote-suggestions", tier);
+    if (!quota.ok) {
+      return new Response(JSON.stringify({ suggestions: [], rate_limited: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Get team's industry + dismissed suggestions
     const [{ data: cs }, { data: dismissed }] = await Promise.all([
       supabase.from("company_settings").select("industry").maybeSingle(),
