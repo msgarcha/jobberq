@@ -25,35 +25,20 @@ export interface QuotaResult {
 /**
  * Resolve the user's tier:
  *  - super_admin if profiles.is_super_admin
- *  - paid if active subscription (subscribers.subscribed=true) or active trial
- *  - else trial
+ *  - trial if trial_ends_at is still in the future
+ *  - else paid (they retained access past trial)
  */
 export async function resolveTier(adminClient: any, userId: string): Promise<Tier> {
-  // Super admin?
   const { data: prof } = await adminClient
     .from("profiles")
     .select("is_super_admin, trial_ends_at")
     .eq("user_id", userId)
     .maybeSingle();
   if (prof?.is_super_admin) return "super_admin";
-
-  // Active paid subscription?
-  try {
-    const { data: sub } = await adminClient
-      .from("subscribers")
-      .select("subscribed, subscription_end")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (sub?.subscribed) {
-      if (!sub.subscription_end || new Date(sub.subscription_end).getTime() > Date.now()) {
-        return "paid";
-      }
-    }
-  } catch {
-    // subscribers table may not exist in some projects — treat as trial
+  if (prof?.trial_ends_at && new Date(prof.trial_ends_at).getTime() > Date.now()) {
+    return "trial";
   }
-
-  return "trial";
+  return "paid";
 }
 
 /**
