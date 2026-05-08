@@ -28,6 +28,7 @@ const statusStyles: Record<string, string> = {
 const QuoteDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { data: quote, isLoading } = useQuote(id);
   const { data: lineItems } = useQuoteLineItems(id);
   const updateQuote = useUpdateQuote();
