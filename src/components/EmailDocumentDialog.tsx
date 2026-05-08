@@ -64,6 +64,40 @@ ${companyName || ""}`.trim();
   const [body, setBody] = useState(defaultBody);
   const [sendCopy, setSendCopy] = useState(false);
   const [sending, setSending] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const handlePersonalize = async (tone: "friendly" | "professional" | "brief") => {
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("personalize-document-email", {
+        body: {
+          type,
+          clientName,
+          companyName,
+          documentNumber,
+          documentTitle,
+          total,
+          balanceDue,
+          dueDate,
+          tone,
+        },
+      });
+      if (error) {
+        const ctxBody = (error as any)?.context?.body;
+        let msg = error.message;
+        if (ctxBody) {
+          try { const p = typeof ctxBody === "string" ? JSON.parse(ctxBody) : ctxBody; msg = p.error || msg; } catch {}
+        }
+        toast.error(msg || "Linq couldn't write that. Try again.");
+        return;
+      }
+      if (data?.body) setBody(data.body);
+    } catch (e: any) {
+      toast.error(e?.message || "Network error");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // Reset fields when dialog opens
   const handleOpenChange = (val: boolean) => {
