@@ -227,7 +227,22 @@ ${companyName || ""}`.trim();
 
           {/* Body */}
           <div className="space-y-1.5">
-            <Label htmlFor="email-body" className="text-sm font-medium">Message</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="email-body" className="text-sm font-medium">Message</Label>
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] text-muted-foreground hidden sm:inline">Write with Linq:</span>
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" disabled={aiLoading} onClick={() => handlePersonalize("friendly")}>
+                  {aiLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  Friendly
+                </Button>
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" disabled={aiLoading} onClick={() => handlePersonalize("professional")}>
+                  Professional
+                </Button>
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" disabled={aiLoading} onClick={() => handlePersonalize("brief")}>
+                  Brief
+                </Button>
+              </div>
+            </div>
             <Textarea
               id="email-body"
               value={body}
