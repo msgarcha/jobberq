@@ -398,10 +398,42 @@ const QuoteDetail = () => {
                 <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>${Number(quote.tax_amount).toFixed(2)}</span></div>
                 <div className="flex justify-between font-semibold border-t pt-1"><span>Total</span><span>${Number(quote.total).toFixed(2)}</span></div>
                 {Number((quote as any).deposit_amount) > 0 && (
-                  <div className="flex justify-between text-primary font-medium pt-1">
-                    <span>Deposit Required ({(quote as any).deposit_type === "percent" ? `${(quote as any).deposit_value}%` : "Fixed"})</span>
-                    <span>${Number((quote as any).deposit_amount).toFixed(2)}</span>
-                  </div>
+                  <>
+                    <div className="flex justify-between text-primary font-medium pt-1">
+                      <span>Deposit Required ({(quote as any).deposit_type === "percent" ? `${(quote as any).deposit_value}%` : "Fixed"})</span>
+                      <span>${Number((quote as any).deposit_amount).toFixed(2)}</span>
+                    </div>
+                    {Number((quote as any).deposit_paid_amount) > 0 ? (
+                      <div className="flex items-center justify-between gap-2 text-status-success-foreground bg-status-success/10 rounded px-2 py-1.5">
+                        <span className="flex items-center gap-1.5 text-xs">
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          Deposit paid ${Number((quote as any).deposit_paid_amount).toFixed(2)}
+                          {(quote as any).deposit_paid_method && ` · ${(quote as any).deposit_paid_method}`}
+                        </span>
+                        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={handleMarkDepositUnpaid}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground bg-muted/40 rounded px-2 py-1.5">
+                        <span>Deposit not collected yet</span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                              <DollarSign className="h-3 w-3" /> Mark Paid
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleMarkDepositPaid("cash")}>Cash</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleMarkDepositPaid("check")}>Check</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleMarkDepositPaid("etransfer")}>e-Transfer</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleMarkDepositPaid("card")}>Card (manual)</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleMarkDepositPaid("other")}>Other</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
