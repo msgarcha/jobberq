@@ -17,7 +17,9 @@ import {
   Kanban,
   FolderOpen,
   LogOut,
+  Sparkles,
 } from "lucide-react";
+import { AssistantSheet } from "@/components/ai/AssistantSheet";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 
