@@ -18,7 +18,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         {!isMobile && <AppSidebar />}
         <div className="flex-1 flex flex-col min-w-0">
           <TopBar />
-          <main className={`flex-1 overflow-auto ${isMobile ? "px-4 pt-4 pb-24" : "p-6"}`}>
+          <main className={`flex-1 overflow-auto overflow-x-hidden ${isMobile ? "px-4 pt-4 safe-area-pb-nav" : "p-6"}`}>
             {children}
           </main>
         </div>
