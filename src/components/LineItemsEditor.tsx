@@ -197,6 +197,16 @@ export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 
               <Input type="number" min={0} step="0.01" value={newTax} onChange={(e) => setNewTax(e.target.value)} placeholder="0" />
             </div>
           </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Description</Label>
+              <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" disabled={aiBusy || !newName.trim()} onClick={handleWriteDescription}>
+                {aiBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                Write with Linq
+              </Button>
+            </div>
+            <Textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} placeholder="What's included? Shown on quotes and invoices." rows={3} className="text-sm resize-none" />
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setNewServiceOpen(false)}>Cancel</Button>
