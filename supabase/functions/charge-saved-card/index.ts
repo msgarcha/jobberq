@@ -58,6 +58,36 @@ serve(async (req) => {
       });
     }
 
+    // Load invoice to cap charge at outstanding balance
+    const { data: invoiceRow, error: invErr } = await supabase
+      .from("invoices")
+      .select("balance_due")
+      .eq("id", invoice_id)
+      .single();
+
+    if (invErr || !invoiceRow) {
+      return new Response(JSON.stringify({ error: "Invoice not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const requested = Number(amount);
+    const balanceDue = Number(invoiceRow.balance_due);
+    if (!Number.isFinite(requested) || requested <= 0) {
+      return new Response(JSON.stringify({ error: "Invalid amount" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const chargeAmount = Math.min(requested, balanceDue);
+    if (chargeAmount <= 0) {
+      return new Response(JSON.stringify({ error: "Invoice has no balance due" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { data: companySettings } = await supabase
       .from("company_settings")
       .select("stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled")
@@ -72,7 +102,7 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    const amountCents = Math.round(Number(amount) * 100);
+    const amountCents = Math.round(chargeAmount * 100);
     const feePercent = Number(Deno.env.get("PLATFORM_FEE_PERCENT") || "0");
     const applicationFee = feePercent > 0 ? Math.round(amountCents * feePercent / 100) : undefined;
 
@@ -115,7 +145,7 @@ serve(async (req) => {
         invoice_id,
         user_id: user.id,
         team_id: membership?.team_id,
-        amount: Number(amount),
+        amount: chargeAmount,
         payment_method: "credit_card",
         stripe_payment_id: paymentIntent.id,
         notes: `Charged saved card ending in ${savedCard.card_last4}`,
@@ -128,7 +158,7 @@ serve(async (req) => {
         .single();
 
       if (invoice) {
-        const newAmountPaid = Number(invoice.amount_paid) + Number(amount);
+        const newAmountPaid = Number(invoice.amount_paid) + chargeAmount;
         const newBalance = Number(invoice.total) - newAmountPaid;
         const updates: any = {
           amount_paid: newAmountPaid,
