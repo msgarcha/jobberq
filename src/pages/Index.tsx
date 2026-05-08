@@ -77,7 +77,7 @@ const Index = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in overflow-hidden">
         {/* Greeting + Tip */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 min-w-0">
           <div className="min-w-0">
@@ -146,14 +146,14 @@ const Index = () => {
         {/* Main Content Grid */}
         <div className="grid gap-5 lg:grid-cols-5">
           {/* Today's Schedule - Timeline style */}
-          <Card className="lg:col-span-2 shadow-warm">
+          <Card className="lg:col-span-2 min-w-0 overflow-hidden shadow-warm">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-display font-semibold flex items-center gap-2">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <CardTitle className="text-sm font-display font-semibold flex items-center gap-2 min-w-0 truncate">
                   <Calendar className="h-4 w-4 text-primary" />
                   Today's Schedule
                 </CardTitle>
-                <Button variant="ghost" size="sm" className="text-xs gap-1 text-muted-foreground" onClick={() => navigate("/schedule")}>
+                <Button variant="ghost" size="sm" className="text-xs gap-1 text-muted-foreground shrink-0" onClick={() => navigate("/schedule")}>
                   View all <ChevronRight className="h-3 w-3" />
                 </Button>
               </div>
@@ -210,11 +210,11 @@ const Index = () => {
           </Card>
 
           {/* Recent Activity */}
-          <Card className="lg:col-span-3 shadow-warm">
+          <Card className="lg:col-span-3 min-w-0 overflow-hidden shadow-warm">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-display font-semibold">Recent Activity</CardTitle>
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1" onClick={() => navigate("/invoices")}>
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <CardTitle className="text-sm font-display font-semibold truncate min-w-0">Recent Activity</CardTitle>
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground gap-1 shrink-0" onClick={() => navigate("/invoices")}>
                   View all <ChevronRight className="h-3 w-3" />
                 </Button>
               </div>
@@ -234,7 +234,7 @@ const Index = () => {
                     const Icon = item.type === "quote" ? FileText : Receipt;
                     const detailPath = item.type === "quote" ? `/quotes/${item.id}` : `/invoices/${item.id}`;
                     return (
-                      <div key={`${item.type}-${item.id}`} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 cursor-pointer hover:bg-secondary/30 -mx-2 px-2 rounded transition-colors" onClick={() => navigate(detailPath)}>
+                      <div key={`${item.type}-${item.id}`} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 cursor-pointer hover:bg-secondary/30 -mx-2 px-2 rounded transition-colors min-w-0" onClick={() => navigate(detailPath)}>
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
                           <Icon className="h-4 w-4 text-muted-foreground" />
                         </div>
@@ -242,11 +242,11 @@ const Index = () => {
                           <p className="text-sm font-medium truncate">{item.text}</p>
                           <p className="text-xs text-muted-foreground truncate">{item.detail}</p>
                         </div>
-                        <div className="text-right shrink-0">
-                          <Badge className={statusColors[item.status] || "bg-status-neutral text-status-neutral-foreground"} variant="secondary">
+                        <div className="text-right shrink-0 max-w-[35%]">
+                          <Badge className={`${statusColors[item.status] || "bg-status-neutral text-status-neutral-foreground"} max-w-full truncate inline-block`} variant="secondary">
                             {item.status}
                           </Badge>
-                          <p className="text-[10px] text-muted-foreground mt-1">{formatRelativeTime(item.time)}</p>
+                          <p className="text-[10px] text-muted-foreground mt-1 truncate">{formatRelativeTime(item.time)}</p>
                         </div>
                       </div>
                     );
