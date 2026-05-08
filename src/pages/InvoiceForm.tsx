@@ -255,10 +255,44 @@ const InvoiceForm = () => {
               title={title}
               lineItems={lineItems.map((li) => ({ description: li.description, unit_price: li.unit_price, tax_rate: li.tax_rate }))}
               enabled={companySettings?.ai_assistant_enabled !== false}
-              onAdd={(s) => setLineItems((curr) => [
-                ...curr,
-                { service_id: null, description: s.description, quantity: 1, unit_price: s.suggested_price, tax_rate: defaultTaxRate, discount_percent: 0, line_total: s.suggested_price * (1 + defaultTaxRate / 100) },
-              ])}
+              onAdd={async (s) => {
+                const shortName = s.description.split(/[.!:–-]/)[0].trim().slice(0, 60) || s.description.slice(0, 60);
+                let serviceId: string | null = null;
+                try {
+                  const { data: { user } } = await supabase.auth.getUser();
+                  const { data: tm } = await supabase.from("team_members").select("team_id").eq("user_id", user!.id).maybeSingle();
+                  const { data: existing } = await supabase
+                    .from("services_catalog")
+                    .select("id, name")
+                    .ilike("name", shortName)
+                    .limit(1)
+                    .maybeSingle();
+                  if (existing?.id) {
+                    serviceId = existing.id;
+                  } else if (tm?.team_id) {
+                    const { data: created } = await supabase
+                      .from("services_catalog")
+                      .insert({
+                        name: shortName,
+                        description: s.description,
+                        default_price: s.suggested_price,
+                        tax_rate: defaultTaxRate,
+                        is_active: true,
+                        user_id: user!.id,
+                        team_id: tm.team_id,
+                      } as any)
+                      .select("id")
+                      .single();
+                    serviceId = created?.id || null;
+                  }
+                } catch (e) {
+                  console.error("auto-create service from suggestion failed", e);
+                }
+                setLineItems((curr) => [
+                  ...curr,
+                  { service_id: serviceId, description: s.description, quantity: 1, unit_price: s.suggested_price, tax_rate: defaultTaxRate, discount_percent: 0, line_total: s.suggested_price * (1 + defaultTaxRate / 100) },
+                ]);
+              }}
             />
           </CardContent>
         </Card>
