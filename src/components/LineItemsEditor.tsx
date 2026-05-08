@@ -72,19 +72,46 @@ export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 
   const [newName, setNewName] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [newTax, setNewTax] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
 
   const openNewServiceDialog = (rowIndex: number) => {
     setNewServiceRow(rowIndex);
     setNewName("");
     setNewPrice("");
     setNewTax("");
+    setNewDescription("");
     setNewServiceOpen(true);
+  };
+
+  const handleWriteDescription = async () => {
+    if (!newName.trim()) {
+      toast.error("Enter a service name first");
+      return;
+    }
+    setAiBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("service-describe", {
+        body: { name: newName.trim(), price: parseFloat(newPrice) || undefined },
+      });
+      if (error) {
+        const ctxBody = (error as any)?.context?.body;
+        let msg = error.message;
+        if (ctxBody) { try { const p = typeof ctxBody === "string" ? JSON.parse(ctxBody) : ctxBody; msg = p.error || msg; } catch {} }
+        toast.error(msg || "Couldn't generate description");
+        return;
+      }
+      if (data?.description) setNewDescription(data.description);
+    } finally {
+      setAiBusy(false);
+    }
   };
 
   const handleCreateService = async () => {
     if (!newName.trim()) return;
     const result = await createService.mutateAsync({
       name: newName.trim(),
+      description: newDescription.trim() || null,
       default_price: parseFloat(newPrice) || 0,
       tax_rate: parseFloat(newTax) || 0,
       is_active: true,
