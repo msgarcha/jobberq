@@ -250,6 +250,11 @@
 }
 
 @media print {
+  html, body {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
   body * {
     visibility: hidden;
   }
@@ -258,6 +263,9 @@
   .print-public-page,
   .print-public-page * {
     visibility: visible;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
   .print-document,
   .print-public-page {
@@ -265,12 +273,23 @@
     left: 0;
     top: 0;
     width: 100%;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+  .print-document table,
+  .print-document tr,
+  .print-document td,
+  .print-document th,
+  .print-document img {
+    page-break-inside: avoid;
   }
   .no-print {
     display: none !important;
   }
   @page {
-    margin: 0.5in;
+    margin: 16mm;
     size: A4;
   }
 }
