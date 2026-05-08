@@ -19,6 +19,12 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { token, rating, feedback, action } = body;
 
+    // Validate token format to prevent PostgREST filter injection
+    if (!token || typeof token !== "string" || !/^[A-Za-z0-9._-]{6,128}$/.test(token)) {
+      return new Response(JSON.stringify({ error: "Invalid token" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
