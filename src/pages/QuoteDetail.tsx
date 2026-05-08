@@ -43,24 +43,74 @@ const QuoteDetail = () => {
     updateQuote.mutate({ id: id!, status: "approved", approved_at: new Date().toISOString() });
   };
 
+  const handleMarkDepositPaid = async (method: string) => {
+    if (!quote) return;
+    const amount = Number((quote as any).deposit_amount) || 0;
+    await (supabase as any)
+      .from("quotes")
+      .update({
+        deposit_paid_amount: amount,
+        deposit_paid_at: new Date().toISOString(),
+        deposit_paid_method: method,
+      })
+      .eq("id", id);
+    qc.invalidateQueries({ queryKey: ["quote", id] });
+    toast.success(`Deposit marked paid (${method})`);
+  };
+
+  const handleMarkDepositUnpaid = async () => {
+    await (supabase as any)
+      .from("quotes")
+      .update({ deposit_paid_amount: 0, deposit_paid_at: null, deposit_paid_method: null })
+      .eq("id", id);
+    qc.invalidateQueries({ queryKey: ["quote", id] });
+    toast.success("Deposit marked unpaid");
+  };
+
   const handleConvert = async () => {
     if (!quote || !lineItems) return;
     const invoiceNumber = nextInvNumber?.formatted || `INV-${Date.now()}`;
-      const depositPaid = Number((quote as any).deposit_amount) || 0;
-      const inv = await createInvoice.mutateAsync({
-        invoice_number: invoiceNumber,
-        client_id: quote.client_id,
-        quote_id: quote.id,
-        title: quote.title,
-        subtotal: quote.subtotal,
-        tax_amount: quote.tax_amount,
-        discount_amount: quote.discount_amount,
-        total: quote.total,
-        amount_paid: depositPaid,
-        balance_due: Number(quote.total) - depositPaid,
-        client_notes: quote.client_notes,
-        internal_notes: quote.internal_notes,
+    const depositRequired = Number((quote as any).deposit_amount) || 0;
+    const depositPaid = Number((quote as any).deposit_paid_amount) || 0;
+
+    if (depositRequired > 0 && depositPaid === 0) {
+      const proceed = window.confirm(
+        `This quote requires a $${depositRequired.toFixed(2)} deposit that has not been collected yet. Convert anyway? The deposit will not be applied to the invoice.`
+      );
+      if (!proceed) return;
+    }
+
+    const inv = await createInvoice.mutateAsync({
+      invoice_number: invoiceNumber,
+      client_id: quote.client_id,
+      quote_id: quote.id,
+      title: quote.title,
+      subtotal: quote.subtotal,
+      tax_amount: quote.tax_amount,
+      discount_amount: quote.discount_amount,
+      total: quote.total,
+      amount_paid: depositPaid,
+      balance_due: Math.max(0, Number(quote.total) - depositPaid),
+      client_notes: quote.client_notes,
+      internal_notes: quote.internal_notes,
+    });
+
+    // Audit trail: if a deposit was actually collected, record it as a payment row on the new invoice.
+    if (depositPaid > 0) {
+      const method = (quote as any).deposit_paid_method || "other";
+      const validMethods = ["cash", "check", "card", "etransfer", "stripe", "other"];
+      const pm = validMethods.includes(method) ? method : "other";
+      await (supabase as any).from("payments").insert({
+        invoice_id: inv.id,
+        amount: depositPaid,
+        payment_method: pm,
+        payment_date: ((quote as any).deposit_paid_at || new Date().toISOString()).split("T")[0],
+        notes: `Deposit carried over from quote ${quote.quote_number}`,
+        user_id: quote.user_id,
+        team_id: (quote as any).team_id,
       });
+    }
+
     await saveInvoiceLineItems.mutateAsync({
       invoiceId: inv.id,
       items: lineItems.map((li) => ({
