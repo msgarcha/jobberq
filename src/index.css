@@ -189,11 +189,16 @@
 }
 
 /* Safe area for notched devices */
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+.safe-area-bottom,
+.safe-area-pb {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
 }
-.safe-area-top {
-  padding-top: env(safe-area-inset-top, 0px);
+.safe-area-top,
+.safe-area-pt {
+  padding-top: max(env(safe-area-inset-top, 0px), 0px);
+}
+.safe-area-pb-nav {
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
 }
 
 /* Mobile touch targets */
