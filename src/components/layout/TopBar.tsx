@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bell, Plus, Search, Users, FileText, Receipt, Briefcase, Settings, KeyRound, LogOut, ChevronRight } from "lucide-react";
+import { ArrowLeft, Bell, Plus, Search, Users, FileText, Receipt, Briefcase, Settings, KeyRound, LogOut, ChevronRight } from "lucide-react";
 import QuickLinqLogo from "@/components/QuickLinqLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +12,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useRecentActivity, formatRelativeTime } from "@/hooks/useInvoices";
 
 export function TopBar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -117,11 +118,50 @@ export function TopBar() {
   );
 
   if (isMobile) {
+    const titleMap: Record<string, string> = {
+      "/clients": "Clients",
+      "/quotes": "Quotes",
+      "/invoices": "Invoices",
+      "/jobs": "Jobs",
+      "/pipeline": "Pipeline",
+      "/projects": "Projects",
+      "/reviews": "Reputation Shield",
+      "/schedule": "Schedule",
+      "/reports": "Reports",
+      "/services": "Services",
+      "/settings": "Settings",
+      "/import": "Import Data",
+    };
+    const path = location.pathname;
+    const isHome = path === "/";
+    let title = "";
+    if (!isHome) {
+      const match = Object.keys(titleMap).find((p) => path === p || path.startsWith(p + "/"));
+      title = match ? titleMap[match] : "";
+    }
+
     return (
       <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b safe-area-top">
-        <div className="flex h-14 items-center justify-between px-4">
-          <QuickLinqLogo size={28} type="full" variant="dark" />
-          <div className="flex items-center gap-2">
+        <div className="flex h-14 items-center justify-between px-4 gap-2">
+          {isHome ? (
+            <QuickLinqLogo size={28} type="full" variant="dark" />
+          ) : (
+            <div className="flex items-center gap-1 min-w-0 flex-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 shrink-0 -ml-2"
+                onClick={() => navigate(-1)}
+                aria-label="Go back"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              {title && (
+                <h1 className="text-base font-display font-semibold truncate">{title}</h1>
+              )}
+            </div>
+          )}
+          <div className="flex items-center gap-2 shrink-0">
             <NotificationDropdown />
             <AvatarDropdown />
           </div>
