@@ -22,9 +22,14 @@ export function LinqLauncher() {
         className={cn(
           "fixed z-40 right-4 flex items-center gap-2 rounded-full bg-primary text-primary-foreground shadow-warm-lg active:scale-95 transition-all hover:shadow-xl",
           isMobile
-            ? "bottom-24 h-12 w-12 justify-center"
+            ? "h-14 w-14 justify-center"
             : "bottom-6 px-4 h-12"
         )}
+        style={
+          isMobile
+            ? { bottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }
+            : undefined
+        }
       >
         <Sparkles className="h-5 w-5" />
         {!isMobile && <span className="font-medium text-sm">Ask Linq</span>}
