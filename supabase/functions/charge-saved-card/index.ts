@@ -145,7 +145,7 @@ serve(async (req) => {
         invoice_id,
         user_id: user.id,
         team_id: membership?.team_id,
-        amount: Number(amount),
+        amount: chargeAmount,
         payment_method: "credit_card",
         stripe_payment_id: paymentIntent.id,
         notes: `Charged saved card ending in ${savedCard.card_last4}`,
