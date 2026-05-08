@@ -179,6 +179,16 @@ export function MobileBottomNav() {
               <button
                 onClick={() => {
                   setMoreOpen(false);
+                  setLinqOpen(true);
+                }}
+                className="flex flex-col items-center gap-2 py-4 px-2 rounded-2xl text-primary hover:bg-primary/10 transition-colors"
+              >
+                <Sparkles className="h-6 w-6" />
+                <span className="text-xs font-medium">Ask Linq</span>
+              </button>
+              <button
+                onClick={() => {
+                  setMoreOpen(false);
                   signOut();
                 }}
                 className="flex flex-col items-center gap-2 py-4 px-2 rounded-2xl text-destructive hover:bg-destructive/10 transition-colors"
@@ -190,6 +200,7 @@ export function MobileBottomNav() {
           </div>
         </div>
       )}
+      <AssistantSheet open={linqOpen} onOpenChange={setLinqOpen} />
 
       {/* Bottom Tab Bar */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t safe-area-bottom">
