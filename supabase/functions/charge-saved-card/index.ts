@@ -158,7 +158,7 @@ serve(async (req) => {
         .single();
 
       if (invoice) {
-        const newAmountPaid = Number(invoice.amount_paid) + Number(amount);
+        const newAmountPaid = Number(invoice.amount_paid) + chargeAmount;
         const newBalance = Number(invoice.total) - newAmountPaid;
         const updates: any = {
           amount_paid: newAmountPaid,
