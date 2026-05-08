@@ -14,6 +14,7 @@ import { useInvoice, useInvoiceLineItems, useCreateInvoice, useUpdateInvoice, us
 import { useClient } from "@/hooks/useClients";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { SuggestionChip } from "@/components/ai/SuggestionChip";
+import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Save, RefreshCw, Plus } from "lucide-react";
 import { addDays, format } from "date-fns";
 
