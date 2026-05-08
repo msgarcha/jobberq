@@ -118,11 +118,13 @@ export function TopBar() {
 
   if (isMobile) {
     return (
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-card/80 backdrop-blur-sm px-4 border-b">
-        <QuickLinqLogo size={28} type="full" variant="dark" />
-        <div className="flex items-center gap-2">
-          <NotificationDropdown />
-          <AvatarDropdown />
+      <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b safe-area-top">
+        <div className="flex h-14 items-center justify-between px-4">
+          <QuickLinqLogo size={28} type="full" variant="dark" />
+          <div className="flex items-center gap-2">
+            <NotificationDropdown />
+            <AvatarDropdown />
+          </div>
         </div>
       </header>
     );
