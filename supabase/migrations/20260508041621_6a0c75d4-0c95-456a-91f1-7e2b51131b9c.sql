@@ -1,0 +1,4 @@
+ALTER TABLE public.quotes
+  ADD COLUMN IF NOT EXISTS deposit_paid_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS deposit_paid_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS deposit_paid_method TEXT;

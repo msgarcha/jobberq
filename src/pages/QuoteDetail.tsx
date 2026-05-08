@@ -1,16 +1,20 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EmailDocumentDialog } from "@/components/EmailDocumentDialog";
 import { useQuote, useQuoteLineItems, useUpdateQuote, useDeleteQuote } from "@/hooks/useQuotes";
 import { useCreateInvoice, useSaveInvoiceLineItems, useIncrementInvoiceNumber, useNextInvoiceNumber } from "@/hooks/useInvoices";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
-import { ArrowLeft, Edit, Send, CheckCircle, FileText, Trash2, Download, Mail, Link2, Eye } from "lucide-react";
+import { ArrowLeft, Edit, Send, CheckCircle, FileText, Trash2, Download, Mail, Link2, Eye, DollarSign, X } from "lucide-react";
 import { format } from "date-fns";
 
 const statusStyles: Record<string, string> = {
@@ -24,6 +28,7 @@ const statusStyles: Record<string, string> = {
 const QuoteDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { data: quote, isLoading } = useQuote(id);
   const { data: lineItems } = useQuoteLineItems(id);
   const updateQuote = useUpdateQuote();
@@ -43,24 +48,74 @@ const QuoteDetail = () => {
     updateQuote.mutate({ id: id!, status: "approved", approved_at: new Date().toISOString() });
   };
 
+  const handleMarkDepositPaid = async (method: string) => {
+    if (!quote) return;
+    const amount = Number((quote as any).deposit_amount) || 0;
+    await (supabase as any)
+      .from("quotes")
+      .update({
+        deposit_paid_amount: amount,
+        deposit_paid_at: new Date().toISOString(),
+        deposit_paid_method: method,
+      })
+      .eq("id", id);
+    qc.invalidateQueries({ queryKey: ["quote", id] });
+    toast.success(`Deposit marked paid (${method})`);
+  };
+
+  const handleMarkDepositUnpaid = async () => {
+    await (supabase as any)
+      .from("quotes")
+      .update({ deposit_paid_amount: 0, deposit_paid_at: null, deposit_paid_method: null })
+      .eq("id", id);
+    qc.invalidateQueries({ queryKey: ["quote", id] });
+    toast.success("Deposit marked unpaid");
+  };
+
   const handleConvert = async () => {
     if (!quote || !lineItems) return;
     const invoiceNumber = nextInvNumber?.formatted || `INV-${Date.now()}`;
-      const depositPaid = Number((quote as any).deposit_amount) || 0;
-      const inv = await createInvoice.mutateAsync({
-        invoice_number: invoiceNumber,
-        client_id: quote.client_id,
-        quote_id: quote.id,
-        title: quote.title,
-        subtotal: quote.subtotal,
-        tax_amount: quote.tax_amount,
-        discount_amount: quote.discount_amount,
-        total: quote.total,
-        amount_paid: depositPaid,
-        balance_due: Number(quote.total) - depositPaid,
-        client_notes: quote.client_notes,
-        internal_notes: quote.internal_notes,
+    const depositRequired = Number((quote as any).deposit_amount) || 0;
+    const depositPaid = Number((quote as any).deposit_paid_amount) || 0;
+
+    if (depositRequired > 0 && depositPaid === 0) {
+      const proceed = window.confirm(
+        `This quote requires a $${depositRequired.toFixed(2)} deposit that has not been collected yet. Convert anyway? The deposit will not be applied to the invoice.`
+      );
+      if (!proceed) return;
+    }
+
+    const inv = await createInvoice.mutateAsync({
+      invoice_number: invoiceNumber,
+      client_id: quote.client_id,
+      quote_id: quote.id,
+      title: quote.title,
+      subtotal: quote.subtotal,
+      tax_amount: quote.tax_amount,
+      discount_amount: quote.discount_amount,
+      total: quote.total,
+      amount_paid: depositPaid,
+      balance_due: Math.max(0, Number(quote.total) - depositPaid),
+      client_notes: quote.client_notes,
+      internal_notes: quote.internal_notes,
+    });
+
+    // Audit trail: if a deposit was actually collected, record it as a payment row on the new invoice.
+    if (depositPaid > 0) {
+      const method = (quote as any).deposit_paid_method || "other";
+      const validMethods = ["cash", "check", "card", "etransfer", "stripe", "other"];
+      const pm = validMethods.includes(method) ? method : "other";
+      await (supabase as any).from("payments").insert({
+        invoice_id: inv.id,
+        amount: depositPaid,
+        payment_method: pm,
+        payment_date: ((quote as any).deposit_paid_at || new Date().toISOString()).split("T")[0],
+        notes: `Deposit carried over from quote ${quote.quote_number}`,
+        user_id: quote.user_id,
+        team_id: (quote as any).team_id,
       });
+    }
+
     await saveInvoiceLineItems.mutateAsync({
       invoiceId: inv.id,
       items: lineItems.map((li) => ({
@@ -343,10 +398,42 @@ const QuoteDetail = () => {
                 <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>${Number(quote.tax_amount).toFixed(2)}</span></div>
                 <div className="flex justify-between font-semibold border-t pt-1"><span>Total</span><span>${Number(quote.total).toFixed(2)}</span></div>
                 {Number((quote as any).deposit_amount) > 0 && (
-                  <div className="flex justify-between text-primary font-medium pt-1">
-                    <span>Deposit Required ({(quote as any).deposit_type === "percent" ? `${(quote as any).deposit_value}%` : "Fixed"})</span>
-                    <span>${Number((quote as any).deposit_amount).toFixed(2)}</span>
-                  </div>
+                  <>
+                    <div className="flex justify-between text-primary font-medium pt-1">
+                      <span>Deposit Required ({(quote as any).deposit_type === "percent" ? `${(quote as any).deposit_value}%` : "Fixed"})</span>
+                      <span>${Number((quote as any).deposit_amount).toFixed(2)}</span>
+                    </div>
+                    {Number((quote as any).deposit_paid_amount) > 0 ? (
+                      <div className="flex items-center justify-between gap-2 text-status-success-foreground bg-status-success/10 rounded px-2 py-1.5">
+                        <span className="flex items-center gap-1.5 text-xs">
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          Deposit paid ${Number((quote as any).deposit_paid_amount).toFixed(2)}
+                          {(quote as any).deposit_paid_method && ` · ${(quote as any).deposit_paid_method}`}
+                        </span>
+                        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={handleMarkDepositUnpaid}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground bg-muted/40 rounded px-2 py-1.5">
+                        <span>Deposit not collected yet</span>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                              <DollarSign className="h-3 w-3" /> Mark Paid
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleMarkDepositPaid("cash")}>Cash</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleMarkDepositPaid("check")}>Check</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleMarkDepositPaid("etransfer")}>e-Transfer</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleMarkDepositPaid("card")}>Card (manual)</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleMarkDepositPaid("other")}>Other</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>

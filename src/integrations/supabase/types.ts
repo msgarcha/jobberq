@@ -1161,6 +1161,9 @@ export type Database = {
           client_notes: string | null
           created_at: string
           deposit_amount: number | null
+          deposit_paid_amount: number
+          deposit_paid_at: string | null
+          deposit_paid_method: string | null
           deposit_type: string | null
           deposit_value: number | null
           discount_amount: number
@@ -1186,6 +1189,9 @@ export type Database = {
           client_notes?: string | null
           created_at?: string
           deposit_amount?: number | null
+          deposit_paid_amount?: number
+          deposit_paid_at?: string | null
+          deposit_paid_method?: string | null
           deposit_type?: string | null
           deposit_value?: number | null
           discount_amount?: number
@@ -1211,6 +1217,9 @@ export type Database = {
           client_notes?: string | null
           created_at?: string
           deposit_amount?: number | null
+          deposit_paid_amount?: number
+          deposit_paid_at?: string | null
+          deposit_paid_method?: string | null
           deposit_type?: string | null
           deposit_value?: number | null
           discount_amount?: number

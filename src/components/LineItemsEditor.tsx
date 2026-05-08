@@ -1,14 +1,17 @@
 import { useState } from "react";
-import { Plus, Trash2, Settings2 } from "lucide-react";
+import { Plus, Trash2, Settings2, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useServices, useCreateService } from "@/hooks/useServices";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface LineItem {
   id?: string;
@@ -69,19 +72,46 @@ export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 
   const [newName, setNewName] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [newTax, setNewTax] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
 
   const openNewServiceDialog = (rowIndex: number) => {
     setNewServiceRow(rowIndex);
     setNewName("");
     setNewPrice("");
     setNewTax("");
+    setNewDescription("");
     setNewServiceOpen(true);
+  };
+
+  const handleWriteDescription = async () => {
+    if (!newName.trim()) {
+      toast.error("Enter a service name first");
+      return;
+    }
+    setAiBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("service-describe", {
+        body: { name: newName.trim(), price: parseFloat(newPrice) || undefined },
+      });
+      if (error) {
+        const ctxBody = (error as any)?.context?.body;
+        let msg = error.message;
+        if (ctxBody) { try { const p = typeof ctxBody === "string" ? JSON.parse(ctxBody) : ctxBody; msg = p.error || msg; } catch {} }
+        toast.error(msg || "Couldn't generate description");
+        return;
+      }
+      if (data?.description) setNewDescription(data.description);
+    } finally {
+      setAiBusy(false);
+    }
   };
 
   const handleCreateService = async () => {
     if (!newName.trim()) return;
     const result = await createService.mutateAsync({
       name: newName.trim(),
+      description: newDescription.trim() || null,
       default_price: parseFloat(newPrice) || 0,
       tax_rate: parseFloat(newTax) || 0,
       is_active: true,
@@ -166,6 +196,16 @@ export function LineItemsEditor({ items, onChange, disabled, defaultTaxRate = 0 
               <Label>Tax Rate %</Label>
               <Input type="number" min={0} step="0.01" value={newTax} onChange={(e) => setNewTax(e.target.value)} placeholder="0" />
             </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Description</Label>
+              <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" disabled={aiBusy || !newName.trim()} onClick={handleWriteDescription}>
+                {aiBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                Write with Linq
+              </Button>
+            </div>
+            <Textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} placeholder="What's included? Shown on quotes and invoices." rows={3} className="text-sm resize-none" />
           </div>
         </div>
         <DialogFooter>

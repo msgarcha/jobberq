@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Send, Loader2, X } from "lucide-react";
+import { Send, Loader2, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -64,6 +64,40 @@ ${companyName || ""}`.trim();
   const [body, setBody] = useState(defaultBody);
   const [sendCopy, setSendCopy] = useState(false);
   const [sending, setSending] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const handlePersonalize = async (tone: "friendly" | "professional" | "brief") => {
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("personalize-document-email", {
+        body: {
+          type,
+          clientName,
+          companyName,
+          documentNumber,
+          documentTitle,
+          total,
+          balanceDue,
+          dueDate,
+          tone,
+        },
+      });
+      if (error) {
+        const ctxBody = (error as any)?.context?.body;
+        let msg = error.message;
+        if (ctxBody) {
+          try { const p = typeof ctxBody === "string" ? JSON.parse(ctxBody) : ctxBody; msg = p.error || msg; } catch {}
+        }
+        toast.error(msg || "Linq couldn't write that. Try again.");
+        return;
+      }
+      if (data?.body) setBody(data.body);
+    } catch (e: any) {
+      toast.error(e?.message || "Network error");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // Reset fields when dialog opens
   const handleOpenChange = (val: boolean) => {
@@ -193,7 +227,22 @@ ${companyName || ""}`.trim();
 
           {/* Body */}
           <div className="space-y-1.5">
-            <Label htmlFor="email-body" className="text-sm font-medium">Message</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="email-body" className="text-sm font-medium">Message</Label>
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] text-muted-foreground hidden sm:inline">Write with Linq:</span>
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" disabled={aiLoading} onClick={() => handlePersonalize("friendly")}>
+                  {aiLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  Friendly
+                </Button>
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" disabled={aiLoading} onClick={() => handlePersonalize("professional")}>
+                  Professional
+                </Button>
+                <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-primary" disabled={aiLoading} onClick={() => handlePersonalize("brief")}>
+                  Brief
+                </Button>
+              </div>
+            </div>
             <Textarea
               id="email-body"
               value={body}

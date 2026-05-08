@@ -1,126 +1,99 @@
-## Goals
+# Fix QA Issues — Quotes, Invoices, AI & PDF
 
-1. **Stop AI cost runaway** — cap how much any single user can spend on Lovable AI calls per minute and per day, tier-aware.
-2. **Improve activation** — add a Day 0 / Day 2 / Day 7 onboarding email sequence so trial signups actually return.
-
-> Heads-up: the platform doesn't have first-class rate-limiting primitives yet, so the AI cap will be an ad-hoc table-based counter. It's simple, effective, and easy to swap out later if Lovable ships native rate limiting.
+Five distinct issues from today's testing. Each fix is scoped tight.
 
 ---
 
-## Part 1 — AI usage caps
+## 1. Deposit tracking (quote → invoice carry-forward bug)
 
-### New table: `ai_usage_counters`
+**Problem:** When a quote has a deposit, `handleConvert` blindly subtracts `deposit_amount` from the invoice total and marks it as `amount_paid` — even when the deposit was never actually paid. There's no concept of "deposit paid yet" on quotes.
 
-| Column | Type | Notes |
-|---|---|---|
-| `user_id` | uuid | FK to auth.users |
-| `function_name` | text | e.g. `linq-assistant` |
-| `window_kind` | text | `minute` or `day` |
-| `window_start` | timestamptz | truncated to the window |
-| `count` | int | calls in window |
-
-Primary key: `(user_id, function_name, window_kind, window_start)`. RLS: service_role only (writes happen inside edge functions).
-
-### New shared helper: `supabase/functions/_shared/rate-limit.ts`
-
-Single function `enforceAiQuota(supabase, userId, fnName, tier)`:
-
-1. Look up the user's tier (`trial`, `starter`, `pro`, `super_admin`).
-2. Atomic upsert into `ai_usage_counters` for the current minute and day windows.
-3. If either count exceeds the cap, return `{ ok: false, retryAfterSec, reason }`. Otherwise `{ ok: true }`.
-4. Super admins are always uncapped.
-
-### Default caps (tunable)
-
-| Tier | Per minute | Per day |
-|---|---|---|
-| Trial | 5 | 50 |
-| Starter / Pro | 30 | 500 |
-| Super admin | ∞ | ∞ |
-
-Caps live as constants in the helper so they're easy to change without a migration.
-
-### Apply the helper to all 4 AI functions
-
-- `linq-assistant` (highest priority — multi-turn + tool calls)
-- `quote-suggestions`
-- `personalize-review-email`
-- `review-suggestions-sweep` (skip user check — cron-only, restrict to `service_role`)
-
-On exceed: respond `429` with `{ error, retry_after }` and a `Retry-After` header.
-
-### UI surface
-
-- `useLinqAssistant` and `useQuoteSuggestions` already return errors — toast a friendly *"You've hit today's AI limit — upgrade to keep going"* message when the function returns 429, with an upgrade CTA for trial users.
-- No quota meter in the UI for v1 (keep scope tight). We can add one later.
-
-### Cleanup
-
-- A simple DB cron job once a day deletes `ai_usage_counters` rows older than 7 days so the table stays tiny.
+**Fix:**
+- Add `deposit_paid_at TIMESTAMPTZ` and `deposit_paid_amount NUMERIC` to `quotes` table (migration).
+- Public quote payment flow (Stripe checkout) already exists for deposits — wire success webhook to set `deposit_paid_at` + `deposit_paid_amount`. (Verify in `stripe-webhook` / `public-quote` flow.)
+- On manual approve in `QuoteDetail`, if deposit set but unpaid → show a modal: "Deposit not collected. Mark as paid (cash/etransfer) or skip?"
+- In `handleConvert` (QuoteDetail.tsx ~46-79):
+  - Only carry forward `deposit_paid_amount` (not the planned amount).
+  - If unpaid, invoice starts with `amount_paid = 0` and full balance due.
+  - If paid, also create a row in `payments` table linked to the new invoice (method = whatever was used) so the audit trail is real.
+- On QuoteDetail UI, show deposit status badge: "Deposit pending $X" vs "Deposit paid $X · [date]" with a "Mark deposit paid" / "Mark unpaid" toggle for owners.
 
 ---
 
-## Part 2 — Onboarding email drip
+## 2. Email send dialog — no AI personalization visible
 
-### Approach
+**Problem:** `EmailDocumentDialog` has no AI button. Earlier work added `personalize-review-email` for review emails only — quote/invoice emails were missed.
 
-Use the existing transactional email infrastructure (`send-transactional-email`, queue, templates registry). No new providers.
-
-### New scheduled edge function: `onboarding-drip-sweep`
-
-Runs once an hour via `pg_cron`. For each user in `profiles`:
-
-- **Day 0 — Welcome** *(already exists as `welcome-email`; wire it into `handle_new_user` trigger or first sign-in)*
-- **Day 2 — "Send your first quote in 60 seconds"**: highlights the Linq AI assistant + voice quote feature. Skips if the user has already created a quote.
-- **Day 7 — "How other contractors use QuickLinq"**: social proof + Stripe Connect setup nudge. Skips if Stripe is already connected.
-
-### New table: `onboarding_email_log`
-
-Tracks `(user_id, email_kind, sent_at)` so we never double-send. RLS: service_role only.
-
-### New email templates
-
-In `supabase/functions/_shared/transactional-email-templates/`:
-- `onboarding-day-2.tsx`
-- `onboarding-day-7.tsx`
-
-Both branded with the existing QuickLinq dark teal + Poppins, same components as `welcome-email`.
-
-### Skip / suppression rules
-
-- Skip if user is in `suppressed_emails`.
-- Skip if user has unsubscribed (existing token system).
-- Skip Day 2 if quotes table has any row for the user's team.
-- Skip Day 7 if `connected_accounts` row exists for the team.
+**Fix:**
+- Add a ✨ "Write with Linq" button next to the body textarea in `EmailDocumentDialog`.
+- New edge function `personalize-document-email` (or extend existing pattern): takes `{type, clientName, companyName, documentNumber, total, dueDate, tone}` → returns 2-3 sentence personalized body. Uses Lovable AI (`google/gemini-2.5-flash`). Wraps with `enforceAiQuota`.
+- Click → loading state on textarea, replaces body with AI output. User can re-roll or edit.
+- Optional tone chip row: "Friendly · Professional · Brief".
 
 ---
 
-## Files & technical changes
+## 3. Add New Service dialog — no description field, no AI
 
-**Migrations**
-- `ai_usage_counters` table + index + RLS
-- `onboarding_email_log` table + RLS
-- `pg_cron` job: hourly `onboarding-drip-sweep`
-- `pg_cron` job: daily cleanup of `ai_usage_counters`
+**Problem:** Dialog only collects name/price/tax. No description (needed for line-item description and richer quotes). No AI assist.
 
-**New files**
-- `supabase/functions/_shared/rate-limit.ts`
-- `supabase/functions/onboarding-drip-sweep/index.ts`
-- `supabase/functions/_shared/transactional-email-templates/onboarding-day-2.tsx`
-- `supabase/functions/_shared/transactional-email-templates/onboarding-day-7.tsx`
-- Register both templates in `_shared/transactional-email-templates/registry.ts`
-
-**Edits**
-- `supabase/functions/linq-assistant/index.ts` — call `enforceAiQuota` early
-- `supabase/functions/quote-suggestions/index.ts` — same
-- `supabase/functions/personalize-review-email/index.ts` — same
-- `src/hooks/useLinqAssistant.ts` and `src/hooks/useQuoteSuggestions.ts` — show 429 toast with upgrade CTA
+**Fix to `LineItemsEditor.tsx` newServiceDialog:**
+- Add `Description` textarea field.
+- Add ✨ "Write with Linq" button beside it. Calls a new lightweight edge function `service-describe` (or extend `quote-suggestions`) — takes `{name, price}`, returns a 1-2 sentence service description learned from the user's existing services_catalog + past line-item descriptions in their team.
+- Pass `description` into `useCreateService` (already supports it via `services_catalog.description`).
+- After create, populate the line-item `description` with `name – description` (already done) so the new field flows through.
 
 ---
 
-## Out of scope (intentional)
+## 4. Quote suggestions UX polish + "Add" bug
 
-- No streaming usage meter UI (can add later)
-- No A/B testing of drip copy
-- No Day 14 / Day 30 reactivation emails (add after we see Day 7 open rates)
-- No IP-based rate limiting (user-id is sufficient since all 4 functions require auth)
+**Problems:**
+- No loading indicator while AI thinks.
+- Card is pale and not clickable as a whole.
+- Clicking "Add" only fills description, not service name (selector stays "Select…").
+
+**Fixes:**
+- `useQuoteSuggestions`: already has `loading` state — surface it.
+- `SuggestionChip`:
+  - When `loading && suggestions.length===0` → render a subtle skeleton row: "Linq is thinking…" with animated dots.
+  - Make whole row clickable (entire row triggers `onAdd`); add hover state (`hover:bg-primary/10 cursor-pointer transition`); keep dismiss as separate stop-propagation button.
+  - Bump contrast: stronger border, primary-tinted background.
+- `LineItemsEditor` — when adding from suggestion, auto-create a `services_catalog` entry (or link to one if name matches existing service, case-insensitive) so `service_id` is set on the line item. Currently the suggestion only carries `description` + `suggested_price` — extend `onAdd` in `QuoteForm.tsx` to:
+  1. Look up service by name in catalog.
+  2. If missing, call `useCreateService` with `{name: suggestion.description (short form), default_price, tax_rate, description}`.
+  3. Then push line item with `service_id` set.
+
+---
+
+## 5. Downloaded PDF differs from in-browser preview
+
+**Problem:** "Download PDF" opens `/quotes/:id/print` which calls `window.print()`. Browser print uses default page CSS; the on-screen `PrintableQuote` component looks different from the resulting PDF (margins, fonts, color profiles).
+
+**Fix:**
+- Add a dedicated `@media print` stylesheet in `PrintableQuote.tsx` / `PrintableInvoice.tsx`:
+  - `@page { size: A4; margin: 16mm; }`
+  - Force colors: `-webkit-print-color-adjust: exact; print-color-adjust: exact;`
+  - Hide everything outside `.printable-root`.
+  - Lock font to a web-safe stack (Poppins may not embed in print) — load Poppins via Google Fonts in print view, or fall back cleanly.
+- Verify `QuotePrint.tsx` route renders ONLY the printable component (no nav, no padding).
+- Add a quick visual QA pass at 1106px wide and at print size.
+
+---
+
+## Technical Summary
+
+**Files touched:**
+- Migration: add deposit-paid columns to `quotes`.
+- `src/pages/QuoteDetail.tsx` — convert logic, deposit status UI, mark-paid action.
+- `src/components/EmailDocumentDialog.tsx` — AI personalize button.
+- `supabase/functions/personalize-document-email/index.ts` — new (or extend existing).
+- `src/components/LineItemsEditor.tsx` — description field + AI in dialog.
+- `supabase/functions/service-describe/index.ts` — new (lightweight).
+- `src/components/ai/SuggestionChip.tsx` — loading state, hover, clickable row.
+- `src/hooks/useQuoteSuggestions.ts` — expose loading.
+- `src/pages/QuoteForm.tsx` / `InvoiceForm.tsx` — onAdd suggestion → ensure service_id is set.
+- `src/components/PrintableQuote.tsx` & `PrintableInvoice.tsx` — `@media print` rules + `@page`.
+- `src/pages/QuotePrint.tsx` / `InvoicePrint.tsx` — strip layout chrome.
+
+**Out of scope:** Stripe Connect deposit payment routing changes (already wired); rebuilding PDF via server-side renderer (use print-CSS approach first).
+
+Approve and I'll implement all five.

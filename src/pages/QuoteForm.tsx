@@ -13,6 +13,7 @@ import { LineItemsEditor, LineItem, computeTotals } from "@/components/LineItems
 import { useQuote, useQuoteLineItems, useCreateQuote, useUpdateQuote, useSaveQuoteLineItems, useNextQuoteNumber, useIncrementQuoteNumber } from "@/hooks/useQuotes";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { SuggestionChip } from "@/components/ai/SuggestionChip";
+import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Save, Plus } from "lucide-react";
 
 const QuoteForm = () => {
@@ -160,10 +161,46 @@ const QuoteForm = () => {
               title={title}
               lineItems={lineItems.map((li) => ({ description: li.description, unit_price: li.unit_price, tax_rate: li.tax_rate }))}
               enabled={companySettings?.ai_assistant_enabled !== false}
-              onAdd={(s) => setLineItems((curr) => [
-                ...curr,
-                { service_id: null, description: s.description, quantity: 1, unit_price: s.suggested_price, tax_rate: defaultTaxRate, discount_percent: 0, line_total: s.suggested_price * (1 + defaultTaxRate / 100) },
-              ])}
+              onAdd={async (s) => {
+                // Try to derive a short service name from the suggestion description
+                const shortName = s.description.split(/[.!:–-]/)[0].trim().slice(0, 60) || s.description.slice(0, 60);
+                let serviceId: string | null = null;
+                try {
+                  const { data: { user } } = await supabase.auth.getUser();
+                  const { data: tm } = await supabase.from("team_members").select("team_id").eq("user_id", user!.id).maybeSingle();
+                  // Look up existing service by case-insensitive name match
+                  const { data: existing } = await supabase
+                    .from("services_catalog")
+                    .select("id, name")
+                    .ilike("name", shortName)
+                    .limit(1)
+                    .maybeSingle();
+                  if (existing?.id) {
+                    serviceId = existing.id;
+                  } else if (tm?.team_id) {
+                    const { data: created } = await supabase
+                      .from("services_catalog")
+                      .insert({
+                        name: shortName,
+                        description: s.description,
+                        default_price: s.suggested_price,
+                        tax_rate: defaultTaxRate,
+                        is_active: true,
+                        user_id: user!.id,
+                        team_id: tm.team_id,
+                      } as any)
+                      .select("id")
+                      .single();
+                    serviceId = created?.id || null;
+                  }
+                } catch (e) {
+                  console.error("auto-create service from suggestion failed", e);
+                }
+                setLineItems((curr) => [
+                  ...curr,
+                  { service_id: serviceId, description: s.description, quantity: 1, unit_price: s.suggested_price, tax_rate: defaultTaxRate, discount_percent: 0, line_total: s.suggested_price * (1 + defaultTaxRate / 100) },
+                ]);
+              }}
             />
           </CardContent>
         </Card>
