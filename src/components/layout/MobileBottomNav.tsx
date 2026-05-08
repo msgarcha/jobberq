@@ -58,6 +58,7 @@ export function MobileBottomNav() {
   const [fabClosing, setFabClosing] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const closingTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const [linqOpen, setLinqOpen] = useState(false);
 
   const isActive = (path: string) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
