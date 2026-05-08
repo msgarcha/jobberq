@@ -1,6 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
+import { isNative } from '@/lib/native/platform';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -21,7 +22,7 @@ export function ProtectedRoute({ children, skipOnboardingCheck }: ProtectedRoute
   }
 
   if (!user) {
-    return <Navigate to="/landing" replace />;
+    return <Navigate to={isNative() ? '/login' : '/landing'} replace />;
   }
 
   // Redirect first-time users to onboarding
