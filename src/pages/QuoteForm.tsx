@@ -13,6 +13,7 @@ import { LineItemsEditor, LineItem, computeTotals } from "@/components/LineItems
 import { useQuote, useQuoteLineItems, useCreateQuote, useUpdateQuote, useSaveQuoteLineItems, useNextQuoteNumber, useIncrementQuoteNumber } from "@/hooks/useQuotes";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { SuggestionChip } from "@/components/ai/SuggestionChip";
+import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Save, Plus } from "lucide-react";
 
 const QuoteForm = () => {
