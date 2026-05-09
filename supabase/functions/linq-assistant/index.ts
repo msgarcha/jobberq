@@ -217,6 +217,14 @@ async function handleTool(name: string, args: any, ctx: Ctx): Promise<any> {
       return await createDraftInvoice(args, ctx);
     case "lookup_recent_documents":
       return await lookupRecentDocuments(args, ctx);
+    case "lookup_client_history":
+      return await lookupClientHistory(args, ctx);
+    case "list_overdue_invoices":
+      return await listOverdueInvoices(args, ctx);
+    case "list_unpaid_invoices":
+      return await listUnpaidInvoices(args, ctx);
+    case "list_approved_quotes_not_invoiced":
+      return await listApprovedQuotesNotInvoiced(args, ctx);
     default:
       return { error: `Unknown tool ${name}` };
   }
