@@ -114,6 +114,8 @@ export interface SpeakOptions {
   rate?: number;
   pitch?: number;
   volume?: number;
+  onStart?: () => void;
+  onBoundary?: () => void;
   onEnd?: () => void;
   onError?: (msg: string) => void;
 }
