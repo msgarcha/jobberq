@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic, MicOff, Send, Sparkles, FileText, Receipt, Loader2, ArrowRight, X } from "lucide-react";
+import { Mic, MicOff, Send, Sparkles, FileText, Receipt, Loader2, ArrowRight, X, Volume2, VolumeX, Radio } from "lucide-react";
 import { useLinqAssistant, type CreatedDoc } from "@/hooks/useLinqAssistant";
-import { isVoiceSupported, startVoiceCapture } from "@/lib/ai/voice";
+import { isVoiceSupported, startVoiceCapture, cancelSpeech, isSpeechSynthesisSupported } from "@/lib/ai/voice";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -14,20 +14,31 @@ interface Props {
 }
 
 const EXAMPLES = [
+  "When did I last invoice Mark Henderson?",
+  "What invoices are overdue?",
   "Quote Mark Henderson 10k for bathroom reno",
-  "Invoice Sarah for the window cleaning quote that was approved",
-  "New client: Tom Wilson, 555-1234, lawn care",
 ];
 
 export function AssistantSheet({ open, onOpenChange }: Props) {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { messages, isLoading, send, reset, latestDocs } = useLinqAssistant();
+  const {
+    messages,
+    isLoading,
+    send,
+    reset,
+    latestDocs,
+    status,
+    speakReplies,
+    setSpeakReplies,
+  } = useLinqAssistant();
   const [input, setInput] = useState("");
   const [listening, setListening] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false);
   const voiceRef = useRef<{ stop: () => void } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const voiceSupported = isVoiceSupported();
+  const ttsSupported = isSpeechSynthesisSupported();
 
   useEffect(() => {
     if (!open) return;
@@ -49,8 +60,43 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
       voiceRef.current?.stop();
       voiceRef.current = null;
       setListening(false);
+      setVoiceMode(false);
+      cancelSpeech();
     }
   }, [open]);
+
+  const startListening = useCallback((mode: "dictate" | "chat") => {
+    if (!voiceSupported) {
+      toast({ title: "Voice not supported", description: "Try Chrome or Safari." });
+      return;
+    }
+    cancelSpeech();
+    setListening(true);
+    voiceRef.current = startVoiceCapture(
+      (text) => setInput(text),
+      async () => {
+        setListening(false);
+        if (mode === "chat") {
+          // Auto-send whatever was captured.
+          const captured = (voiceRef.current as any)?._lastText ?? "";
+          // We rely on input state being updated — read latest via a small delay-free trick:
+          setInput((curr) => {
+            const trimmed = curr.trim();
+            if (trimmed && !isLoading) {
+              setInput("");
+              send(trimmed);
+            }
+            return curr ? "" : curr;
+          });
+        }
+      },
+      (err) => {
+        toast({ title: "Voice error", description: err, variant: "destructive" });
+        setListening(false);
+      },
+      mode === "chat" ? { silenceTimeoutMs: 1400 } : {}
+    );
+  }, [voiceSupported, toast, isLoading, send]);
 
   const handleSend = async () => {
     const text = input.trim();
@@ -61,26 +107,41 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     await send(text);
   };
 
-  const handleMicToggle = () => {
+  // Voice-chat loop: when status returns to idle and voiceMode is on, auto-restart listening.
+  useEffect(() => {
+    if (!open || !voiceMode) return;
+    if (status === "idle" && !listening && !isLoading) {
+      const t = setTimeout(() => startListening("chat"), 250);
+      return () => clearTimeout(t);
+    }
+  }, [open, voiceMode, status, listening, isLoading, startListening]);
+
+  const handleMicTap = () => {
     if (listening) {
       voiceRef.current?.stop();
       voiceRef.current = null;
       setListening(false);
       return;
     }
+    startListening(voiceMode ? "chat" : "dictate");
+  };
+
+  const toggleVoiceMode = () => {
     if (!voiceSupported) {
       toast({ title: "Voice not supported", description: "Try Chrome or Safari." });
       return;
     }
-    setListening(true);
-    voiceRef.current = startVoiceCapture(
-      (text) => setInput(text),
-      () => setListening(false),
-      (err) => {
-        toast({ title: "Voice error", description: err, variant: "destructive" });
-        setListening(false);
-      }
-    );
+    const next = !voiceMode;
+    setVoiceMode(next);
+    if (next) {
+      if (!speakReplies) setSpeakReplies(true);
+      startListening("chat");
+    } else {
+      voiceRef.current?.stop();
+      voiceRef.current = null;
+      setListening(false);
+      cancelSpeech();
+    }
   };
 
   const openDoc = (doc: CreatedDoc) => {
@@ -88,6 +149,12 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     if (doc.type === "quote") navigate(`/quotes/${doc.id}/edit`);
     else if (doc.type === "invoice") navigate(`/invoices/${doc.id}/edit`);
   };
+
+  const statusLabel =
+    listening ? "Listening…" :
+    status === "thinking" ? "Thinking…" :
+    status === "speaking" ? "Speaking…" :
+    voiceMode ? "Voice mode on — tap mic to pause" : "";
 
   if (!open) return null;
 
