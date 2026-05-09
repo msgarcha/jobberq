@@ -175,8 +175,38 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
         </div>
         <div className="flex items-center gap-1 min-w-0 flex-1">
           <span className="font-semibold text-base">Linq Assistant</span>
-          <span className="text-xs font-normal text-muted-foreground ml-1 truncate">drafts only · always review</span>
+          <span className="text-xs font-normal text-muted-foreground ml-1 truncate hidden sm:inline">drafts only · always review</span>
         </div>
+        {ttsSupported && (
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            onClick={() => {
+              const next = !speakReplies;
+              setSpeakReplies(next);
+              if (!next) cancelSpeech();
+            }}
+            className="h-8 w-8 shrink-0"
+            aria-label={speakReplies ? "Mute spoken replies" : "Unmute spoken replies"}
+            title={speakReplies ? "Mute voice" : "Unmute voice"}
+          >
+            {speakReplies ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4 text-muted-foreground" />}
+          </Button>
+        )}
+        {voiceSupported && (
+          <Button
+            type="button"
+            size="icon"
+            variant={voiceMode ? "default" : "ghost"}
+            onClick={toggleVoiceMode}
+            className="h-8 w-8 shrink-0"
+            aria-label={voiceMode ? "Stop voice chat" : "Start voice chat"}
+            title={voiceMode ? "Voice chat on" : "Start voice chat"}
+          >
+            <Radio className={cn("h-4 w-4", voiceMode && "animate-pulse")} />
+          </Button>
+        )}
         <Button
           type="button"
           size="icon"
