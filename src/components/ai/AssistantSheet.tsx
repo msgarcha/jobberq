@@ -85,6 +85,11 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     }
   }, [messages, open, latestDocs]);
 
+  // Success haptic when Linq creates a draft
+  useEffect(() => {
+    if (latestDocs.length > 0) haptic.success();
+  }, [latestDocs]);
+
   useEffect(() => {
     if (!open) {
       voiceRef.current?.stop();
