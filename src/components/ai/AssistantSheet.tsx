@@ -7,6 +7,7 @@ import { useLinqAssistant, type CreatedDoc } from "@/hooks/useLinqAssistant";
 import { isVoiceSupported, startVoiceCapture, cancelSpeech, isSpeechSynthesisSupported, speak } from "@/lib/ai/voice";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { haptic } from "@/lib/native/haptics";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { VoiceOrb } from "./VoiceOrb";
