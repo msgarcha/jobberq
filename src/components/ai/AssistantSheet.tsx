@@ -7,6 +7,7 @@ import { useLinqAssistant, type CreatedDoc } from "@/hooks/useLinqAssistant";
 import { isVoiceSupported, startVoiceCapture, cancelSpeech, isSpeechSynthesisSupported, speak } from "@/lib/ai/voice";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { haptic } from "@/lib/native/haptics";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { VoiceOrb } from "./VoiceOrb";
@@ -84,6 +85,11 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     }
   }, [messages, open, latestDocs]);
 
+  // Success haptic when Linq creates a draft
+  useEffect(() => {
+    if (latestDocs.length > 0) haptic.success();
+  }, [latestDocs]);
+
   useEffect(() => {
     if (!open) {
       voiceRef.current?.stop();
@@ -118,6 +124,7 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     }
     cancelSpeech();
     setListening(true);
+    haptic.light();
     setInterim("");
     voiceRef.current = startVoiceCapture(
       (text) => {
@@ -174,6 +181,7 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
       }
     } catch { /* ignore */ }
     setVoiceMode(true);
+    haptic.medium();
     if (!speakReplies) setSpeakReplies(true);
     // Personalized greeting on first call
     if (!greetedRef.current && ttsSupported) {
@@ -193,6 +201,7 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
 
   const endVoiceCall = () => {
     setVoiceMode(false);
+    haptic.light();
     voiceRef.current?.stop();
     voiceRef.current = null;
     setListening(false);
