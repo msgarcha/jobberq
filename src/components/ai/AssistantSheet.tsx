@@ -239,7 +239,6 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
             </button>
           )}
         </div>
-      </SheetContent>
-    </Sheet>
+    </div>
   );
 }
