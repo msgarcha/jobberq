@@ -116,5 +116,6 @@ export function useLinqAssistant() {
     setSpeakReplies,
     send,
     reset,
+    setSpeechBoundaryHandler,
   };
 }
