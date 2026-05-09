@@ -1015,6 +1015,21 @@ Deno.serve(async (req) => {
       .maybeSingle();
     const defaultTaxRate = cs?.default_tax_rate != null ? Number(cs.default_tax_rate) : 0;
 
+    // Personalize Linq with owner name + team
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const { data: teamRow } = await supabase
+      .from("teams")
+      .select("name")
+      .eq("id", teamId)
+      .maybeSingle();
+    const rawName = (profile?.display_name || user.email?.split("@")[0] || "there").trim();
+    const firstName = rawName.split(/\s+/)[0];
+    const teamName = teamRow?.name || "your business";
+
     const { messages: incomingMessages } = await req.json();
     if (!Array.isArray(incomingMessages)) {
       return new Response(JSON.stringify({ error: "messages array required" }), {
@@ -1027,8 +1042,9 @@ Deno.serve(async (req) => {
 
     // Trim history to last 12 messages (≈6 turns)
     const trimmed = incomingMessages.slice(-12);
+    const contextLine = `\n\nAccount owner: ${firstName} (full: ${rawName}). Business: ${teamName}. Default tax rate: ${defaultTaxRate}%.`;
     const conversationMessages: any[] = [
-      { role: "system", content: SYSTEM_PROMPT + `\n\nDefault tax rate: ${defaultTaxRate}%.` },
+      { role: "system", content: SYSTEM_PROMPT + contextLine },
       ...trimmed,
     ];
 
