@@ -146,6 +146,55 @@ const TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "lookup_client_history",
+      description: "Get summary of a client's history: most recent quote, most recent invoice (date, total, paid status), lifetime revenue, and total open balance. Use for 'when did I last invoice X', 'how much have I made from X', 'does X owe me anything'. Provide either client_id or client_name.",
+      parameters: {
+        type: "object",
+        properties: {
+          client_id: { type: "string" },
+          client_name: { type: "string", description: "Full or partial name (first, last, or company)." },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_overdue_invoices",
+      description: "List invoices past their due_date with balance still owing. Use for 'what's overdue', 'who hasn't paid me', 'late invoices'.",
+      parameters: {
+        type: "object",
+        properties: {
+          min_days_overdue: { type: "number", description: "Only include invoices overdue by at least this many days. Default 1." },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_unpaid_invoices",
+      description: "List invoices with balance_due > 0 (sent, partially paid, or overdue). Optionally filter by client name or only invoices from a date onward. Use for 'any unpaid invoices', 'unpaid for Acme'.",
+      parameters: {
+        type: "object",
+        properties: {
+          client_name: { type: "string" },
+          since_date: { type: "string", description: "ISO date YYYY-MM-DD; only invoices issued on or after this date." },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_approved_quotes_not_invoiced",
+      description: "List approved quotes that have not yet been converted to an invoice. Use for 'which approved quotes still need invoicing', 'what should I bill next'.",
+      parameters: { type: "object", properties: {} },
+    },
+  },
 ];
 
 interface Ctx {
