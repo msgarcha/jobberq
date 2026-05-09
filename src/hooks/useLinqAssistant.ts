@@ -1,5 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { speak, cancelSpeech, isSpeechSynthesisSupported } from "@/lib/ai/voice";
 
 export interface AssistantMessage {
   role: "user" | "assistant";
@@ -18,16 +19,23 @@ interface SendResult {
   createdDocs: CreatedDoc[];
 }
 
+export type AssistantStatus = "idle" | "listening" | "thinking" | "speaking";
+
 export function useLinqAssistant() {
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [latestDocs, setLatestDocs] = useState<CreatedDoc[]>([]);
+  const [status, setStatus] = useState<AssistantStatus>("idle");
+  const [speakReplies, setSpeakReplies] = useState<boolean>(() => isSpeechSynthesisSupported());
+  const speakRepliesRef = useRef(speakReplies);
+  useEffect(() => { speakRepliesRef.current = speakReplies; }, [speakReplies]);
 
   const send = useCallback(async (text: string): Promise<SendResult | null> => {
     if (!text.trim()) return null;
     setError(null);
     setIsLoading(true);
+    setStatus("thinking");
     setLatestDocs([]);
 
     const userMsg: AssistantMessage = { role: "user", content: text.trim() };
@@ -55,6 +63,7 @@ export function useLinqAssistant() {
           ? `${errMsg} Upgrade in Settings → Subscription to keep going.`
           : errMsg || "Something went wrong.";
         setMessages((m) => [...m, { role: "assistant", content: display }]);
+        setStatus("idle");
         return null;
       }
 
@@ -62,11 +71,19 @@ export function useLinqAssistant() {
       const createdDocs = data?.createdDocs || [];
       setMessages((m) => [...m, { role: "assistant", content: reply }]);
       setLatestDocs(createdDocs);
+
+      if (speakRepliesRef.current && reply) {
+        setStatus("speaking");
+        speak(reply, { onEnd: () => setStatus("idle") });
+      } else {
+        setStatus("idle");
+      }
       return { reply, createdDocs };
     } catch (e: any) {
       const msg = e?.message || "Network error";
       setError(msg);
       setMessages((m) => [...m, { role: "assistant", content: msg }]);
+      setStatus("idle");
       return null;
     } finally {
       setIsLoading(false);
@@ -74,10 +91,23 @@ export function useLinqAssistant() {
   }, [messages]);
 
   const reset = useCallback(() => {
+    cancelSpeech();
     setMessages([]);
     setError(null);
     setLatestDocs([]);
+    setStatus("idle");
   }, []);
 
-  return { messages, isLoading, error, latestDocs, send, reset };
+  return {
+    messages,
+    isLoading,
+    error,
+    latestDocs,
+    status,
+    setStatus,
+    speakReplies,
+    setSpeakReplies,
+    send,
+    reset,
+  };
 }
