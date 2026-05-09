@@ -1,5 +1,8 @@
-// Unified speech I/O. Uses the browser's free Web Speech APIs.
-// STT: SpeechRecognition. TTS: window.speechSynthesis.
+// Unified speech I/O. Uses Web Speech APIs in browsers and Capacitor plugins on native iOS/Android.
+
+import { isNative } from "@/lib/native/platform";
+import { SpeechRecognition as NativeSR } from "@capacitor-community/speech-recognition";
+import { TextToSpeech as NativeTTS } from "@capacitor-community/text-to-speech";
 
 type Listener = (text: string, isFinal: boolean) => void;
 
@@ -14,15 +17,29 @@ interface VoiceCaptureOptions {
 
 export function isVoiceSupported(): boolean {
   if (typeof window === "undefined") return false;
+  if (isNative()) return true; // Capacitor plugin handles it
   const w = window as any;
   return Boolean(w.SpeechRecognition || w.webkitSpeechRecognition);
 }
 
 export function isSpeechSynthesisSupported(): boolean {
+  if (isNative()) return true;
   return typeof window !== "undefined" && "speechSynthesis" in window;
 }
 
+// ---------- STT ----------
+
 export function startVoiceCapture(
+  onResult: Listener,
+  onEnd: () => void,
+  onError?: (msg: string) => void,
+  opts: VoiceCaptureOptions = {}
+): VoiceController | null {
+  if (isNative()) return startNativeCapture(onResult, onEnd, onError, opts);
+  return startWebCapture(onResult, onEnd, onError, opts);
+}
+
+function startWebCapture(
   onResult: Listener,
   onEnd: () => void,
   onError?: (msg: string) => void,
@@ -49,11 +66,7 @@ export function startVoiceCapture(
     if (!opts.silenceTimeoutMs) return;
     if (silenceTimer) clearTimeout(silenceTimer);
     silenceTimer = setTimeout(() => {
-      try {
-        recognition.stop();
-      } catch {
-        // noop
-      }
+      try { recognition.stop(); } catch {}
     }, opts.silenceTimeoutMs);
   };
 
@@ -61,11 +74,8 @@ export function startVoiceCapture(
     let interim = "";
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const transcript = event.results[i][0].transcript;
-      if (event.results[i].isFinal) {
-        finalText += transcript + " ";
-      } else {
-        interim += transcript;
-      }
+      if (event.results[i].isFinal) finalText += transcript + " ";
+      else interim += transcript;
     }
     onResult((finalText + interim).trim(), false);
     armSilence();
@@ -77,10 +87,7 @@ export function startVoiceCapture(
   };
 
   recognition.onend = () => {
-    if (silenceTimer) {
-      clearTimeout(silenceTimer);
-      silenceTimer = null;
-    }
+    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
     if (stopped) return;
     stopped = true;
     onResult(finalText.trim(), true);
@@ -90,25 +97,91 @@ export function startVoiceCapture(
   try {
     recognition.start();
     armSilence();
-  } catch (e) {
+  } catch {
     onError?.("Could not start microphone");
     return null;
   }
 
   return {
     stop: () => {
-      if (silenceTimer) {
-        clearTimeout(silenceTimer);
-        silenceTimer = null;
-      }
-      try {
-        recognition.stop();
-      } catch {
-        // noop
-      }
+      if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+      try { recognition.stop(); } catch {}
     },
   };
 }
+
+function startNativeCapture(
+  onResult: Listener,
+  onEnd: () => void,
+  onError?: (msg: string) => void,
+  opts: VoiceCaptureOptions = {}
+): VoiceController {
+  let silenceTimer: ReturnType<typeof setTimeout> | null = null;
+  let stopped = false;
+  let lastText = "";
+  let partialListener: any = null;
+
+  const cleanup = async () => {
+    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+    try { partialListener?.remove?.(); } catch {}
+    try { await NativeSR.stop(); } catch {}
+  };
+
+  const armSilence = () => {
+    if (!opts.silenceTimeoutMs) return;
+    if (silenceTimer) clearTimeout(silenceTimer);
+    silenceTimer = setTimeout(async () => {
+      if (stopped) return;
+      stopped = true;
+      await cleanup();
+      onResult(lastText.trim(), true);
+      onEnd();
+    }, opts.silenceTimeoutMs);
+  };
+
+  (async () => {
+    try {
+      const perm = await NativeSR.checkPermissions();
+      if (perm.speechRecognition !== "granted") {
+        const req = await NativeSR.requestPermissions();
+        if (req.speechRecognition !== "granted") {
+          onError?.("Microphone permission denied. Enable it in Settings to use voice.");
+          return;
+        }
+      }
+      partialListener = await NativeSR.addListener("partialResults", (data: any) => {
+        const text = (data?.matches?.[0] || "").trim();
+        if (text) {
+          lastText = text;
+          onResult(text, false);
+          armSilence();
+        }
+      });
+      await NativeSR.start({
+        language: navigator.language || "en-US",
+        partialResults: true,
+        popup: false,
+      } as any);
+      armSilence();
+    } catch (e: any) {
+      onError?.(e?.message || "Could not start microphone");
+    }
+  })();
+
+  return {
+    stop: () => {
+      (async () => {
+        if (stopped) return;
+        stopped = true;
+        await cleanup();
+        onResult(lastText.trim(), true);
+        onEnd();
+      })();
+    },
+  };
+}
+
+// ---------- TTS ----------
 
 export interface SpeakOptions {
   rate?: number;
@@ -123,7 +196,7 @@ export interface SpeakOptions {
 let pickedVoice: SpeechSynthesisVoice | null = null;
 
 function pickVoice(): SpeechSynthesisVoice | null {
-  if (!isSpeechSynthesisSupported()) return null;
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
   if (pickedVoice) return pickedVoice;
   const voices = window.speechSynthesis.getVoices();
   if (!voices || voices.length === 0) return null;
@@ -140,18 +213,40 @@ function pickVoice(): SpeechSynthesisVoice | null {
   return pickedVoice;
 }
 
+let nativeBoundaryTimer: ReturnType<typeof setInterval> | null = null;
+
 export function speak(text: string, opts: SpeakOptions = {}): void {
-  if (!text || !isSpeechSynthesisSupported()) {
-    opts.onEnd?.();
+  if (!text) { opts.onEnd?.(); return; }
+
+  if (isNative()) {
+    cancelSpeech();
+    opts.onStart?.();
+    if (opts.onBoundary) {
+      nativeBoundaryTimer = setInterval(() => opts.onBoundary?.(), 220);
+    }
+    NativeTTS.speak({
+      text,
+      lang: navigator.language || "en-US",
+      rate: opts.rate ?? 1.0,
+      pitch: opts.pitch ?? 1.05,
+      volume: opts.volume ?? 1,
+      category: "ambient",
+    } as any)
+      .then(() => {
+        if (nativeBoundaryTimer) { clearInterval(nativeBoundaryTimer); nativeBoundaryTimer = null; }
+        opts.onEnd?.();
+      })
+      .catch((e: any) => {
+        if (nativeBoundaryTimer) { clearInterval(nativeBoundaryTimer); nativeBoundaryTimer = null; }
+        opts.onError?.(e?.message || "tts error");
+        opts.onEnd?.();
+      });
     return;
   }
+
+  if (!isSpeechSynthesisSupported()) { opts.onEnd?.(); return; }
   const synth = window.speechSynthesis;
-  // Cancel anything currently speaking so we never queue up.
-  try {
-    synth.cancel();
-  } catch {
-    // noop
-  }
+  try { synth.cancel(); } catch {}
   const utter = new SpeechSynthesisUtterance(text);
   const voice = pickVoice();
   if (voice) utter.voice = voice;
@@ -165,7 +260,6 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
     opts.onError?.(e?.error || "speech error");
     opts.onEnd?.();
   };
-  // Voices may load async; if missing, kick the loader and try once more.
   if (!voice && typeof synth.onvoiceschanged !== "undefined") {
     synth.onvoiceschanged = () => {
       const v = pickVoice();
@@ -176,10 +270,11 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
 }
 
 export function cancelSpeech(): void {
-  if (!isSpeechSynthesisSupported()) return;
-  try {
-    window.speechSynthesis.cancel();
-  } catch {
-    // noop
+  if (nativeBoundaryTimer) { clearInterval(nativeBoundaryTimer); nativeBoundaryTimer = null; }
+  if (isNative()) {
+    NativeTTS.stop().catch(() => {});
+    return;
   }
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  try { window.speechSynthesis.cancel(); } catch {}
 }
