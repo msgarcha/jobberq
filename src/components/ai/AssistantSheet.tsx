@@ -196,6 +196,7 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
 
   const endVoiceCall = () => {
     setVoiceMode(false);
+    haptic.light();
     voiceRef.current?.stop();
     voiceRef.current = null;
     setListening(false);
