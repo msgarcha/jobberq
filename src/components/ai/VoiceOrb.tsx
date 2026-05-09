@@ -34,10 +34,10 @@ export function VoiceOrb({
     "Tap to talk";
 
   return (
-    <div className="absolute inset-0 z-10 flex flex-col bg-gradient-to-b from-background via-background to-secondary/30 animate-fade-in">
-      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-8">
+    <div className="absolute inset-0 z-10 flex flex-col bg-gradient-to-b from-background via-background to-secondary/30 animate-fade-in overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 gap-6 sm:gap-8 min-h-0">
         {/* Orb */}
-        <div className="relative h-44 w-44 flex items-center justify-center">
+        <div className="relative h-36 w-36 sm:h-44 sm:w-44 flex items-center justify-center shrink-0">
           {/* Outer ripple rings - listening/speaking */}
           {(state === "listening" || state === "speaking") && (
             <>
