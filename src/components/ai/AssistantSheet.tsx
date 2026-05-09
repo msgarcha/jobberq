@@ -297,7 +297,7 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
               type="button"
               size="icon"
               variant={listening ? "destructive" : "outline"}
-              onClick={handleMicToggle}
+              onClick={handleMicTap}
               className="h-11 w-11 rounded-full shrink-0"
               disabled={isLoading}
             >
