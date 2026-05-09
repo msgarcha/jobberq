@@ -78,7 +78,10 @@ export function useLinqAssistant() {
 
       if (speakRepliesRef.current && reply) {
         setStatus("speaking");
-        speak(reply, { onEnd: () => setStatus("idle") });
+        speak(reply, {
+          onBoundary: () => onBoundaryRef.current?.(),
+          onEnd: () => setStatus("idle"),
+        });
       } else {
         setStatus("idle");
       }
