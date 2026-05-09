@@ -96,6 +96,21 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     }
   }, [open]);
 
+  // Stop voice + TTS when the page goes to background (iOS Safari kills audio on backgrounding)
+  useEffect(() => {
+    if (!open) return;
+    const onVis = () => {
+      if (document.visibilityState === "hidden") {
+        voiceRef.current?.stop();
+        voiceRef.current = null;
+        setListening(false);
+        cancelSpeech();
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [open]);
+
   const startListening = useCallback((mode: "dictate" | "chat") => {
     if (!voiceSupported) {
       toast({ title: "Voice not supported", description: "Try Chrome or Safari." });
@@ -147,9 +162,17 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
 
   const startVoiceCall = () => {
     if (!voiceSupported) {
-      toast({ title: "Voice not supported", description: "Try Chrome or Safari." });
+      toast({ title: "Voice not supported", description: "Try Chrome or Safari, or update the app." });
       return;
     }
+    // First-time hint so the OS permission prompt feels expected
+    try {
+      const KEY = "linq.voice.permHinted";
+      if (!localStorage.getItem(KEY)) {
+        toast({ title: "Linq needs your mic", description: "Allow microphone access so we can chat." });
+        localStorage.setItem(KEY, "1");
+      }
+    } catch { /* ignore */ }
     setVoiceMode(true);
     if (!speakReplies) setSpeakReplies(true);
     // Personalized greeting on first call
