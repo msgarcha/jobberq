@@ -119,6 +119,7 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     }
     cancelSpeech();
     setListening(true);
+    haptic.light();
     setInterim("");
     voiceRef.current = startVoiceCapture(
       (text) => {
