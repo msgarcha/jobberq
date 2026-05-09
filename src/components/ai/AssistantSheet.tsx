@@ -2,11 +2,14 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic, MicOff, Send, Sparkles, FileText, Receipt, Loader2, ArrowRight, X, Volume2, VolumeX, Radio } from "lucide-react";
+import { Mic, Send, Sparkles, FileText, Receipt, Loader2, ArrowRight, X, Volume2, VolumeX } from "lucide-react";
 import { useLinqAssistant, type CreatedDoc } from "@/hooks/useLinqAssistant";
-import { isVoiceSupported, startVoiceCapture, cancelSpeech, isSpeechSynthesisSupported } from "@/lib/ai/voice";
+import { isVoiceSupported, startVoiceCapture, cancelSpeech, isSpeechSynthesisSupported, speak } from "@/lib/ai/voice";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { VoiceOrb } from "./VoiceOrb";
 
 interface Props {
   open: boolean;
@@ -22,6 +25,7 @@ const EXAMPLES = [
 export function AssistantSheet({ open, onOpenChange }: Props) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const {
     messages,
     isLoading,
@@ -31,23 +35,48 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     status,
     speakReplies,
     setSpeakReplies,
+    setSpeechBoundaryHandler,
   } = useLinqAssistant();
   const [input, setInput] = useState("");
   const [listening, setListening] = useState(false);
   const [voiceMode, setVoiceMode] = useState(false);
+  const [interim, setInterim] = useState("");
+  const [pulseKey, setPulseKey] = useState(0);
+  const [firstName, setFirstName] = useState<string>("");
   const voiceRef = useRef<{ stop: () => void } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const greetedRef = useRef(false);
   const voiceSupported = isVoiceSupported();
   const ttsSupported = isSpeechSynthesisSupported();
+
+  // Fetch display name once for personalized greeting
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => {
+        const raw = (data?.display_name || user.email?.split("@")[0] || "").trim();
+        setFirstName(raw.split(/\s+/)[0] || "");
+      });
+  }, [user]);
+
+  // Wire orb pulse to TTS word boundaries
+  useEffect(() => {
+    setSpeechBoundaryHandler(() => setPulseKey((k) => k + 1));
+    return () => setSpeechBoundaryHandler(null);
+  }, [setSpeechBoundaryHandler]);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onOpenChange(false);
+      if (e.key === "Escape") {
+        if (voiceMode) endVoiceCall();
+        else onOpenChange(false);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onOpenChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, onOpenChange, voiceMode]);
 
   useEffect(() => {
     if (open) {
@@ -61,6 +90,8 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
       voiceRef.current = null;
       setListening(false);
       setVoiceMode(false);
+      setInterim("");
+      greetedRef.current = false;
       cancelSpeech();
     }
   }, [open]);
@@ -72,21 +103,19 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     }
     cancelSpeech();
     setListening(true);
+    setInterim("");
     voiceRef.current = startVoiceCapture(
-      (text) => setInput(text),
+      (text) => {
+        if (mode === "chat") setInterim(text);
+        else setInput(text);
+      },
       async () => {
         setListening(false);
         if (mode === "chat") {
-          // Auto-send whatever was captured.
-          const captured = (voiceRef.current as any)?._lastText ?? "";
-          // We rely on input state being updated — read latest via a small delay-free trick:
-          setInput((curr) => {
+          setInterim((curr) => {
             const trimmed = curr.trim();
-            if (trimmed && !isLoading) {
-              setInput("");
-              send(trimmed);
-            }
-            return curr ? "" : curr;
+            if (trimmed && !isLoading) send(trimmed);
+            return "";
           });
         }
       },
@@ -107,40 +136,54 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     await send(text);
   };
 
-  // Voice-chat loop: when status returns to idle and voiceMode is on, auto-restart listening.
+  // Voice-chat loop
   useEffect(() => {
     if (!open || !voiceMode) return;
     if (status === "idle" && !listening && !isLoading) {
-      const t = setTimeout(() => startListening("chat"), 250);
+      const t = setTimeout(() => startListening("chat"), 300);
       return () => clearTimeout(t);
     }
   }, [open, voiceMode, status, listening, isLoading, startListening]);
 
-  const handleMicTap = () => {
-    if (listening) {
-      voiceRef.current?.stop();
-      voiceRef.current = null;
-      setListening(false);
-      return;
-    }
-    startListening(voiceMode ? "chat" : "dictate");
-  };
-
-  const toggleVoiceMode = () => {
+  const startVoiceCall = () => {
     if (!voiceSupported) {
       toast({ title: "Voice not supported", description: "Try Chrome or Safari." });
       return;
     }
-    const next = !voiceMode;
-    setVoiceMode(next);
-    if (next) {
-      if (!speakReplies) setSpeakReplies(true);
-      startListening("chat");
+    setVoiceMode(true);
+    if (!speakReplies) setSpeakReplies(true);
+    // Personalized greeting on first call
+    if (!greetedRef.current && ttsSupported) {
+      greetedRef.current = true;
+      const name = firstName || "there";
+      const greeting = messages.length === 0
+        ? `Hey ${name}, Linq here. What are we working on?`
+        : `Hey ${name}, I'm back. What's next?`;
+      speak(greeting, {
+        onBoundary: () => setPulseKey((k) => k + 1),
+        onEnd: () => startListening("chat"),
+      });
     } else {
+      startListening("chat");
+    }
+  };
+
+  const endVoiceCall = () => {
+    setVoiceMode(false);
+    voiceRef.current?.stop();
+    voiceRef.current = null;
+    setListening(false);
+    setInterim("");
+    cancelSpeech();
+  };
+
+  const toggleMicMute = () => {
+    if (listening) {
       voiceRef.current?.stop();
       voiceRef.current = null;
       setListening(false);
-      cancelSpeech();
+    } else {
+      startListening("chat");
     }
   };
 
@@ -150,13 +193,15 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     else if (doc.type === "invoice") navigate(`/invoices/${doc.id}/edit`);
   };
 
-  const statusLabel =
-    listening ? "Listening…" :
-    status === "thinking" ? "Thinking…" :
-    status === "speaking" ? "Speaking…" :
-    voiceMode ? "Voice mode on — tap mic to pause" : "";
+  const lastReply = [...messages].reverse().find((m) => m.role === "assistant")?.content;
 
   if (!open) return null;
+
+  const orbState =
+    status === "thinking" ? "thinking" :
+    status === "speaking" ? "speaking" :
+    listening ? "listening" :
+    "idle";
 
   return (
     <div
@@ -175,9 +220,11 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
         </div>
         <div className="flex items-center gap-1 min-w-0 flex-1">
           <span className="font-semibold text-base">Linq Assistant</span>
-          <span className="text-xs font-normal text-muted-foreground ml-1 truncate hidden sm:inline">drafts only · always review</span>
+          <span className="text-xs font-normal text-muted-foreground ml-1 truncate hidden sm:inline">
+            {voiceMode ? "voice mode · always review drafts" : "drafts only · always review"}
+          </span>
         </div>
-        {ttsSupported && (
+        {ttsSupported && !voiceMode && (
           <Button
             type="button"
             size="icon"
@@ -194,19 +241,6 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
             {speakReplies ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4 text-muted-foreground" />}
           </Button>
         )}
-        {voiceSupported && (
-          <Button
-            type="button"
-            size="icon"
-            variant={voiceMode ? "default" : "ghost"}
-            onClick={toggleVoiceMode}
-            className="h-8 w-8 shrink-0"
-            aria-label={voiceMode ? "Stop voice chat" : "Start voice chat"}
-            title={voiceMode ? "Voice chat on" : "Start voice chat"}
-          >
-            <Radio className={cn("h-4 w-4", voiceMode && "animate-pulse")} />
-          </Button>
-        )}
         <Button
           type="button"
           size="icon"
@@ -218,6 +252,25 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
           <X className="h-4 w-4" />
         </Button>
       </div>
+
+      <div className="flex-1 relative flex flex-col min-h-0">
+        {voiceMode && (
+          <VoiceOrb
+            state={orbState}
+            transcript={interim}
+            reply={lastReply}
+            micMuted={!listening && status === "idle"}
+            speakerMuted={!speakReplies}
+            onToggleMic={toggleMicMute}
+            onToggleSpeaker={() => {
+              const next = !speakReplies;
+              setSpeakReplies(next);
+              if (!next) cancelSpeech();
+            }}
+            onEndCall={endVoiceCall}
+            pulseKey={pulseKey}
+          />
+        )}
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
           {messages.length === 0 && (
@@ -281,7 +334,7 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
               </button>
             ))}
 
-          {isLoading && (
+          {isLoading && !voiceMode && (
             <div className="flex justify-start">
               <div className="bg-secondary rounded-2xl rounded-bl-md px-4 py-3 flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
@@ -290,25 +343,11 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
             </div>
           )}
         </div>
+      </div>
 
+      {!voiceMode && (
         <div className="border-t p-3 shrink-0 safe-area-bottom bg-background">
-          {statusLabel && (
-            <div className="text-xs text-muted-foreground text-center mb-2 flex items-center justify-center gap-1.5">
-              {(listening || status === "thinking") && <Loader2 className="h-3 w-3 animate-spin" />}
-              {statusLabel}
-            </div>
-          )}
           <div className="flex items-end gap-2">
-            <Button
-              type="button"
-              size="icon"
-              variant={listening ? "destructive" : "outline"}
-              onClick={handleMicTap}
-              className="h-11 w-11 rounded-full shrink-0"
-              disabled={isLoading}
-            >
-              {listening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-            </Button>
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -318,30 +357,55 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
                   handleSend();
                 }
               }}
-              placeholder={listening ? "Listening…" : "Ask Linq to draft something…"}
+              placeholder="Ask Linq to draft something…"
               className="min-h-[44px] max-h-[120px] resize-none rounded-2xl"
               rows={1}
               disabled={isLoading}
             />
-            <Button
-              type="button"
-              size="icon"
-              onClick={handleSend}
-              className="h-11 w-11 rounded-full shrink-0"
-              disabled={!input.trim() || isLoading}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+            {input.trim() ? (
+              <Button
+                type="button"
+                size="icon"
+                onClick={handleSend}
+                className="h-11 w-11 rounded-full shrink-0"
+                disabled={isLoading}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            ) : (
+              <button
+                type="button"
+                onClick={startVoiceCall}
+                disabled={isLoading || !voiceSupported}
+                className={cn(
+                  "relative h-11 w-11 rounded-full shrink-0 flex items-center justify-center",
+                  "bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg shadow-primary/30",
+                  "hover:shadow-primary/50 hover:scale-105 active:scale-95 transition-all",
+                  "disabled:opacity-50 disabled:cursor-not-allowed"
+                )}
+                aria-label="Start voice chat with Linq"
+                title="Tap to talk to Linq"
+              >
+                <span className="absolute inset-0 rounded-full bg-primary/40 animate-pulse-ring pointer-events-none" />
+                <Mic className="h-5 w-5 relative z-10" />
+              </button>
+            )}
           </div>
-          {messages.length > 0 && (
-            <button
-              onClick={reset}
-              className="text-xs text-muted-foreground mt-2 mx-auto block hover:text-foreground transition-colors"
-            >
-              Clear conversation
-            </button>
-          )}
+          <div className="flex items-center justify-between mt-2 px-1">
+            <span className="text-[11px] text-muted-foreground">
+              {voiceSupported ? "Tap mic to start a voice call" : ""}
+            </span>
+            {messages.length > 0 && (
+              <button
+                onClick={reset}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Clear conversation
+              </button>
+            )}
+          </div>
         </div>
+      )}
     </div>
   );
 }

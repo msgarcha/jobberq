@@ -119,6 +119,22 @@ export default {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-6px)" },
         },
+        "orb-breathe": {
+          "0%, 100%": { transform: "scale(1)", opacity: "0.9" },
+          "50%": { transform: "scale(1.06)", opacity: "1" },
+        },
+        "pulse-ring": {
+          "0%": { transform: "scale(0.85)", opacity: "0.6" },
+          "100%": { transform: "scale(1.6)", opacity: "0" },
+        },
+        "orb-spin": {
+          "from": { transform: "rotate(0deg)" },
+          "to": { transform: "rotate(360deg)" },
+        },
+        "orb-shimmer": {
+          "0%, 100%": { opacity: "0.6" },
+          "50%": { opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -128,6 +144,10 @@ export default {
         "ticker-scroll": "ticker-scroll 30s linear infinite",
         "counter-up": "counter-up 0.6s ease-out forwards",
         "float": "float 3s ease-in-out infinite",
+        "orb-breathe": "orb-breathe 2.4s ease-in-out infinite",
+        "pulse-ring": "pulse-ring 1.8s ease-out infinite",
+        "orb-spin": "orb-spin 6s linear infinite",
+        "orb-shimmer": "orb-shimmer 1.4s ease-in-out infinite",
       },
     },
   },

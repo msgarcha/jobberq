@@ -114,6 +114,8 @@ export interface SpeakOptions {
   rate?: number;
   pitch?: number;
   volume?: number;
+  onStart?: () => void;
+  onBoundary?: () => void;
   onEnd?: () => void;
   onError?: (msg: string) => void;
 }
@@ -126,11 +128,13 @@ function pickVoice(): SpeechSynthesisVoice | null {
   const voices = window.speechSynthesis.getVoices();
   if (!voices || voices.length === 0) return null;
   const lang = (navigator.language || "en-US").toLowerCase();
-  // Prefer a high-quality voice in the user's locale.
+  const langBase = lang.split("-")[0];
+  const PREFERRED = /Samantha|Ava|Serena|Karen|Allison|Moira|Google US English|Google UK English Female|Microsoft Aria|Microsoft Jenny|Microsoft Guy|Natural|Neural|Premium|Enhanced/i;
   pickedVoice =
-    voices.find((v) => v.lang?.toLowerCase() === lang && /natural|neural|enhanced|premium/i.test(v.name)) ||
+    voices.find((v) => v.lang?.toLowerCase() === lang && PREFERRED.test(v.name)) ||
+    voices.find((v) => v.lang?.toLowerCase().startsWith(langBase) && PREFERRED.test(v.name)) ||
     voices.find((v) => v.lang?.toLowerCase() === lang) ||
-    voices.find((v) => v.lang?.toLowerCase().startsWith(lang.split("-")[0])) ||
+    voices.find((v) => v.lang?.toLowerCase().startsWith(langBase)) ||
     voices.find((v) => v.default) ||
     voices[0];
   return pickedVoice;
@@ -151,9 +155,11 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
   const utter = new SpeechSynthesisUtterance(text);
   const voice = pickVoice();
   if (voice) utter.voice = voice;
-  utter.rate = opts.rate ?? 1.05;
-  utter.pitch = opts.pitch ?? 1;
+  utter.rate = opts.rate ?? 1.0;
+  utter.pitch = opts.pitch ?? 1.05;
   utter.volume = opts.volume ?? 1;
+  utter.onstart = () => opts.onStart?.();
+  utter.onboundary = () => opts.onBoundary?.();
   utter.onend = () => opts.onEnd?.();
   utter.onerror = (e: any) => {
     opts.onError?.(e?.error || "speech error");

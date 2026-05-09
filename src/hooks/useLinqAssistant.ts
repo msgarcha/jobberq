@@ -30,6 +30,10 @@ export function useLinqAssistant() {
   const [speakReplies, setSpeakReplies] = useState<boolean>(() => isSpeechSynthesisSupported());
   const speakRepliesRef = useRef(speakReplies);
   useEffect(() => { speakRepliesRef.current = speakReplies; }, [speakReplies]);
+  const onBoundaryRef = useRef<(() => void) | null>(null);
+  const setSpeechBoundaryHandler = useCallback((fn: (() => void) | null) => {
+    onBoundaryRef.current = fn;
+  }, []);
 
   const send = useCallback(async (text: string): Promise<SendResult | null> => {
     if (!text.trim()) return null;
@@ -74,7 +78,10 @@ export function useLinqAssistant() {
 
       if (speakRepliesRef.current && reply) {
         setStatus("speaking");
-        speak(reply, { onEnd: () => setStatus("idle") });
+        speak(reply, {
+          onBoundary: () => onBoundaryRef.current?.(),
+          onEnd: () => setStatus("idle"),
+        });
       } else {
         setStatus("idle");
       }
@@ -109,5 +116,6 @@ export function useLinqAssistant() {
     setSpeakReplies,
     send,
     reset,
+    setSpeechBoundaryHandler,
   };
 }
