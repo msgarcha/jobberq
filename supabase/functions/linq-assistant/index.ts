@@ -768,6 +768,192 @@ async function lookupRecentDocuments(args: any, ctx: Ctx) {
   return { documents: data || [] };
 }
 
+// Find a single client by id or fuzzy name. Returns { client_id, label } or { needs_clarification, candidates }.
+async function findClientForLookup(args: { client_id?: string; client_name?: string }, ctx: Ctx) {
+  if (args.client_id) {
+    const { data } = await ctx.supabase
+      .from("clients")
+      .select("id, first_name, last_name, company_name")
+      .eq("id", args.client_id)
+      .maybeSingle();
+    if (data) return { client_id: data.id, label: `${data.first_name || ""} ${data.last_name || ""}`.trim() || data.company_name || "client" };
+  }
+  const name = (args.client_name || "").trim();
+  if (!name) return { error: "Provide client_id or client_name." };
+  const parts = name.split(/\s+/);
+  const first = parts[0] || "";
+  const last = parts.slice(1).join(" ");
+  const { data } = await ctx.supabase
+    .from("clients")
+    .select("id, first_name, last_name, company_name")
+    .or(
+      `first_name.ilike.%${first}%,last_name.ilike.%${last || first}%,company_name.ilike.%${name}%`
+    )
+    .limit(5);
+  const matches = (data || []).filter((c: any) => {
+    const full = `${c.first_name || ""} ${c.last_name || ""}`.toLowerCase().trim();
+    const co = (c.company_name || "").toLowerCase();
+    const search = name.toLowerCase();
+    return full.includes(search) || search.includes(full) || co.includes(search);
+  });
+  if (matches.length === 0) return { error: `No client found matching "${name}".` };
+  if (matches.length > 1) {
+    return {
+      needs_clarification: true,
+      candidates: matches.map((c: any) => ({
+        id: c.id,
+        label: `${c.first_name || ""} ${c.last_name || ""}${c.company_name ? ` · ${c.company_name}` : ""}`.trim(),
+      })),
+    };
+  }
+  const m = matches[0];
+  return { client_id: m.id, label: `${m.first_name || ""} ${m.last_name || ""}`.trim() || m.company_name || "client" };
+}
+
+async function lookupClientHistory(args: any, ctx: Ctx) {
+  const found = await findClientForLookup(args, ctx);
+  if ((found as any).error || (found as any).needs_clarification) return found;
+  const clientId = (found as any).client_id;
+  const label = (found as any).label;
+
+  const [{ data: lastQuote }, { data: lastInvoice }, { data: allInvoices }] = await Promise.all([
+    ctx.supabase
+      .from("quotes")
+      .select("id, quote_number, title, total, status, created_at, approved_at")
+      .eq("client_id", clientId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    ctx.supabase
+      .from("invoices")
+      .select("id, invoice_number, title, total, amount_paid, balance_due, status, created_at, due_date, paid_at")
+      .eq("client_id", clientId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    ctx.supabase
+      .from("invoices")
+      .select("total, amount_paid, balance_due, status")
+      .eq("client_id", clientId)
+      .limit(500),
+  ]);
+
+  let lifetime_revenue = 0;
+  let open_balance = 0;
+  for (const inv of allInvoices || []) {
+    lifetime_revenue += Number(inv.amount_paid) || 0;
+    open_balance += Number(inv.balance_due) || 0;
+  }
+
+  return {
+    client_id: clientId,
+    client_label: label,
+    last_quote: lastQuote || null,
+    last_invoice: lastInvoice || null,
+    lifetime_revenue: Math.round(lifetime_revenue * 100) / 100,
+    open_balance: Math.round(open_balance * 100) / 100,
+    invoice_count: (allInvoices || []).length,
+  };
+}
+
+async function listOverdueInvoices(args: any, ctx: Ctx) {
+  const minDays = Math.max(1, Number(args?.min_days_overdue) || 1);
+  const cutoff = new Date(Date.now() - minDays * 86400000).toISOString().slice(0, 10);
+  const { data } = await ctx.supabase
+    .from("invoices")
+    .select("id, invoice_number, title, total, balance_due, due_date, status, client_id, clients(first_name, last_name, company_name)")
+    .gt("balance_due", 0)
+    .not("due_date", "is", null)
+    .lt("due_date", cutoff)
+    .neq("status", "draft")
+    .order("due_date", { ascending: true })
+    .limit(20);
+  const today = new Date();
+  const items = (data || []).map((inv: any) => {
+    const due = inv.due_date ? new Date(inv.due_date) : null;
+    const days_overdue = due ? Math.floor((today.getTime() - due.getTime()) / 86400000) : null;
+    const c = inv.clients || {};
+    const client_label = `${c.first_name || ""} ${c.last_name || ""}`.trim() || c.company_name || "Unknown";
+    return {
+      id: inv.id,
+      invoice_number: inv.invoice_number,
+      client_label,
+      balance_due: Number(inv.balance_due),
+      total: Number(inv.total),
+      due_date: inv.due_date,
+      days_overdue,
+    };
+  });
+  return { count: items.length, invoices: items };
+}
+
+async function listUnpaidInvoices(args: any, ctx: Ctx) {
+  let q = ctx.supabase
+    .from("invoices")
+    .select("id, invoice_number, title, total, balance_due, due_date, status, created_at, client_id, clients(first_name, last_name, company_name)")
+    .gt("balance_due", 0)
+    .neq("status", "draft")
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (args?.since_date) q = q.gte("created_at", args.since_date);
+  if (args?.client_name) {
+    const found = await findClientForLookup({ client_name: args.client_name }, ctx);
+    if ((found as any).error) return found;
+    if ((found as any).needs_clarification) return found;
+    q = q.eq("client_id", (found as any).client_id);
+  }
+  const { data } = await q;
+  const items = (data || []).map((inv: any) => {
+    const c = inv.clients || {};
+    const client_label = `${c.first_name || ""} ${c.last_name || ""}`.trim() || c.company_name || "Unknown";
+    return {
+      id: inv.id,
+      invoice_number: inv.invoice_number,
+      client_label,
+      balance_due: Number(inv.balance_due),
+      total: Number(inv.total),
+      due_date: inv.due_date,
+      created_at: inv.created_at,
+      status: inv.status,
+    };
+  });
+  return { count: items.length, invoices: items };
+}
+
+async function listApprovedQuotesNotInvoiced(_args: any, ctx: Ctx) {
+  const { data: quotes } = await ctx.supabase
+    .from("quotes")
+    .select("id, quote_number, title, total, approved_at, client_id, clients(first_name, last_name, company_name)")
+    .eq("status", "approved")
+    .order("approved_at", { ascending: false })
+    .limit(40);
+  const ids = (quotes || []).map((q: any) => q.id);
+  let invoicedQuoteIds = new Set<string>();
+  if (ids.length > 0) {
+    const { data: invs } = await ctx.supabase
+      .from("invoices")
+      .select("quote_id")
+      .in("quote_id", ids);
+    invoicedQuoteIds = new Set((invs || []).map((i: any) => i.quote_id).filter(Boolean));
+  }
+  const items = (quotes || [])
+    .filter((q: any) => !invoicedQuoteIds.has(q.id))
+    .slice(0, 20)
+    .map((q: any) => {
+      const c = q.clients || {};
+      const client_label = `${c.first_name || ""} ${c.last_name || ""}`.trim() || c.company_name || "Unknown";
+      return {
+        id: q.id,
+        quote_number: q.quote_number,
+        title: q.title,
+        total: Number(q.total),
+        approved_at: q.approved_at,
+        client_label,
+      };
+    });
+  return { count: items.length, quotes: items };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
