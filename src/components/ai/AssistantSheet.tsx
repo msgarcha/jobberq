@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic, MicOff, Send, Sparkles, FileText, Receipt, Loader2, ArrowRight } from "lucide-react";
+import { Mic, MicOff, Send, Sparkles, FileText, Receipt, Loader2, ArrowRight, X } from "lucide-react";
 import { useLinqAssistant, type CreatedDoc } from "@/hooks/useLinqAssistant";
 import { isVoiceSupported, startVoiceCapture } from "@/lib/ai/voice";
 import { useToast } from "@/hooks/use-toast";
