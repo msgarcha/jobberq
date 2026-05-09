@@ -96,6 +96,21 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     }
   }, [open]);
 
+  // Stop voice + TTS when the page goes to background (iOS Safari kills audio on backgrounding)
+  useEffect(() => {
+    if (!open) return;
+    const onVis = () => {
+      if (document.visibilityState === "hidden") {
+        voiceRef.current?.stop();
+        voiceRef.current = null;
+        setListening(false);
+        cancelSpeech();
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [open]);
+
   const startListening = useCallback((mode: "dictate" | "chat") => {
     if (!voiceSupported) {
       toast({ title: "Voice not supported", description: "Try Chrome or Safari." });
