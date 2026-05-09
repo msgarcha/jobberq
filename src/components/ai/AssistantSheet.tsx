@@ -292,6 +292,12 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
         </div>
 
         <div className="border-t p-3 shrink-0 safe-area-bottom bg-background">
+          {statusLabel && (
+            <div className="text-xs text-muted-foreground text-center mb-2 flex items-center justify-center gap-1.5">
+              {(listening || status === "thinking") && <Loader2 className="h-3 w-3 animate-spin" />}
+              {statusLabel}
+            </div>
+          )}
           <div className="flex items-end gap-2">
             <Button
               type="button"
