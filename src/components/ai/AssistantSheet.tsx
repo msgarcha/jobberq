@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic, MicOff, Send, Sparkles, FileText, Receipt, Loader2, ArrowRight } from "lucide-react";
+import { Mic, MicOff, Send, Sparkles, FileText, Receipt, Loader2, ArrowRight, X } from "lucide-react";
 import { useLinqAssistant, type CreatedDoc } from "@/hooks/useLinqAssistant";
 import { isVoiceSupported, startVoiceCapture } from "@/lib/ai/voice";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +28,15 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
   const voiceRef = useRef<{ stop: () => void } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const voiceSupported = isVoiceSupported();
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onOpenChange(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onOpenChange]);
 
   useEffect(() => {
     if (open) {
@@ -81,18 +89,38 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     else if (doc.type === "invoice") navigate(`/invoices/${doc.id}/edit`);
   };
 
+  if (!open) return null;
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] p-0 rounded-t-3xl flex flex-col">
-        <SheetHeader className="px-5 py-4 border-b shrink-0">
-          <SheetTitle className="flex items-center gap-2 text-base">
-            <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            Linq Assistant
-            <span className="text-xs font-normal text-muted-foreground ml-1">drafts only · always review</span>
-          </SheetTitle>
-        </SheetHeader>
+    <div
+      className={cn(
+        "fixed z-50 bg-background border shadow-2xl flex flex-col overflow-hidden",
+        "inset-x-0 bottom-0 h-[85vh] rounded-t-3xl",
+        "md:inset-x-auto md:bottom-4 md:right-4 md:w-[400px] md:h-[min(620px,80vh)] md:rounded-2xl md:border-border",
+        "animate-in slide-in-from-bottom-4 fade-in duration-200"
+      )}
+      role="dialog"
+      aria-label="Linq Assistant"
+    >
+      <div className="px-5 py-4 border-b shrink-0 flex items-center gap-2">
+        <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <Sparkles className="h-4 w-4" />
+        </div>
+        <div className="flex items-center gap-1 min-w-0 flex-1">
+          <span className="font-semibold text-base">Linq Assistant</span>
+          <span className="text-xs font-normal text-muted-foreground ml-1 truncate">drafts only · always review</span>
+        </div>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          onClick={() => onOpenChange(false)}
+          className="h-8 w-8 shrink-0"
+          aria-label="Close"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
           {messages.length === 0 && (
@@ -211,7 +239,6 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
             </button>
           )}
         </div>
-      </SheetContent>
-    </Sheet>
+    </div>
   );
 }
