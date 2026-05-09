@@ -29,7 +29,7 @@ serve(async (req) => {
     // Load invoice with line items and client info
     const { data: invoice, error: invErr } = await supabaseAdmin
       .from("invoices")
-      .select("id, invoice_number, title, subtotal, discount_amount, tax_amount, total, balance_due, amount_paid, status, due_date, created_at, client_id, team_id, clients(first_name, last_name, company_name, email)")
+      .select("id, invoice_number, title, subtotal, discount_amount, tax_amount, total, balance_due, amount_paid, status, due_date, created_at, client_id, team_id, clients(first_name, last_name, company_name)")
       .eq("id", invoice_id)
       .single();
 
