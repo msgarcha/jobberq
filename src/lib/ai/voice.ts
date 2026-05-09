@@ -155,9 +155,11 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
   const utter = new SpeechSynthesisUtterance(text);
   const voice = pickVoice();
   if (voice) utter.voice = voice;
-  utter.rate = opts.rate ?? 1.05;
-  utter.pitch = opts.pitch ?? 1;
+  utter.rate = opts.rate ?? 1.0;
+  utter.pitch = opts.pitch ?? 1.05;
   utter.volume = opts.volume ?? 1;
+  utter.onstart = () => opts.onStart?.();
+  utter.onboundary = () => opts.onBoundary?.();
   utter.onend = () => opts.onEnd?.();
   utter.onerror = (e: any) => {
     opts.onError?.(e?.error || "speech error");
