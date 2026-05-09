@@ -176,6 +176,7 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
       }
     } catch { /* ignore */ }
     setVoiceMode(true);
+    haptic.medium();
     if (!speakReplies) setSpeakReplies(true);
     // Personalized greeting on first call
     if (!greetedRef.current && ttsSupported) {
