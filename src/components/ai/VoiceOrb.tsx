@@ -66,7 +66,7 @@ export function VoiceOrb({
           {/* Core orb */}
           <div
             className={cn(
-              "relative h-32 w-32 rounded-full shadow-2xl shadow-primary/40",
+              "relative h-28 w-28 sm:h-32 sm:w-32 rounded-full shadow-2xl shadow-primary/40",
               "bg-gradient-to-br from-primary via-primary to-primary/70",
               state !== "idle" && "animate-orb-breathe"
             )}
