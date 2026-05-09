@@ -162,9 +162,17 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
 
   const startVoiceCall = () => {
     if (!voiceSupported) {
-      toast({ title: "Voice not supported", description: "Try Chrome or Safari." });
+      toast({ title: "Voice not supported", description: "Try Chrome or Safari, or update the app." });
       return;
     }
+    // First-time hint so the OS permission prompt feels expected
+    try {
+      const KEY = "linq.voice.permHinted";
+      if (!localStorage.getItem(KEY)) {
+        toast({ title: "Linq needs your mic", description: "Allow microphone access so we can chat." });
+        localStorage.setItem(KEY, "1");
+      }
+    } catch { /* ignore */ }
     setVoiceMode(true);
     if (!speakReplies) setSpeakReplies(true);
     // Personalized greeting on first call
