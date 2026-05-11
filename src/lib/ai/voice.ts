@@ -1,4 +1,5 @@
 // Unified speech I/O. Uses Web Speech APIs in browsers and Capacitor plugins on native iOS/Android.
+// Auto-restarts on iOS where the engine times out after ~1s of silence.
 
 import { isNative } from "@/lib/native/platform";
 import { SpeechRecognition as NativeSR } from "@capacitor-community/speech-recognition";
@@ -11,13 +12,22 @@ interface VoiceController {
 }
 
 interface VoiceCaptureOptions {
-  /** When set, auto-stop after this many ms of silence following the latest result. Used in voice-chat mode. */
+  /** Auto-stop after this many ms of silence following the latest result. */
   silenceTimeoutMs?: number;
+  /**
+   * Keep listening across engine timeouts. iOS Safari + iOS native both auto-stop
+   * after ~1s of silence; with autoRestart we restart silently until silenceTimeoutMs
+   * elapses with no new speech, or the user stops.
+   */
+  autoRestart?: boolean;
 }
+
+const MAX_RESTARTS = 40;
+const RESTART_BACKOFF_MS = 250;
 
 export function isVoiceSupported(): boolean {
   if (typeof window === "undefined") return false;
-  if (isNative()) return true; // Capacitor plugin handles it
+  if (isNative()) return true;
   const w = window as any;
   return Boolean(w.SpeechRecognition || w.webkitSpeechRecognition);
 }
@@ -53,48 +63,91 @@ function startWebCapture(
     return null;
   }
 
-  const recognition = new SR();
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  recognition.lang = navigator.language || "en-US";
-
+  let recognition: any = null;
   let finalText = "";
   let silenceTimer: ReturnType<typeof setTimeout> | null = null;
-  let stopped = false;
+  let userStopped = false;
+  let ended = false;
+  let restarts = 0;
+  let lastSpeechAt = Date.now();
+
+  const finish = () => {
+    if (ended) return;
+    ended = true;
+    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+    onResult(finalText.trim(), true);
+    onEnd();
+  };
 
   const armSilence = () => {
     if (!opts.silenceTimeoutMs) return;
     if (silenceTimer) clearTimeout(silenceTimer);
     silenceTimer = setTimeout(() => {
-      try { recognition.stop(); } catch {}
+      // Real silence: user truly stopped talking.
+      userStopped = true;
+      try { recognition?.stop(); } catch { /* ignore */ }
+      finish();
     }, opts.silenceTimeoutMs);
   };
 
-  recognition.onresult = (event: any) => {
-    let interim = "";
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      const transcript = event.results[i][0].transcript;
-      if (event.results[i].isFinal) finalText += transcript + " ";
-      else interim += transcript;
-    }
-    onResult((finalText + interim).trim(), false);
-    armSilence();
-  };
+  const buildRecognition = () => {
+    const rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = navigator.language || "en-US";
 
-  recognition.onerror = (event: any) => {
-    if (event.error === "no-speech" || event.error === "aborted") return;
-    onError?.(event.error || "Voice error");
-  };
+    rec.onresult = (event: any) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) finalText += transcript + " ";
+        else interim += transcript;
+      }
+      lastSpeechAt = Date.now();
+      onResult((finalText + interim).trim(), false);
+      armSilence();
+    };
 
-  recognition.onend = () => {
-    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
-    if (stopped) return;
-    stopped = true;
-    onResult(finalText.trim(), true);
-    onEnd();
+    rec.onspeechstart = () => {
+      lastSpeechAt = Date.now();
+      armSilence();
+    };
+
+    rec.onerror = (event: any) => {
+      const err = event.error || "";
+      if (err === "no-speech" || err === "aborted") return; // benign on iOS
+      if (err === "not-allowed" || err === "service-not-allowed") {
+        userStopped = true;
+        onError?.("Microphone permission denied. Enable it in Settings.");
+        finish();
+      }
+    };
+
+    rec.onend = () => {
+      if (userStopped || ended) { finish(); return; }
+      // iOS Safari fires onend after ~1s of silence even with continuous=true.
+      // If autoRestart is on and we haven't hit our real silence timeout, restart.
+      if (opts.autoRestart && restarts < MAX_RESTARTS) {
+        restarts++;
+        setTimeout(() => {
+          if (userStopped || ended) return;
+          try {
+            recognition = buildRecognition();
+            recognition.start();
+          } catch {
+            finish();
+          }
+        }, RESTART_BACKOFF_MS);
+        return;
+      }
+      finish();
+    };
+
+    return rec;
   };
 
   try {
+    recognition = buildRecognition();
     recognition.start();
     armSilence();
   } catch {
@@ -104,8 +157,9 @@ function startWebCapture(
 
   return {
     stop: () => {
-      if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
-      try { recognition.stop(); } catch {}
+      userStopped = true;
+      try { recognition?.stop(); } catch { /* ignore */ }
+      finish();
     },
   };
 }
@@ -117,26 +171,54 @@ function startNativeCapture(
   opts: VoiceCaptureOptions = {}
 ): VoiceController {
   let silenceTimer: ReturnType<typeof setTimeout> | null = null;
-  let stopped = false;
+  let restartTimer: ReturnType<typeof setTimeout> | null = null;
+  let userStopped = false;
+  let ended = false;
   let lastText = "";
+  let restarts = 0;
   let partialListener: any = null;
+  let stateListener: any = null;
+  let starting = false;
 
-  const cleanup = async () => {
+  const finish = async () => {
+    if (ended) return;
+    ended = true;
     if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
-    try { partialListener?.remove?.(); } catch {}
-    try { await NativeSR.stop(); } catch {}
+    if (restartTimer) { clearTimeout(restartTimer); restartTimer = null; }
+    try { partialListener?.remove?.(); } catch { /* ignore */ }
+    try { stateListener?.remove?.(); } catch { /* ignore */ }
+    try { await NativeSR.stop(); } catch { /* ignore */ }
+    onResult(lastText.trim(), true);
+    onEnd();
   };
 
   const armSilence = () => {
     if (!opts.silenceTimeoutMs) return;
     if (silenceTimer) clearTimeout(silenceTimer);
-    silenceTimer = setTimeout(async () => {
-      if (stopped) return;
-      stopped = true;
-      await cleanup();
-      onResult(lastText.trim(), true);
-      onEnd();
+    silenceTimer = setTimeout(() => {
+      userStopped = true;
+      finish();
     }, opts.silenceTimeoutMs);
+  };
+
+  const startEngine = async () => {
+    if (starting || userStopped || ended) return;
+    starting = true;
+    try {
+      await NativeSR.start({
+        language: navigator.language || "en-US",
+        partialResults: true,
+        popup: false,
+      } as any);
+    } catch (e: any) {
+      // iOS sometimes throws if already running; safe to ignore.
+      const msg = (e?.message || "").toLowerCase();
+      if (!msg.includes("already")) {
+        onError?.(e?.message || "Could not start microphone");
+      }
+    } finally {
+      starting = false;
+    }
   };
 
   (async () => {
@@ -149,6 +231,7 @@ function startNativeCapture(
           return;
         }
       }
+
       partialListener = await NativeSR.addListener("partialResults", (data: any) => {
         const text = (data?.matches?.[0] || "").trim();
         if (text) {
@@ -157,11 +240,21 @@ function startNativeCapture(
           armSilence();
         }
       });
-      await NativeSR.start({
-        language: navigator.language || "en-US",
-        partialResults: true,
-        popup: false,
-      } as any);
+
+      // listeningState fires { status: 'started' | 'stopped' } on plugin v6+.
+      try {
+        stateListener = await (NativeSR as any).addListener("listeningState", (data: any) => {
+          const status = (data?.status || data?.state || "").toString().toLowerCase();
+          if (status === "stopped" && !userStopped && !ended && opts.autoRestart && restarts < MAX_RESTARTS) {
+            restarts++;
+            if (restartTimer) clearTimeout(restartTimer);
+            restartTimer = setTimeout(() => { void startEngine(); }, RESTART_BACKOFF_MS);
+          }
+        });
+      } catch { /* listeningState not available on this plugin version */ }
+
+      await startEngine();
+      // Arm silence immediately so we still time out even if no partials ever come.
       armSilence();
     } catch (e: any) {
       onError?.(e?.message || "Could not start microphone");
@@ -170,13 +263,8 @@ function startNativeCapture(
 
   return {
     stop: () => {
-      (async () => {
-        if (stopped) return;
-        stopped = true;
-        await cleanup();
-        onResult(lastText.trim(), true);
-        onEnd();
-      })();
+      userStopped = true;
+      void finish();
     },
   };
 }
@@ -246,7 +334,7 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
 
   if (!isSpeechSynthesisSupported()) { opts.onEnd?.(); return; }
   const synth = window.speechSynthesis;
-  try { synth.cancel(); } catch {}
+  try { synth.cancel(); } catch { /* ignore */ }
   const utter = new SpeechSynthesisUtterance(text);
   const voice = pickVoice();
   if (voice) utter.voice = voice;
@@ -272,9 +360,9 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
 export function cancelSpeech(): void {
   if (nativeBoundaryTimer) { clearInterval(nativeBoundaryTimer); nativeBoundaryTimer = null; }
   if (isNative()) {
-    NativeTTS.stop().catch(() => {});
+    NativeTTS.stop().catch(() => { /* ignore */ });
     return;
   }
   if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-  try { window.speechSynthesis.cancel(); } catch {}
+  try { window.speechSynthesis.cancel(); } catch { /* ignore */ }
 }
