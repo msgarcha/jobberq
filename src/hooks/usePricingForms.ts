@@ -84,8 +84,8 @@ export function usePricingForm(id: string | undefined) {
       if (!form.data) throw new Error("Form not found");
       return {
         form: form.data as PricingForm,
-        services: (services.data || []) as PricingFormService[],
-        questions: (questions.data || []) as PricingFormQuestion[],
+        services: (services.data || []) as unknown as PricingFormService[],
+        questions: (questions.data || []) as unknown as PricingFormQuestion[],
       };
     },
   });
