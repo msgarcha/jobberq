@@ -1030,7 +1030,9 @@ Deno.serve(async (req) => {
     const firstName = rawName.split(/\s+/)[0];
     const teamName = teamRow?.name || "your business";
 
-    const { messages: incomingMessages } = await req.json();
+    const reqBody = await req.json();
+    const incomingMessages = reqBody?.messages;
+    const clientCtx = reqBody?.context || {};
     if (!Array.isArray(incomingMessages)) {
       return new Response(JSON.stringify({ error: "messages array required" }), {
         status: 400,
@@ -1042,7 +1044,16 @@ Deno.serve(async (req) => {
 
     // Trim history to last 12 messages (≈6 turns)
     const trimmed = incomingMessages.slice(-12);
-    const contextLine = `\n\nAccount owner: ${firstName} (full: ${rawName}). Business: ${teamName}. Default tax rate: ${defaultTaxRate}%.`;
+    const platform = typeof clientCtx.platform === "string" ? clientCtx.platform : "unknown";
+    const currentRoute = typeof clientCtx.currentRoute === "string" ? clientCtx.currentRoute.slice(0, 200) : "";
+    const isMobile = platform.startsWith("ios") || platform.startsWith("android");
+    const platformLine = isMobile
+      ? `\nPlatform: ${platform} — user is on a phone. Keep replies extra short for voice. Do not suggest desktop-only actions like multi-window or right-click.`
+      : `\nPlatform: ${platform}.`;
+    const routeLine = currentRoute
+      ? `\nCurrent screen: ${currentRoute}. If they ask "this quote/invoice/client", that's the record they're viewing — use the ID from the URL.`
+      : "";
+    const contextLine = `\n\nAccount owner: ${firstName} (full: ${rawName}). Business: ${teamName}. Default tax rate: ${defaultTaxRate}%.${platformLine}${routeLine}`;
     const conversationMessages: any[] = [
       { role: "system", content: SYSTEM_PROMPT + contextLine },
       ...trimmed,
