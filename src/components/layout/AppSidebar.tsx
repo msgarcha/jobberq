@@ -13,6 +13,7 @@ import {
   FolderOpen,
   Star,
   Shield,
+  Globe,
 } from "lucide-react";
 import QuickLinqLogo from "@/components/QuickLinqLogo";
 import { NavLink } from "@/components/NavLink";
@@ -47,6 +48,7 @@ const mainNav = [
 const secondaryNav = [
   { title: "Reports", url: "/reports", icon: BarChart3 },
   { title: "Services", url: "/services", icon: Wrench },
+  { title: "Pricing Forms", url: "/settings/pricing-forms", icon: Globe },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 
