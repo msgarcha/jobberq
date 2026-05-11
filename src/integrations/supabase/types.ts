@@ -985,6 +985,225 @@ export type Database = {
           },
         ]
       }
+      pricing_form_questions: {
+        Row: {
+          applies_to_service_ids: string[]
+          created_at: string
+          form_id: string
+          help_text: string | null
+          id: string
+          kind: string
+          label: string
+          options: Json
+          required: boolean
+          sort_order: number
+          team_id: string
+        }
+        Insert: {
+          applies_to_service_ids?: string[]
+          created_at?: string
+          form_id: string
+          help_text?: string | null
+          id?: string
+          kind: string
+          label: string
+          options?: Json
+          required?: boolean
+          sort_order?: number
+          team_id: string
+        }
+        Update: {
+          applies_to_service_ids?: string[]
+          created_at?: string
+          form_id?: string
+          help_text?: string | null
+          id?: string
+          kind?: string
+          label?: string
+          options?: Json
+          required?: boolean
+          sort_order?: number
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_form_questions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_form_services: {
+        Row: {
+          base_price: number
+          created_at: string
+          display_name: string
+          form_id: string
+          id: string
+          max_qty: number
+          min_qty: number
+          service_id: string | null
+          sort_order: number
+          tax_rate: number | null
+          team_id: string
+          unit_label: string | null
+        }
+        Insert: {
+          base_price?: number
+          created_at?: string
+          display_name: string
+          form_id: string
+          id?: string
+          max_qty?: number
+          min_qty?: number
+          service_id?: string | null
+          sort_order?: number
+          tax_rate?: number | null
+          team_id: string
+          unit_label?: string | null
+        }
+        Update: {
+          base_price?: number
+          created_at?: string
+          display_name?: string
+          form_id?: string
+          id?: string
+          max_qty?: number
+          min_qty?: number
+          service_id?: string | null
+          sort_order?: number
+          tax_rate?: number | null
+          team_id?: string
+          unit_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_form_services_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_form_submissions: {
+        Row: {
+          answers: Json
+          client_id: string | null
+          computed_subtotal: number
+          computed_tax: number
+          computed_total: number
+          contact: Json
+          created_at: string
+          form_id: string
+          id: string
+          ip_hash: string | null
+          quote_id: string | null
+          selected_services: Json
+          slug: string
+          status: string
+          team_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          answers?: Json
+          client_id?: string | null
+          computed_subtotal?: number
+          computed_tax?: number
+          computed_total?: number
+          contact?: Json
+          created_at?: string
+          form_id: string
+          id?: string
+          ip_hash?: string | null
+          quote_id?: string | null
+          selected_services?: Json
+          slug: string
+          status?: string
+          team_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          answers?: Json
+          client_id?: string | null
+          computed_subtotal?: number
+          computed_tax?: number
+          computed_total?: number
+          contact?: Json
+          created_at?: string
+          form_id?: string
+          id?: string
+          ip_hash?: string | null
+          quote_id?: string | null
+          selected_services?: Json
+          slug?: string
+          status?: string
+          team_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_form_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_forms: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_published: boolean
+          logo_url: string | null
+          primary_color: string
+          require_address: boolean
+          require_phone: boolean
+          slug: string
+          success_message: string
+          team_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          logo_url?: string | null
+          primary_color?: string
+          require_address?: boolean
+          require_phone?: boolean
+          slug: string
+          success_message?: string
+          team_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean
+          logo_url?: string | null
+          primary_color?: string
+          require_address?: boolean
+          require_phone?: boolean
+          slug?: string
+          success_message?: string
+          team_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

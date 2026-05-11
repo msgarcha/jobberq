@@ -41,6 +41,10 @@ project_id = "bfnlvdbswhjlpzdfwznz"
     verify_jwt = false
   [functions.public-quote]
     verify_jwt = false
+  [functions.public-pricing-form]
+    verify_jwt = false
+  [functions.submit-pricing-form]
+    verify_jwt = false
   [functions.save-card-setup]
     verify_jwt = false
   [functions.send-team-invite]

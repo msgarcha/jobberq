@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { speak, cancelSpeech, isSpeechSynthesisSupported } from "@/lib/ai/voice";
+import { getPlatform, isNative } from "@/lib/native/platform";
 
 export interface AssistantMessage {
   role: "user" | "assistant";
@@ -47,8 +48,12 @@ export function useLinqAssistant() {
     setMessages(next);
 
     try {
+      const platform = `${getPlatform()}-${isNative() ? "native" : "web"}`;
+      const currentRoute = typeof window !== "undefined"
+        ? window.location.pathname + window.location.search
+        : "";
       const { data, error: invokeErr } = await supabase.functions.invoke("linq-assistant", {
-        body: { messages: next },
+        body: { messages: next, context: { platform, currentRoute } },
       });
 
       if (invokeErr) {
