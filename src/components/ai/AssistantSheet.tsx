@@ -145,7 +145,7 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
         toast({ title: "Voice error", description: err, variant: "destructive" });
         setListening(false);
       },
-      mode === "chat" ? { silenceTimeoutMs: 1400 } : {}
+      mode === "chat" ? { silenceTimeoutMs: 2500, autoRestart: true } : { autoRestart: false }
     );
   }, [voiceSupported, toast, isLoading, send]);
 
