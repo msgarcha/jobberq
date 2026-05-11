@@ -44,6 +44,9 @@ import Unsubscribe from "./pages/Unsubscribe";
 import ConnectDashboard from "./pages/ConnectDashboard";
 import ConnectSuccess from "./pages/ConnectSuccess";
 import HowItWorks from "./pages/HowItWorks";
+import PricingForms from "./pages/PricingForms";
+import PricingFormBuilder from "./pages/PricingFormBuilder";
+import PublicPricingForm from "./pages/PublicPricingForm";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +69,7 @@ const App = () => (
             <Route path="/pay/:invoiceId" element={<PublicInvoicePay />} />
             <Route path="/quote/view/:quoteId" element={<PublicQuoteView />} />
             <Route path="/unsubscribe" element={<Unsubscribe />} />
+            <Route path="/book/:slug" element={<PublicPricingForm />} />
 
             {/* Onboarding (auth required, no company_settings check) */}
             <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
@@ -98,6 +102,8 @@ const App = () => (
             <Route path="/reviews" element={<ProtectedRoute><Reviews /></ProtectedRoute>} />
             <Route path="/import" element={<ProtectedRoute><ImportData /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/settings/pricing-forms" element={<ProtectedRoute><PricingForms /></ProtectedRoute>} />
+            <Route path="/settings/pricing-forms/:id" element={<ProtectedRoute><PricingFormBuilder /></ProtectedRoute>} />
             <Route path="/connect" element={<ProtectedRoute><ConnectDashboard /></ProtectedRoute>} />
             <Route path="/connect/success" element={<ProtectedRoute><ConnectSuccess /></ProtectedRoute>} />
             <Route path="/connect/storefront" element={<ProtectedRoute><ConnectDashboard /></ProtectedRoute>} />
