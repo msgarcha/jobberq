@@ -62,6 +62,14 @@ const PricingFormBuilder = () => {
   }
 
   const saveForm = async () => {
+    if (local.is_published && data.services.length === 0) {
+      toast({
+        title: "Add a service first",
+        description: "You can't publish a form with zero services.",
+        variant: "destructive",
+      });
+      return;
+    }
     await updateForm.mutateAsync({ id: id!, patch: local });
     toast({ title: "Saved" });
   };
