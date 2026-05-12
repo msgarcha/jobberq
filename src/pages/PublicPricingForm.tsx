@@ -84,6 +84,13 @@ const PublicPricingForm = () => {
     return () => ro.disconnect();
   }, [embed, form, qty, picked, answers, done]);
 
+  // Hide questions that duplicate the always-present contact fields
+  const visibleQuestions = useMemo(() => {
+    if (!form) return [];
+    const dupe = /^(first\s*name|last\s*name|full\s*name|name|email|e-?mail|phone|telephone|mobile)\s*\*?$/i;
+    return form.questions.filter((q) => !dupe.test(q.label.trim()));
+  }, [form]);
+
   const totals = useMemo(() => {
     if (!form) return { subtotal: 0, tax: 0, total: 0 };
     let subtotal = 0;
