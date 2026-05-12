@@ -328,7 +328,7 @@ Deno.serve(async (req) => {
       computed_total: total,
       client_id: clientId,
       quote_id: quote.id,
-      status: "converted",
+      status: "new",
       ip_hash: ipHash,
       user_agent: ua,
     });
