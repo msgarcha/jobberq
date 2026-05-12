@@ -14,6 +14,7 @@ import {
   Star,
   Shield,
   Globe,
+  Inbox,
 } from "lucide-react";
 import QuickLinqLogo from "@/components/QuickLinqLogo";
 import { NavLink } from "@/components/NavLink";
@@ -36,6 +37,7 @@ import {
 const mainNav = [
   { title: "Home", url: "/", icon: LayoutDashboard },
   { title: "Clients", url: "/clients", icon: Users },
+  { title: "Leads", url: "/leads", icon: Inbox },
   { title: "Quotes", url: "/quotes", icon: FileText },
   { title: "Jobs", url: "/jobs", icon: Briefcase },
   { title: "Pipeline", url: "/pipeline", icon: Kanban },
