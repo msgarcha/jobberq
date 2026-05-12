@@ -35,7 +35,8 @@ export interface LeadRow {
 }
 
 export function useLeads(status?: LeadStatus | "all") {
-  const { teamId } = useTeam();
+  const { data: team } = useTeam();
+  const teamId = team?.team_id;
   return useQuery({
     queryKey: ["leads", teamId, status ?? "all"],
     enabled: !!teamId,
@@ -75,7 +76,8 @@ export function useLead(id: string | undefined) {
 }
 
 export function useLeadCounts() {
-  const { teamId } = useTeam();
+  const { data: team } = useTeam();
+  const teamId = team?.team_id;
   return useQuery({
     queryKey: ["lead-counts", teamId],
     enabled: !!teamId,
