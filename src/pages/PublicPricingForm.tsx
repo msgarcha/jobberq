@@ -401,11 +401,31 @@ const PublicPricingForm = () => {
         </Card>
 
         {!embed && (
-          <p className="text-center text-xs text-muted-foreground mt-4">
+          <p className="text-center text-xs text-muted-foreground mt-4 mb-20 md:mb-4">
             Powered by QuickLinq
           </p>
         )}
       </div>
+
+      {/* Sticky mobile price bar */}
+      {!done && !embed && Object.values(picked).some(Boolean) && (
+        <div className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t bg-background/95 backdrop-blur px-4 py-3 flex items-center gap-3 shadow-lg">
+          <div className="flex-1 min-w-0">
+            <div className="text-xs text-muted-foreground leading-none">Estimated total</div>
+            <div className="text-lg font-semibold leading-tight" style={{ color: accent }}>
+              ${totals.total.toFixed(2)}
+            </div>
+          </div>
+          <Button
+            size="lg"
+            style={{ background: accent }}
+            disabled={submitting}
+            onClick={submit}
+          >
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Get quote"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
