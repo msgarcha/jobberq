@@ -254,10 +254,10 @@ const PublicPricingForm = () => {
                   })}
                 </section>
 
-                {form.questions.length > 0 && (
+                {visibleQuestions.length > 0 && (
                   <section className="space-y-3">
                     <h2 className="font-medium text-sm uppercase tracking-wide text-muted-foreground">Tell us more</h2>
-                    {form.questions.map((q) => (
+                    {visibleQuestions.map((q) => (
                       <div key={q.id} className="space-y-1.5">
                         <Label>{q.label}{q.required && " *"}</Label>
                         {q.help_text && <p className="text-xs text-muted-foreground">{q.help_text}</p>}
