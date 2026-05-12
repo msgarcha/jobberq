@@ -47,6 +47,8 @@ import HowItWorks from "./pages/HowItWorks";
 import PricingForms from "./pages/PricingForms";
 import PricingFormBuilder from "./pages/PricingFormBuilder";
 import PublicPricingForm from "./pages/PublicPricingForm";
+import Leads from "./pages/Leads";
+import LeadDetail from "./pages/LeadDetail";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +82,8 @@ const App = () => (
             <Route path="/clients/new" element={<ProtectedRoute><ClientForm /></ProtectedRoute>} />
             <Route path="/clients/:id" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
             <Route path="/clients/:id/edit" element={<ProtectedRoute><ClientForm /></ProtectedRoute>} />
+            <Route path="/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
+            <Route path="/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
             <Route path="/quotes" element={<ProtectedRoute><Quotes /></ProtectedRoute>} />
             <Route path="/quotes/new" element={<ProtectedRoute><QuoteForm /></ProtectedRoute>} />
             <Route path="/quotes/:id" element={<ProtectedRoute><QuoteDetail /></ProtectedRoute>} />

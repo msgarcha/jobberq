@@ -210,13 +210,14 @@ Deno.serve(async (req) => {
     taxTotal = Math.round(taxTotal * 100) / 100;
     const total = Math.round((subtotal + taxTotal) * 100) / 100;
 
-    // Find or create client (match by email within team).
+    // Find or create client (match by lowercased email within team).
     let clientId: string | null = null;
+    const normalizedEmail = String(contact.email).trim().toLowerCase();
     const { data: existingClient } = await admin
       .from("clients")
       .select("id")
       .eq("team_id", form.team_id)
-      .eq("email", contact.email)
+      .ilike("email", normalizedEmail)
       .maybeSingle();
 
     if (existingClient) {
@@ -229,7 +230,7 @@ Deno.serve(async (req) => {
           user_id: form.user_id,
           first_name: String(contact.first_name).slice(0, 100),
           last_name: String(contact.last_name).slice(0, 100),
-          email: contact.email,
+          email: normalizedEmail,
           phone: contact.phone ? String(contact.phone).slice(0, 40) : null,
           address_line1: contact.address_line1 ? String(contact.address_line1).slice(0, 200) : null,
           city: contact.city ? String(contact.city).slice(0, 80) : null,
@@ -327,7 +328,7 @@ Deno.serve(async (req) => {
       computed_total: total,
       client_id: clientId,
       quote_id: quote.id,
-      status: "converted",
+      status: "new",
       ip_hash: ipHash,
       user_agent: ua,
     });
