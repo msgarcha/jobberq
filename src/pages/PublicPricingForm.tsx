@@ -84,6 +84,13 @@ const PublicPricingForm = () => {
     return () => ro.disconnect();
   }, [embed, form, qty, picked, answers, done]);
 
+  // Hide questions that duplicate the always-present contact fields
+  const visibleQuestions = useMemo(() => {
+    if (!form) return [];
+    const dupe = /^(first\s*name|last\s*name|full\s*name|name|email|e-?mail|phone|telephone|mobile)\s*\*?$/i;
+    return form.questions.filter((q) => !dupe.test(q.label.trim()));
+  }, [form]);
+
   const totals = useMemo(() => {
     if (!form) return { subtotal: 0, tax: 0, total: 0 };
     let subtotal = 0;
@@ -247,10 +254,10 @@ const PublicPricingForm = () => {
                   })}
                 </section>
 
-                {form.questions.length > 0 && (
+                {visibleQuestions.length > 0 && (
                   <section className="space-y-3">
                     <h2 className="font-medium text-sm uppercase tracking-wide text-muted-foreground">Tell us more</h2>
-                    {form.questions.map((q) => (
+                    {visibleQuestions.map((q) => (
                       <div key={q.id} className="space-y-1.5">
                         <Label>{q.label}{q.required && " *"}</Label>
                         {q.help_text && <p className="text-xs text-muted-foreground">{q.help_text}</p>}
@@ -394,11 +401,31 @@ const PublicPricingForm = () => {
         </Card>
 
         {!embed && (
-          <p className="text-center text-xs text-muted-foreground mt-4">
+          <p className="text-center text-xs text-muted-foreground mt-4 mb-20 md:mb-4">
             Powered by QuickLinq
           </p>
         )}
       </div>
+
+      {/* Sticky mobile price bar */}
+      {!done && !embed && Object.values(picked).some(Boolean) && (
+        <div className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t bg-background/95 backdrop-blur px-4 py-3 flex items-center gap-3 shadow-lg">
+          <div className="flex-1 min-w-0">
+            <div className="text-xs text-muted-foreground leading-none">Estimated total</div>
+            <div className="text-lg font-semibold leading-tight" style={{ color: accent }}>
+              ${totals.total.toFixed(2)}
+            </div>
+          </div>
+          <Button
+            size="lg"
+            style={{ background: accent }}
+            disabled={submitting}
+            onClick={submit}
+          >
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Get quote"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

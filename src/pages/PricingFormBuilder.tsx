@@ -62,6 +62,14 @@ const PricingFormBuilder = () => {
   }
 
   const saveForm = async () => {
+    if (local.is_published && data.services.length === 0) {
+      toast({
+        title: "Add a service first",
+        description: "You can't publish a form with zero services.",
+        variant: "destructive",
+      });
+      return;
+    }
     await updateForm.mutateAsync({ id: id!, patch: local });
     toast({ title: "Saved" });
   };
@@ -314,9 +322,23 @@ const PricingFormBuilder = () => {
                   <label className="flex items-center gap-2">
                     <Switch
                       checked={local.is_published}
-                      onCheckedChange={(v) => setLocal({ ...local, is_published: v })}
+                      disabled={data.services.length === 0}
+                      onCheckedChange={(v) => {
+                        if (v && data.services.length === 0) {
+                          toast({
+                            title: "Add a service first",
+                            description: "You can't publish a form with zero services.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        setLocal({ ...local, is_published: v });
+                      }}
                     />
                     <span className="text-sm">Published</span>
+                    {data.services.length === 0 && (
+                      <span className="text-xs text-muted-foreground">(add a service to publish)</span>
+                    )}
                   </label>
                 </div>
               </CardContent>
