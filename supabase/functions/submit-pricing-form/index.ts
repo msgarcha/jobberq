@@ -230,7 +230,7 @@ Deno.serve(async (req) => {
           user_id: form.user_id,
           first_name: String(contact.first_name).slice(0, 100),
           last_name: String(contact.last_name).slice(0, 100),
-          email: contact.email,
+          email: normalizedEmail,
           phone: contact.phone ? String(contact.phone).slice(0, 40) : null,
           address_line1: contact.address_line1 ? String(contact.address_line1).slice(0, 200) : null,
           city: contact.city ? String(contact.city).slice(0, 80) : null,
