@@ -8,6 +8,7 @@ import { ArrowLeft, Edit, Trash2, Play, CheckCircle, FileText, MapPin, Clock, Us
 import { useJob, useUpdateJob, useDeleteJob } from "@/hooks/useJobs";
 import { useCreateInvoice, useNextInvoiceNumber, useIncrementInvoiceNumber } from "@/hooks/useInvoices";
 import { SendReviewDialog } from "@/components/review/SendReviewDialog";
+import { AssigneeSelect, AssigneeAvatar } from "@/components/AssigneeSelect";
 import { format } from "date-fns";
 
 const statusStyles: Record<string, string> = {
