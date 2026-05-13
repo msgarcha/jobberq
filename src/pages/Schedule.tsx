@@ -17,12 +17,18 @@ const views = [
 const Schedule = () => {
   const [activeView, setActiveView] = useState("Day");
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const { user } = useAuth();
 
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 });
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart.toISOString()]);
 
   const dateStr = format(selectedDate, "yyyy-MM-dd");
   const { data: jobs, isLoading } = useJobsByDate(dateStr);
+  const filteredJobs = useMemo(
+    () => (jobs || []).filter((j: any) => matchesAssigneeFilter(j.assigned_to, assigneeFilter, user?.id)),
+    [jobs, assigneeFilter, user?.id]
+  );
 
   return (
     <DashboardLayout>
