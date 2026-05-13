@@ -65,6 +65,10 @@ const Pipeline = () => {
           </Button>
         </div>
 
+        <div className="flex items-center justify-end">
+          <AssigneeFilter value={assigneeFilter} onChange={setAssigneeFilter} />
+        </div>
+
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground">Loading pipeline…</div>
         ) : isMobile ? (
