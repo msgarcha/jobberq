@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronRight, MapPin, Clock, User } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { AssigneeAvatar } from "@/components/AssigneeSelect";
 
 export interface PipelineJob {
   id: string;
@@ -12,6 +13,7 @@ export interface PipelineJob {
   status: string;
   address?: string | null;
   scheduled_start?: string | null;
+  assigned_to?: string | null;
   clients?: { first_name: string; last_name: string; company_name?: string | null } | null;
 }
 
