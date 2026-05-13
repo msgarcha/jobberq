@@ -87,18 +87,22 @@ const Schedule = () => {
           </CardContent>
         </Card>
 
+        <div className="flex items-center justify-end">
+          <AssigneeFilter value={assigneeFilter} onChange={setAssigneeFilter} />
+        </div>
+
         {/* Timeline */}
         <div className="space-y-2">
           {isLoading ? (
             <div className="text-center py-12 text-muted-foreground">Loading…</div>
-          ) : !jobs?.length ? (
+          ) : !filteredJobs?.length ? (
             <Card className="shadow-warm">
               <CardContent className="py-12 text-center text-muted-foreground">
                 <p>No jobs scheduled for this day</p>
               </CardContent>
             </Card>
           ) : (
-            jobs.map((job) => {
+            filteredJobs.map((job: any) => {
               const client = (job as any).clients;
               const clientName = client ? `${client.first_name} ${client.last_name}` : "";
               const startTime = job.scheduled_start ? format(new Date(job.scheduled_start), "h:mm a") : "";
@@ -114,10 +118,11 @@ const Schedule = () => {
                       {duration && <p className="text-[10px] text-muted-foreground">{duration}</p>}
                     </div>
                     <div className="w-1 self-stretch rounded-full bg-primary" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{job.title}</p>
-                      <p className="text-xs text-muted-foreground">{clientName || job.job_number}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{job.title}</p>
+                      <p className="text-xs text-muted-foreground truncate">{clientName || job.job_number}</p>
                     </div>
+                    <AssigneeAvatar userId={job.assigned_to} showName />
                   </CardContent>
                 </Card>
               );
