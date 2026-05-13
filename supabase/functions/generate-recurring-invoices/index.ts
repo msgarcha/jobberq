@@ -12,6 +12,28 @@ Deno.serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  // Cron-only endpoint — require the service-role JWT.
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const token = authHeader.replace(/^Bearer\s+/i, "");
+  let isServiceRole = false;
+  try {
+    const payloadPart = token.split(".")[1];
+    if (payloadPart) {
+      const padded = payloadPart + "=".repeat((4 - (payloadPart.length % 4)) % 4);
+      const json = JSON.parse(atob(padded.replace(/-/g, "+").replace(/_/g, "/")));
+      isServiceRole = json?.role === "service_role";
+    }
+  } catch (_) {
+    isServiceRole = false;
+  }
+  if (!isServiceRole) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   try {
