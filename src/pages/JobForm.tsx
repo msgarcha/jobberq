@@ -119,6 +119,10 @@ const JobForm = () => {
               <ClientSelector value={clientId} onChange={setClientId} />
             </div>
             <div>
+              <Label>Assigned To</Label>
+              <AssigneeSelect value={assignedTo} onChange={setAssignedTo} />
+            </div>
+            <div>
               <Label>Description</Label>
               <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Job description…" rows={3} />
             </div>
