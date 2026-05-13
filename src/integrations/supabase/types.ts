@@ -780,6 +780,7 @@ export type Database = {
       jobs: {
         Row: {
           address: string | null
+          assigned_to: string | null
           client_id: string | null
           completed_at: string | null
           created_at: string
@@ -799,6 +800,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          assigned_to?: string | null
           client_id?: string | null
           completed_at?: string | null
           created_at?: string
@@ -818,6 +820,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          assigned_to?: string | null
           client_id?: string | null
           completed_at?: string | null
           created_at?: string
