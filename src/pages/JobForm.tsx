@@ -7,13 +7,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClientSelector } from "@/components/ClientSelector";
+import { AssigneeSelect } from "@/components/AssigneeSelect";
 import { ArrowLeft, Save } from "lucide-react";
 import { useJob, useCreateJob, useUpdateJob, useNextJobNumber, useIncrementJobNumber } from "@/hooks/useJobs";
+import { useAuth } from "@/contexts/AuthContext";
 
 const JobForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = !!id;
+  const { user } = useAuth();
 
   const { data: existingJob, isLoading: loadingJob } = useJob(isEdit ? id : undefined);
   const { data: nextNum } = useNextJobNumber();
@@ -24,6 +27,7 @@ const JobForm = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [clientId, setClientId] = useState<string | null>(null);
+  const [assignedTo, setAssignedTo] = useState<string | null>(user?.id || null);
   const [address, setAddress] = useState("");
   const [scheduledStart, setScheduledStart] = useState("");
   const [scheduledEnd, setScheduledEnd] = useState("");
@@ -34,6 +38,7 @@ const JobForm = () => {
       setTitle(existingJob.title || "");
       setDescription(existingJob.description || "");
       setClientId(existingJob.client_id);
+      setAssignedTo((existingJob as any).assigned_to ?? null);
       setAddress(existingJob.address || "");
       setScheduledStart(existingJob.scheduled_start ? existingJob.scheduled_start.slice(0, 16) : "");
       setScheduledEnd(existingJob.scheduled_end ? existingJob.scheduled_end.slice(0, 16) : "");
