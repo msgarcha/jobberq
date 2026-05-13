@@ -40,6 +40,7 @@ export function PipelineCard({ job, nextStage, onMoveToStage, isMoving }: Pipeli
             <p className="font-medium text-sm truncate">{job.title}</p>
             <p className="text-[11px] text-muted-foreground">{job.job_number}</p>
           </div>
+          <AssigneeAvatar userId={job.assigned_to} />
         </div>
 
         {clientName && (
