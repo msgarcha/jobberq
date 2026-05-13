@@ -5,6 +5,8 @@ import { Calendar, List, Map, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useJobsByDate } from "@/hooks/useJobs";
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
+import { AssigneeFilter, AssigneeAvatar, matchesAssigneeFilter } from "@/components/AssigneeSelect";
+import { useAuth } from "@/contexts/AuthContext";
 
 const views = [
   { label: "Day", icon: Calendar },
@@ -15,12 +17,18 @@ const views = [
 const Schedule = () => {
   const [activeView, setActiveView] = useState("Day");
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [assigneeFilter, setAssigneeFilter] = useState("all");
+  const { user } = useAuth();
 
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 });
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart.toISOString()]);
 
   const dateStr = format(selectedDate, "yyyy-MM-dd");
   const { data: jobs, isLoading } = useJobsByDate(dateStr);
+  const filteredJobs = useMemo(
+    () => (jobs || []).filter((j: any) => matchesAssigneeFilter(j.assigned_to, assigneeFilter, user?.id)),
+    [jobs, assigneeFilter, user?.id]
+  );
 
   return (
     <DashboardLayout>
@@ -79,18 +87,22 @@ const Schedule = () => {
           </CardContent>
         </Card>
 
+        <div className="flex items-center justify-end">
+          <AssigneeFilter value={assigneeFilter} onChange={setAssigneeFilter} />
+        </div>
+
         {/* Timeline */}
         <div className="space-y-2">
           {isLoading ? (
             <div className="text-center py-12 text-muted-foreground">Loading…</div>
-          ) : !jobs?.length ? (
+          ) : !filteredJobs?.length ? (
             <Card className="shadow-warm">
               <CardContent className="py-12 text-center text-muted-foreground">
                 <p>No jobs scheduled for this day</p>
               </CardContent>
             </Card>
           ) : (
-            jobs.map((job) => {
+            filteredJobs.map((job: any) => {
               const client = (job as any).clients;
               const clientName = client ? `${client.first_name} ${client.last_name}` : "";
               const startTime = job.scheduled_start ? format(new Date(job.scheduled_start), "h:mm a") : "";
@@ -106,10 +118,11 @@ const Schedule = () => {
                       {duration && <p className="text-[10px] text-muted-foreground">{duration}</p>}
                     </div>
                     <div className="w-1 self-stretch rounded-full bg-primary" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{job.title}</p>
-                      <p className="text-xs text-muted-foreground">{clientName || job.job_number}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{job.title}</p>
+                      <p className="text-xs text-muted-foreground truncate">{clientName || job.job_number}</p>
                     </div>
+                    <AssigneeAvatar userId={job.assigned_to} showName />
                   </CardContent>
                 </Card>
               );

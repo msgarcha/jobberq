@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -7,6 +7,8 @@ import { useJobs, useUpdateJob } from "@/hooks/useJobs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PipelineColumn, type PipelineStage } from "@/components/pipeline/PipelineColumn";
 import { MobilePipelineStage } from "@/components/pipeline/MobilePipelineStage";
+import { AssigneeFilter, matchesAssigneeFilter } from "@/components/AssigneeSelect";
+import { useAuth } from "@/contexts/AuthContext";
 
 const STAGES: PipelineStage[] = [
   { key: "new", label: "New", status: "pending", color: "bg-status-warning", headerBg: "bg-status-warning/10" },
@@ -19,22 +21,28 @@ const STAGES: PipelineStage[] = [
 const Pipeline = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   const { data: jobs, isLoading } = useJobs();
   const updateJob = useUpdateJob();
+  const [assigneeFilter, setAssigneeFilter] = useState("all");
+
+  const filteredJobs = useMemo(
+    () => (jobs || []).filter((j: any) => matchesAssigneeFilter(j.assigned_to, assigneeFilter, user?.id)),
+    [jobs, assigneeFilter, user?.id]
+  );
 
   const grouped = useMemo(() => {
     const map: Record<string, any[]> = {};
     STAGES.forEach((s) => (map[s.status] = []));
-    jobs?.forEach((job) => {
+    filteredJobs.forEach((job: any) => {
       if (map[job.status]) {
         map[job.status].push(job);
       } else {
-        // fallback: put unknown statuses into pending
         map["pending"]?.push(job);
       }
     });
     return map;
-  }, [jobs]);
+  }, [filteredJobs]);
 
   const handleMoveToStage = async (jobId: string, newStatus: string) => {
     const extra: Record<string, any> = {};
@@ -55,6 +63,10 @@ const Pipeline = () => {
             <Plus className="h-4 w-4" />
             New Job
           </Button>
+        </div>
+
+        <div className="flex items-center justify-end">
+          <AssigneeFilter value={assigneeFilter} onChange={setAssigneeFilter} />
         </div>
 
         {isLoading ? (
