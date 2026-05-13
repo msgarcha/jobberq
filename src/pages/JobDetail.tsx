@@ -173,6 +173,18 @@ const JobDetail = () => {
                 <span>{client.first_name} {client.last_name}{client.company_name ? ` · ${client.company_name}` : ""}</span>
               </div>
             )}
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                <span>Assigned to</span>
+                <AssigneeAvatar userId={(job as any).assigned_to} showName />
+              </div>
+              <div className="w-[200px]">
+                <AssigneeSelect
+                  value={(job as any).assigned_to ?? null}
+                  onChange={(v) => updateJob.mutate({ id: job.id, assigned_to: v } as any)}
+                />
+              </div>
+            </div>
             {job.address && (
               <div className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
