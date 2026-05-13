@@ -55,11 +55,12 @@ const JobForm = () => {
         title,
         description: description || null,
         client_id: clientId,
+        assigned_to: assignedTo,
         address: address || null,
         scheduled_start: scheduledStart ? new Date(scheduledStart).toISOString() : null,
         scheduled_end: scheduledEnd ? new Date(scheduledEnd).toISOString() : null,
         internal_notes: internalNotes || null,
-      });
+      } as any);
       navigate(`/jobs/${id}`);
     } else {
       const jobNumber = nextNum?.formatted || `J-${Date.now()}`;
@@ -67,12 +68,13 @@ const JobForm = () => {
         title,
         description: description || null,
         client_id: clientId,
+        assigned_to: assignedTo,
         address: address || null,
         scheduled_start: scheduledStart ? new Date(scheduledStart).toISOString() : null,
         scheduled_end: scheduledEnd ? new Date(scheduledEnd).toISOString() : null,
         internal_notes: internalNotes || null,
         job_number: jobNumber,
-      });
+      } as any);
       await incrementNum.mutateAsync();
       navigate(`/jobs/${result.id}`);
     }
