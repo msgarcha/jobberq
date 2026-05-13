@@ -5,6 +5,8 @@ import { Calendar, List, Map, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useJobsByDate } from "@/hooks/useJobs";
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
+import { AssigneeFilter, AssigneeAvatar, matchesAssigneeFilter } from "@/components/AssigneeSelect";
+import { useAuth } from "@/contexts/AuthContext";
 
 const views = [
   { label: "Day", icon: Calendar },
