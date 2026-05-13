@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -7,6 +7,8 @@ import { useJobs, useUpdateJob } from "@/hooks/useJobs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PipelineColumn, type PipelineStage } from "@/components/pipeline/PipelineColumn";
 import { MobilePipelineStage } from "@/components/pipeline/MobilePipelineStage";
+import { AssigneeFilter, matchesAssigneeFilter } from "@/components/AssigneeSelect";
+import { useAuth } from "@/contexts/AuthContext";
 
 const STAGES: PipelineStage[] = [
   { key: "new", label: "New", status: "pending", color: "bg-status-warning", headerBg: "bg-status-warning/10" },
