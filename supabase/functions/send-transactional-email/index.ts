@@ -145,6 +145,64 @@ Deno.serve(async (req) => {
   // Create Supabase client with service role (bypasses RLS)
   const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+  // Authorization: ensure caller is allowed to email the effective recipient.
+  // Service-role callers (internal functions like onboarding-drip-sweep, submit-review)
+  // are trusted. End-user callers may only send to:
+  //   (a) their own email address, or
+  //   (b) an email belonging to a client of one of their teams.
+  const callerRole = (claimsData.claims as any)?.role
+  if (callerRole !== 'service_role') {
+    const callerUserId = (claimsData.claims as any)?.sub as string | undefined
+    const callerEmail = ((claimsData.claims as any)?.email as string | undefined)?.toLowerCase()
+    const recipientLower = effectiveRecipient.toLowerCase()
+
+    let authorized = !!callerEmail && callerEmail === recipientLower
+
+    if (!authorized && callerUserId) {
+      // Per-user rate limit: 30 sends / 5 minutes
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+      const { count: recentCount } = await supabase
+        .from('email_send_log')
+        .select('id', { count: 'exact', head: true })
+        .eq('recipient_email', recipientLower)
+        .gte('created_at', fiveMinAgo)
+      // (Soft cap on per-recipient burst — protects against loops)
+      if ((recentCount ?? 0) > 10) {
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded for recipient' }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      // Check team membership of recipient as a client
+      const { data: teamRows } = await supabase
+        .from('team_members')
+        .select('team_id')
+        .eq('user_id', callerUserId)
+      const teamIds = (teamRows ?? []).map((r: any) => r.team_id)
+      if (teamIds.length > 0) {
+        const { data: clientMatch } = await supabase
+          .from('clients')
+          .select('id')
+          .in('team_id', teamIds)
+          .ilike('email', recipientLower)
+          .limit(1)
+          .maybeSingle()
+        authorized = !!clientMatch
+      }
+    }
+
+    if (!authorized) {
+      console.warn('Email send refused — recipient not owned by caller', {
+        callerUserId, templateName, effectiveRecipient,
+      })
+      return new Response(JSON.stringify({ error: 'Forbidden: recipient not associated with your account' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+  }
+
   // 2. Check suppression list (fail-closed: if we can't verify, don't send)
   const { data: suppressed, error: suppressionError } = await supabase
     .from('suppressed_emails')
