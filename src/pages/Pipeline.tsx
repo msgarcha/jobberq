@@ -21,22 +21,28 @@ const STAGES: PipelineStage[] = [
 const Pipeline = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   const { data: jobs, isLoading } = useJobs();
   const updateJob = useUpdateJob();
+  const [assigneeFilter, setAssigneeFilter] = useState("all");
+
+  const filteredJobs = useMemo(
+    () => (jobs || []).filter((j: any) => matchesAssigneeFilter(j.assigned_to, assigneeFilter, user?.id)),
+    [jobs, assigneeFilter, user?.id]
+  );
 
   const grouped = useMemo(() => {
     const map: Record<string, any[]> = {};
     STAGES.forEach((s) => (map[s.status] = []));
-    jobs?.forEach((job) => {
+    filteredJobs.forEach((job: any) => {
       if (map[job.status]) {
         map[job.status].push(job);
       } else {
-        // fallback: put unknown statuses into pending
         map["pending"]?.push(job);
       }
     });
     return map;
-  }, [jobs]);
+  }, [filteredJobs]);
 
   const handleMoveToStage = async (jobId: string, newStatus: string) => {
     const extra: Record<string, any> = {};
