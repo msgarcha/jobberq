@@ -25,8 +25,8 @@ export default function Landing() {
       <LandingNav />
       <main>
         <HeroSection />
-        <IndustryTicker />
         <CinematicBanner />
+        <IndustryTicker />
         <StorytellingTabs />
         <StatsBanner />
         <ComparisonSection />

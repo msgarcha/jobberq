@@ -5,4 +5,5 @@
 ## Pages
 
 - [Home](/landing): Product overview, features, pricing, and testimonials for QuickLinq.
+- [Features](/features): Detailed walkthrough of every QuickLinq capability — quotes, jobs, pipeline, reviews, AI assistant, payments, and more.
 - [How It Works](/how-it-works): Walkthrough of QuickLinq's four-step workflow — quotes, jobs, invoices, and payments.
