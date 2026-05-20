@@ -1036,6 +1036,60 @@ const Settings = () => {
             </div>
           </TabsContent>
 
+          {/* Notifications Tab */}
+          <TabsContent value="notifications" className="space-y-5 mt-5">
+            <div className="flex justify-end">
+              <Button onClick={handleSave} disabled={upsert.isPending} className="gap-1.5">
+                <Save className="h-4 w-4" />
+                {upsert.isPending ? "Saving…" : "Save Changes"}
+              </Button>
+            </div>
+            <Card className="shadow-warm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-primary" />
+                  Client Activity Alerts
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Get notified by email and in-app the moment a client interacts with a quote or invoice.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {[
+                  { label: "Quote viewed", desc: "When a client opens a quote for the first time.", val: notifyOnQuoteViewed, set: setNotifyOnQuoteViewed },
+                  { label: "Quote approved", desc: "When a client approves a quote.", val: notifyOnQuoteApproved, set: setNotifyOnQuoteApproved },
+                  { label: "Invoice viewed", desc: "When a client opens an invoice for the first time.", val: notifyOnInvoiceViewed, set: setNotifyOnInvoiceViewed },
+                  { label: "Deposit paid", desc: "When a client pays a deposit on a quote.", val: notifyOnDepositPaid, set: setNotifyOnDepositPaid },
+                  { label: "Invoice paid", desc: "When a client pays an invoice in full.", val: notifyOnInvoicePaid, set: setNotifyOnInvoicePaid },
+                ].map((row, i, arr) => (
+                  <div key={row.label}>
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">{row.label}</Label>
+                        <p className="text-xs text-muted-foreground">{row.desc}</p>
+                      </div>
+                      <Switch checked={row.val} onCheckedChange={row.set} />
+                    </div>
+                    {i < arr.length - 1 && <Separator className="mt-5" />}
+                  </div>
+                ))}
+                <Separator />
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Notification email <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Input
+                    type="email"
+                    value={notificationEmail}
+                    onChange={(e) => setNotificationEmail(e.target.value)}
+                    placeholder="alerts@yourcompany.com"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    If blank, alerts go to your account email.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Import Tab */}
           <TabsContent value="import" className="space-y-5 mt-5">
             <div>
