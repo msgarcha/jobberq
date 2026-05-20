@@ -13,21 +13,21 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-  // Cron-only endpoint — require the service-role JWT.
+  // Cron-only endpoint — require the raw service-role key in the Authorization header.
+  // Constant-time comparison prevents timing-based key recovery, and using the actual
+  // secret value (not just a decoded JWT claim) means forged `alg:none` tokens fail.
   const authHeader = req.headers.get("Authorization") ?? "";
-  const token = authHeader.replace(/^Bearer\s+/i, "");
-  let isServiceRole = false;
-  try {
-    const payloadPart = token.split(".")[1];
-    if (payloadPart) {
-      const padded = payloadPart + "=".repeat((4 - (payloadPart.length % 4)) % 4);
-      const json = JSON.parse(atob(padded.replace(/-/g, "+").replace(/_/g, "/")));
-      isServiceRole = json?.role === "service_role";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  const expected = serviceRoleKey;
+  let ok = token.length > 0 && token.length === expected.length;
+  if (ok) {
+    let diff = 0;
+    for (let i = 0; i < expected.length; i++) {
+      diff |= token.charCodeAt(i) ^ expected.charCodeAt(i);
     }
-  } catch (_) {
-    isServiceRole = false;
+    ok = diff === 0;
   }
-  if (!isServiceRole) {
+  if (!ok) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
       status: 403,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
