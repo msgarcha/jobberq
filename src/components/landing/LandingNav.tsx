@@ -29,7 +29,6 @@ export default function LandingNav() {
           <QuickLinqLogo size={28} type="full" variant="dark" />
         </button>
         <div className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-          <button onClick={() => goAnchor("features")} className={linkClass}>Features</button>
           <NavLink to="/features" className={({ isActive }) => cn(linkClass, isActive && activeClass)}>All Features</NavLink>
           <button onClick={() => goAnchor("industries")} className={linkClass}>Industries</button>
           <button onClick={() => goAnchor("pricing")} className={linkClass}>Pricing</button>
