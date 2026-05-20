@@ -29,7 +29,6 @@ export default function LandingNav() {
           <QuickLinqLogo size={28} type="full" variant="dark" />
         </button>
         <div className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-          <button onClick={() => goAnchor("features")} className={linkClass}>Features</button>
           <NavLink to="/features" className={({ isActive }) => cn(linkClass, isActive && activeClass)}>All Features</NavLink>
           <button onClick={() => goAnchor("industries")} className={linkClass}>Industries</button>
           <button onClick={() => goAnchor("pricing")} className={linkClass}>Pricing</button>
@@ -52,9 +51,6 @@ export default function LandingNav() {
             </SheetTrigger>
             <SheetContent side="right" className="w-72">
               <div className="mt-8 flex flex-col gap-1 text-base">
-                <SheetClose asChild>
-                  <button onClick={() => { setOpen(false); goAnchor("features"); }} className="text-left py-3 px-2 rounded-md hover:bg-muted">Features</button>
-                </SheetClose>
                 <SheetClose asChild>
                   <NavLink to="/features" className="py-3 px-2 rounded-md hover:bg-muted">All Features</NavLink>
                 </SheetClose>
