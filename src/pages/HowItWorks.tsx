@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, FileText, Calendar, Receipt, CreditCard, CheckCircle2 } from "lucide-react";
 import LandingNav from "@/components/landing/LandingNav";
 import LandingFooter from "@/components/landing/LandingFooter";
+import Seo from "@/components/Seo";
 
 const steps = [
   {
