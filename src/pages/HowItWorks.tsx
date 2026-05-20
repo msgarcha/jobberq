@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, FileText, Calendar, Receipt, CreditCard, CheckCircle2 } from "lucide-react";
 import LandingNav from "@/components/landing/LandingNav";
 import LandingFooter from "@/components/landing/LandingFooter";
+import Seo from "@/components/Seo";
 
 const steps = [
   {
@@ -40,7 +41,14 @@ export default function HowItWorks() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="How QuickLinq Works — Quotes, Jobs, Invoices & Payments"
+        description="See how QuickLinq helps service businesses send quotes, schedule jobs, invoice clients, and collect payments in four simple steps."
+        path="/how-it-works"
+      />
       <LandingNav />
+      <main>
+
 
       {/* Hero */}
       <section className="relative py-20 sm:py-28 text-center px-4" style={{ background: "hsl(var(--sidebar-background))" }}>
@@ -100,6 +108,7 @@ export default function HowItWorks() {
           </Button>
         </div>
       </section>
+      </main>
 
       <LandingFooter />
     </div>

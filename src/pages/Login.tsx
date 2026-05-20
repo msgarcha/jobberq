@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
 import QuickLinqLogo from '@/components/QuickLinqLogo';
+import Seo from '@/components/Seo';
 
 const authShellClassName = 'min-h-[100svh] bg-background px-4 py-8 sm:py-10';
 const authContainerClassName = 'mx-auto flex w-full max-w-md min-w-0 flex-col';
@@ -86,7 +87,9 @@ export default function Login() {
 
   if (resetMode) {
     return (
-      <div className={authShellClassName}>
+      <main className={authShellClassName}>
+        <Seo title="Reset Password — QuickLinq" description="Reset your QuickLinq password." path="/login" />
+
         <div className={authContainerClassName}>
           <div className="mb-4">
             <Link to="/landing" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -117,12 +120,15 @@ export default function Login() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </main>
+
     );
   }
 
   return (
-    <div className={authShellClassName}>
+    <main className={authShellClassName}>
+      <Seo title="Log In or Sign Up — QuickLinq" description="Log in to QuickLinq or create a free account to send quotes, manage jobs, and collect payments." path="/login" />
+
       <div className={`${authContainerClassName} animate-slide-up`}>
         <div className="mb-4">
           <Link to="/landing" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -183,6 +189,7 @@ export default function Login() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </main>
+
   );
 }
