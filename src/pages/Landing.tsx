@@ -12,23 +12,31 @@ import ROICalculator from "@/components/landing/ROICalculator";
 import PricingSection from "@/components/landing/PricingSection";
 import FinalCTA from "@/components/landing/FinalCTA";
 import LandingFooter from "@/components/landing/LandingFooter";
+import Seo from "@/components/Seo";
 
 export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="QuickLinq — Send Quotes. Win Jobs. Get Paid."
+        description="The all-in-one platform for service businesses — manage clients, send quotes, schedule jobs, invoice, and collect payments."
+        path="/landing"
+      />
       <LandingNav />
-      <HeroSection />
-      <IndustryTicker />
-      <CinematicBanner />
-      <StorytellingTabs />
-      <StatsBanner />
-      <ComparisonSection />
-      <FeaturesGrid />
-      <BuiltDifferent />
-      <TestimonialsSection />
-      <ROICalculator />
-      <PricingSection />
-      <FinalCTA />
+      <main>
+        <HeroSection />
+        <IndustryTicker />
+        <CinematicBanner />
+        <StorytellingTabs />
+        <StatsBanner />
+        <ComparisonSection />
+        <FeaturesGrid />
+        <BuiltDifferent />
+        <TestimonialsSection />
+        <ROICalculator />
+        <PricingSection />
+        <FinalCTA />
+      </main>
       <LandingFooter />
     </div>
   );
