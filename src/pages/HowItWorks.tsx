@@ -12,6 +12,8 @@ const steps = [
     title: "Create & Send Quotes",
     description: "Build professional quotes in minutes. Add line items from your service catalog, apply deposits and discounts, then send with one click. Clients can approve online — no printing, scanning, or phone tag.",
     highlights: ["Custom branding & logo", "Deposit collection", "Client e-approval", "Convert to invoice instantly"],
+    accent: "hsl(170 60% 40%)", // teal
+    tint: "hsl(170 60% 40% / 0.10)",
   },
   {
     number: "02",
@@ -19,6 +21,8 @@ const steps = [
     title: "Schedule & Manage Jobs",
     description: "Turn approved quotes into scheduled jobs. Track status from pending to complete with your pipeline board. Your whole team sees today's schedule at a glance.",
     highlights: ["Drag-and-drop pipeline", "Team schedule view", "Job notes & addresses", "Status tracking"],
+    accent: "hsl(40 80% 50%)", // gold
+    tint: "hsl(40 80% 50% / 0.12)",
   },
   {
     number: "03",
@@ -26,6 +30,8 @@ const steps = [
     title: "Invoice & Track Payments",
     description: "Generate invoices from completed jobs or create them from scratch. Track sent, viewed, and overdue statuses in real time. Set up recurring invoices for repeat clients.",
     highlights: ["Auto-generate from quotes", "Payment tracking", "Recurring invoices", "Overdue reminders"],
+    accent: "hsl(14 80% 55%)", // coral
+    tint: "hsl(14 80% 55% / 0.10)",
   },
   {
     number: "04",
@@ -33,6 +39,8 @@ const steps = [
     title: "Get Paid Fast",
     description: "Accept credit cards, ACH, and online payments through Stripe. Clients pay from a branded payment link — no app download needed. Money hits your bank account in days, not weeks.",
     highlights: ["Online payment links", "Stripe integration", "Save cards on file", "Automatic receipts"],
+    accent: "hsl(220 70% 55%)", // indigo
+    tint: "hsl(220 70% 55% / 0.10)",
   },
 ];
 
