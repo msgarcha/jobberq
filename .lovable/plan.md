@@ -1,123 +1,35 @@
+# Landing polish, Features page, mobile menu & SEO
 
-# Finalize Stripe Connect (Direct Charges + Embedded Components)
+## 1. Fix landing flow & section boundaries
+- In `src/pages/Landing.tsx`, move `IndustryTicker` from right after `HeroSection` to right after `CinematicBanner` (the 4-steps section). New order: Hero → CinematicBanner (4 steps) → IndustryTicker → StorytellingTabs → StatsBanner → ComparisonSection → FeaturesGrid → BuiltDifferent → Testimonials → ROI → Pricing → FinalCTA.
+- Add alternating section backgrounds so boundaries are visible: wrap/alter neighboring sections with `bg-background` vs `bg-secondary/30` vs subtle gradient bands, plus a thin `border-t border-border/40` between adjacent same-tone sections. Touch only the section wrapper classNames — no content rewrite.
 
-Your Stripe platform is now verified with this configuration:
-- **Funds flow:** Sellers collect directly (direct charges, seller is merchant of record on the receipt)
-- **Payouts:** Per-seller payouts (Stripe handles)
-- **Liability:** Stripe covers negative balances
-- **Fees:** Stripe collects Stripe fees from the seller
-- **Account creation:** Embedded onboarding components
-- **Dashboard:** Embedded account components
-- **Compliance:** Stripe handles ongoing seller compliance
+## 2. How It Works page
+- Replace the local `<LandingNav />` usage on `src/pages/HowItWorks.tsx`: it already uses it, but the nav links use in-page `scrollTo("features")` which silently fails on non-landing routes (making the menu feel "inactive"). Update `LandingNav.tsx` so anchor links navigate to `/landing#features` (etc.) when not already on `/landing`, and add a `How It Works` active state via `useLocation`.
+- Visual upgrade for the 4 step blocks: give each step its own accent tint (teal / gold / coral / indigo from existing tokens) for the icon tile + number, add a soft gradient card background, and a connector line on desktop between steps. Keep copy unchanged.
 
-The current code does NOT match this. Today it uses **destination charges** (funds hit your balance first, then transfer) and **Stripe-hosted Account Links** with the Express dashboard. We need to migrate.
+## 3. New Features page
+- Create `src/pages/Features.tsx` with a hero, then one section per feature (Reviews, Jobs, Pipeline, Quotes, Invoicing, Scheduling, AI Linq Assistant, Pricing Forms, Client Hub, Payments). Each section: zig-zag layout with a "dashboard clip" mockup on one side and benefit copy + bullet highlights on the other. Reuse the visual style from `FeaturesGrid`'s `DashboardMockup` — build small focused mockups per feature (Pipeline kanban columns, Reviews stars + request card, AI assistant chat bubble, etc.) using semantic tokens so they match real dashboards. No screenshots from production — pure styled mockups for performance/SEO.
+- Add `/features` route in `src/App.tsx` (public).
+- Add `Features` link to `LandingNav` desktop menu and update `public/sitemap.xml` + `public/llms.txt`.
 
-## What changes
+## 4. Mobile menu (LandingNav)
+- Current nav hides links behind `md:flex` with no hamburger → mobile Safari/Chrome show nothing. Add a `Menu` icon button visible on `< md` that opens a `Sheet` (already in shadcn) from the right with: Features, Industries, Pricing, How It Works, Log In, Get Started.
+- Ensure anchor links route correctly from any page (see point 2).
 
-### 1. Edge function: `stripe-connect-v2`
-Replace the current actions:
+## 5. SEO
+- Add `<Seo>` to the new `Features` page with unique title/description and canonical `/features`.
+- Verify `HowItWorks` and `Landing` already have `<Seo>` (they do) — extend `Seo.tsx` to also emit `og:image` only when provided (optional prop), and `twitter:card="summary_large_image"`.
+- Single H1 per new page, semantic `<section>` + `<h2>` for each feature block, descriptive `alt` on any decorative imagery (use `alt=""` for pure decoration).
+- Add `Features` entry to `public/sitemap.xml` with `<priority>0.8</priority>` and to `public/llms.txt`.
+- Add JSON-LD `ItemList` of features on `/features` and `BreadcrumbList` on `/how-it-works` and `/features`.
 
-- **`create-account`** — keep V2 Accounts API, but:
-  - Set `identity.country` to `ca` (you're Canadian) — make it a parameter so US sellers also work.
-  - Set `dashboard: "none"` (we render our own embedded dashboard, no Stripe-hosted one).
-  - Keep `fees_collector: "application"` so your platform applies the application fee on top of Stripe's fees.
-  - Keep `losses_collector: "stripe"` (Stripe covers negatives per your settings) — currently set to `application`, must change.
-  - Request `card_payments` capability in addition to `stripe_transfers` (needed for direct charges on the connected account).
+## Technical notes
+- Files created: `src/pages/Features.tsx`, `src/components/landing/features/*` (small mockup components per feature, e.g. `PipelineClip.tsx`, `ReviewsClip.tsx`, `AIClip.tsx`, `JobsClip.tsx`).
+- Files edited: `src/pages/Landing.tsx`, `src/pages/HowItWorks.tsx`, `src/components/landing/LandingNav.tsx`, `src/components/Seo.tsx`, `src/App.tsx`, `public/sitemap.xml`, `public/llms.txt`.
+- All colors via semantic tokens from `index.css` / `tailwind.config.ts` — no raw hex in components beyond what's already in the landing files.
+- No backend/data changes.
 
-- **Replace `create-onboarding-link`** with **`create-account-session`**:
-  - Calls `stripe.accountSessions.create({ account, components: { account_onboarding: { enabled: true }, payments: { enabled: true }, payouts: { enabled: true }, account_management: { enabled: true } } })`.
-  - Returns `client_secret` (NOT a redirect URL). The frontend uses it to mount the embedded components.
-
-- **Replace `create-checkout`** to use **direct charges**:
-  - Pass `Stripe-Account: <connected_account_id>` header on the Checkout Session call (creates the session ON the connected account, not the platform).
-  - Use `payment_intent_data.application_fee_amount` (no `transfer_data` — that's destination charges).
-  - The product/price should also live on the connected account, OR keep them on platform and use inline `price_data` (we'll switch to `price_data` to avoid cross-account product copies — simpler given products are platform-scoped today).
-
-- **Keep `get-status`, `create-product`, `list-products`** roughly as-is.
-
-### 2. New page: Embedded onboarding & dashboard
-
-Install `@stripe/connect-js` and `@stripe/react-connect-js`. Refactor `ConnectDashboard.tsx`:
-
-- Replace the "Onboard" button (which currently redirects to Stripe-hosted onboarding) with an inline `<ConnectAccountOnboarding />` rendered inside a dialog or section, wrapped in `<ConnectComponentsProvider />` that loads the client secret from the new `create-account-session` action.
-- Add a "Manage account" section that renders `<ConnectPayments />`, `<ConnectPayouts />`, `<ConnectAccountManagement />` — the embedded equivalent of the Express dashboard.
-- Add `VITE_STRIPE_PUBLISHABLE_KEY` to env (you already reference it in `src/lib/stripe.ts`).
-
-### 3. Webhook function: `stripe-connect-webhook-v2`
-Verify it listens for `account.updated` on Connect events and updates `connected_accounts.charges_enabled` / `payouts_enabled`. With direct charges + embedded components there's no return URL to refresh status, so the webhook is the source of truth. (I'll inspect/patch as needed during build.)
-
-### 4. Platform fee
-`PLATFORM_FEE_PERCENT` secret already exists (10%). Keep using it. On direct charges this fee is taken from the seller's payment and transferred to your platform balance — exactly what you want.
-
-### 5. Country default
-Currently hardcoded `us` in V2 and `ca` in the legacy `connect-stripe-account` function. We'll standardize on `ca` as the default, accept `country` as an optional parameter on `create-account`, and retire the legacy function (the Settings page that calls it should switch to the V2 flow — out of scope for this plan unless you want it included).
-
-## Technical details
-
-### Edge function key snippets
-
-```ts
-// create-account (changed bits)
-identity: { country: body.country || "ca" },
-dashboard: "none",
-defaults: {
-  responsibilities: {
-    fees_collector: "application",
-    losses_collector: "stripe",   // was "application"
-  },
-},
-configuration: {
-  recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } },
-  merchant:  { capabilities: { card_payments: { requested: true } } }, // NEW
-},
-```
-
-```ts
-// create-account-session (new)
-const session = await (stripe as any).accountSessions.create({
-  account: account_id,
-  components: {
-    account_onboarding: { enabled: true },
-    payments: { enabled: true },
-    payouts: { enabled: true },
-    account_management: { enabled: true },
-  },
-});
-return { client_secret: session.client_secret };
-```
-
-```ts
-// create-checkout (direct charge)
-const session = await stripe.checkout.sessions.create(
-  {
-    mode: "payment",
-    line_items: [{ price_data: { currency, product_data: { name }, unit_amount: price_cents }, quantity: 1 }],
-    payment_intent_data: { application_fee_amount: applicationFeeAmount },
-    success_url, cancel_url,
-  },
-  { stripeAccount: product.connected_account_id }   // <-- direct charge
-);
-```
-
-### Frontend wiring
-
-```tsx
-const stripeConnectInstance = useMemo(() => loadConnectAndInitialize({
-  publishableKey: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY,
-  fetchClientSecret: async () => {
-    const r = await connectAction("create-account-session", { account_id });
-    return r.client_secret;
-  },
-}), [account_id]);
-
-<ConnectComponentsProvider connectInstance={stripeConnectInstance}>
-  <ConnectAccountOnboarding onExit={() => refreshStatus(account_id)} />
-</ConnectComponentsProvider>
-```
-
-## Out of scope (ask if you want included)
-- Retiring the legacy `connect-stripe-account` function and migrating the Settings page to V2.
-- Switching `connect_products` to be stored on each connected account instead of the platform.
-- Multi-currency support (we'll keep current currency selector).
-
-Confirm and I'll implement.
+## Out of scope
+- Real screenshots of the production app (kept as styled mockups for speed and consistency).
+- Rewriting existing landing copy.
