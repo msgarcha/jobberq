@@ -52,9 +52,6 @@ export default function LandingNav() {
             <SheetContent side="right" className="w-72">
               <div className="mt-8 flex flex-col gap-1 text-base">
                 <SheetClose asChild>
-                  <button onClick={() => { setOpen(false); goAnchor("features"); }} className="text-left py-3 px-2 rounded-md hover:bg-muted">Features</button>
-                </SheetClose>
-                <SheetClose asChild>
                   <NavLink to="/features" className="py-3 px-2 rounded-md hover:bg-muted">All Features</NavLink>
                 </SheetClose>
                 <SheetClose asChild>
