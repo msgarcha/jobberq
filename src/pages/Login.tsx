@@ -126,7 +126,9 @@ export default function Login() {
   }
 
   return (
-    <div className={authShellClassName}>
+    <main className={authShellClassName}>
+      <Seo title="Log In or Sign Up — QuickLinq" description="Log in to QuickLinq or create a free account to send quotes, manage jobs, and collect payments." path="/login" />
+
       <div className={`${authContainerClassName} animate-slide-up`}>
         <div className="mb-4">
           <Link to="/landing" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
