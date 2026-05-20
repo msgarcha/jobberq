@@ -108,6 +108,7 @@ export default function HowItWorks() {
           </Button>
         </div>
       </section>
+      </main>
 
       <LandingFooter />
     </div>
