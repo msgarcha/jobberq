@@ -80,6 +80,12 @@ const Settings = () => {
   const [reviewMinStars, setReviewMinStars] = useState(4);
   const [reviewGatingEnabled, setReviewGatingEnabled] = useState(true);
   const [notifyLowRatings, setNotifyLowRatings] = useState(true);
+  const [notifyOnQuoteViewed, setNotifyOnQuoteViewed] = useState(true);
+  const [notifyOnQuoteApproved, setNotifyOnQuoteApproved] = useState(true);
+  const [notifyOnInvoiceViewed, setNotifyOnInvoiceViewed] = useState(true);
+  const [notifyOnDepositPaid, setNotifyOnDepositPaid] = useState(true);
+  const [notifyOnInvoicePaid, setNotifyOnInvoicePaid] = useState(true);
+  const [notificationEmail, setNotificationEmail] = useState("");
 
   // Stripe Connect state
   const [stripeConnectLoading, setStripeConnectLoading] = useState(false);
@@ -189,6 +195,12 @@ const Settings = () => {
       setPdfPrimaryColor((settings as any).pdf_primary_color || "#1a1a1a");
       setPdfAccentColor((settings as any).pdf_accent_color || "#6366f1");
       setPdfStyle((settings as any).pdf_style || "classic");
+      setNotifyOnQuoteViewed((settings as any).notify_on_quote_viewed ?? true);
+      setNotifyOnQuoteApproved((settings as any).notify_on_quote_approved ?? true);
+      setNotifyOnInvoiceViewed((settings as any).notify_on_invoice_viewed ?? true);
+      setNotifyOnDepositPaid((settings as any).notify_on_deposit_paid ?? true);
+      setNotifyOnInvoicePaid((settings as any).notify_on_invoice_paid ?? true);
+      setNotificationEmail((settings as any).notification_email || "");
     }
   }, [settings]);
 
@@ -219,6 +231,12 @@ const Settings = () => {
       pdf_primary_color: pdfPrimaryColor,
       pdf_accent_color: pdfAccentColor,
       pdf_style: pdfStyle,
+      notify_on_quote_viewed: notifyOnQuoteViewed,
+      notify_on_quote_approved: notifyOnQuoteApproved,
+      notify_on_invoice_viewed: notifyOnInvoiceViewed,
+      notify_on_deposit_paid: notifyOnDepositPaid,
+      notify_on_invoice_paid: notifyOnInvoicePaid,
+      notification_email: notificationEmail || null,
     } as any);
   };
 
