@@ -1,34 +1,29 @@
 /**
  * Stripe Connect V2 Edge Function
  * ================================
- * A multi-action edge function that handles all Stripe Connect V2 operations:
- *   - create-account:       Create a V2 connected account
- *   - get-status:           Retrieve onboarding/capability status for a connected account
- *   - create-onboarding-link: Generate an Account Link for Express onboarding
- *   - create-product:       Create a product + price on the platform
- *   - list-products:        List all products in the connect_products table
- *   - create-checkout:      Create a Checkout Session with destination charge
+ * Configuration: Direct charges, sellers payout individually, Stripe covers
+ * negative-balance liability, embedded onboarding + dashboard components.
  *
- * All Stripe API calls use a "Stripe Client" instance (`stripeClient`).
- * The V2 Accounts API is used for account creation, retrieval, and onboarding.
+ * Actions:
+ *   - get-config:             Return the platform publishable key for the browser
+ *   - create-account:         Create a V2 connected account (no dashboard, merchant + recipient)
+ *   - get-status:             Retrieve onboarding/capability status
+ *   - create-account-session: Issue a client_secret for embedded components
+ *   - create-product:         Save a product mapping (price_data is created at checkout)
+ *   - list-products:          List storefront products
+ *   - create-checkout:        Direct-charge Checkout Session on the connected account
  */
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
-// ------------------------------------------------------------------
-// CORS headers — required for browser requests to edge functions
-// ------------------------------------------------------------------
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// ------------------------------------------------------------------
-// Helper: JSON response with CORS
-// ------------------------------------------------------------------
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -37,17 +32,11 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // ------------------------------------------------------------------
-    // 1. Initialise the Stripe Client
-    //    STRIPE_SECRET_KEY must be set as a secret in Lovable Cloud.
-    //    If it's missing, we return a helpful error instead of crashing.
-    // ------------------------------------------------------------------
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeSecretKey) {
       return jsonResponse(
@@ -56,30 +45,26 @@ serve(async (req) => {
       );
     }
 
-    // Create the Stripe Client — all subsequent requests go through this instance.
-    // The SDK automatically uses the latest API version.
     const stripeClient = new Stripe(stripeSecretKey, {
       apiVersion: "2025-08-27.basil",
     });
 
-    // ------------------------------------------------------------------
-    // 2. Supabase clients (anon for user-scoped queries, service for admin writes)
-    // ------------------------------------------------------------------
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
     const serviceSupabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // ------------------------------------------------------------------
-    // 3. Parse request body & determine action
-    // ------------------------------------------------------------------
     const body = await req.json();
     const { action } = body;
 
-    // ------------------------------------------------------------------
-    // 4. Authenticate user (required for most actions except list-products/create-checkout)
-    // ------------------------------------------------------------------
+    // ----- Public action: return the publishable key -----
+    if (action === "get-config") {
+      return jsonResponse({
+        publishable_key: Deno.env.get("STRIPE_PUBLISHABLE_KEY") || "",
+      });
+    }
+
+    // ----- Auth (for everything except list-products / create-checkout / get-config) -----
     let userId: string | null = null;
     let teamId: string | null = null;
     const authHeader = req.headers.get("Authorization");
@@ -92,7 +77,6 @@ serve(async (req) => {
       const { data: claimsData, error: claimsError } = await userSupabase.auth.getClaims(token);
       if (!claimsError && claimsData?.claims) {
         userId = claimsData.claims.sub;
-        // Look up the user's team
         const { data: membership } = await userSupabase
           .from("team_members")
           .select("team_id")
@@ -102,56 +86,53 @@ serve(async (req) => {
       }
     }
 
-    // Helper: require auth
     const requireAuth = () => {
       if (!userId || !teamId) {
         throw Object.assign(new Error("Authentication required"), { status: 401 });
       }
     };
 
-    // ================================================================
-    //  ACTION: create-account
-    //  Creates a V2 connected account using the platform-managed model.
-    //  The platform is responsible for fees and losses collection.
-    // ================================================================
+    // =====================================================================
+    //  create-account — direct-charge model, embedded dashboard (no Stripe UI)
+    // =====================================================================
     if (action === "create-account") {
       requireAuth();
+      const { display_name, contact_email, country } = body;
+      if (!display_name) return jsonResponse({ error: "display_name is required" }, 400);
 
-      const { display_name, contact_email } = body;
-      if (!display_name) {
-        return jsonResponse({ error: "display_name is required" }, 400);
-      }
-
-      // Create the V2 connected account via the Stripe Client.
-      // NOTE: We do NOT pass top-level `type`. The V2 API uses `dashboard`
-      // and `defaults.responsibilities` to determine the account model.
       const account = await (stripeClient as any).v2.core.accounts.create({
         display_name,
         contact_email: contact_email || undefined,
-        identity: {
-          country: "us", // Default country — adjust per your requirements
-        },
-        dashboard: "express", // Express dashboard for the connected account
+        identity: { country: (country || "ca").toLowerCase() },
+        // No Stripe-hosted dashboard — we render embedded components ourselves.
+        dashboard: "none",
         defaults: {
           responsibilities: {
-            fees_collector: "application",   // Platform collects fees
-            losses_collector: "application", // Platform is responsible for losses
+            // Stripe deducts its processing fee from the seller (Stripe collects).
+            // Platform still adds application_fee_amount on top.
+            fees_collector: "stripe",
+            // Stripe covers negative balances per the platform settings.
+            losses_collector: "stripe",
           },
         },
         configuration: {
+          // Merchant config — the connected account charges customers directly.
+          merchant: {
+            capabilities: {
+              card_payments: { requested: true },
+            },
+          },
+          // Recipient config — needed so the platform can pull application fees.
           recipient: {
             capabilities: {
               stripe_balance: {
-                stripe_transfers: {
-                  requested: true, // Request the ability to receive transfers
-                },
+                stripe_transfers: { requested: true },
               },
             },
           },
         },
       });
 
-      // Persist the account mapping in the database
       await serviceSupabase.from("connected_accounts").insert({
         user_id: userId,
         team_id: teamId,
@@ -167,85 +148,65 @@ serve(async (req) => {
       });
     }
 
-    // ================================================================
-    //  ACTION: get-status
-    //  Retrieves the onboarding and capability status of a connected
-    //  account directly from the Stripe API (not from the database).
-    // ================================================================
+    // =====================================================================
+    //  get-status
+    // =====================================================================
     if (action === "get-status") {
       requireAuth();
       const { account_id } = body;
-      if (!account_id) {
-        return jsonResponse({ error: "account_id is required" }, 400);
-      }
+      if (!account_id) return jsonResponse({ error: "account_id is required" }, 400);
 
-      // Retrieve the V2 account with configuration and requirements included
       const account = await (stripeClient as any).v2.core.accounts.retrieve(account_id, {
-        include: ["configuration.recipient", "requirements"],
+        include: ["configuration.recipient", "configuration.merchant", "requirements"],
       });
 
-      // Check if the account can receive payments
-      const readyToReceivePayments =
+      const transfersActive =
         account?.configuration?.recipient?.capabilities?.stripe_balance?.stripe_transfers?.status === "active";
+      const cardPaymentsActive =
+        account?.configuration?.merchant?.capabilities?.card_payments?.status === "active";
 
-      // Check onboarding requirements status
-      const requirementsStatus =
-        account?.requirements?.summary?.minimum_deadline?.status;
+      const requirementsStatus = account?.requirements?.summary?.minimum_deadline?.status;
       const onboardingComplete =
         requirementsStatus !== "currently_due" && requirementsStatus !== "past_due";
 
       return jsonResponse({
         account_id,
-        ready_to_receive_payments: readyToReceivePayments,
+        ready_to_receive_payments: cardPaymentsActive && transfersActive,
+        card_payments_active: cardPaymentsActive,
+        transfers_active: transfersActive,
         onboarding_complete: onboardingComplete,
         requirements_status: requirementsStatus || "none",
-        // Include the raw requirements for debugging
-        requirements_summary: account?.requirements?.summary || null,
       });
     }
 
-    // ================================================================
-    //  ACTION: create-onboarding-link
-    //  Generates an Account Link so the user can complete Express
-    //  onboarding in a Stripe-hosted flow.
-    // ================================================================
-    if (action === "create-onboarding-link") {
+    // =====================================================================
+    //  create-account-session — issue client_secret for embedded components
+    // =====================================================================
+    if (action === "create-account-session") {
       requireAuth();
       const { account_id } = body;
-      if (!account_id) {
-        return jsonResponse({ error: "account_id is required" }, 400);
-      }
+      if (!account_id) return jsonResponse({ error: "account_id is required" }, 400);
 
-      const origin = req.headers.get("origin") || "http://localhost:5173";
-
-      // Create a V2 account link for onboarding
-      const accountLink = await (stripeClient as any).v2.core.accountLinks.create({
+      const session = await (stripeClient as any).accountSessions.create({
         account: account_id,
-        use_case: {
-          type: "account_onboarding",
-          account_onboarding: {
-            configurations: ["recipient"],
-            // Where Stripe redirects if the link expires or needs refresh
-            refresh_url: `${origin}/connect?refresh=true&accountId=${account_id}`,
-            // Where Stripe redirects after onboarding is complete
-            return_url: `${origin}/connect?accountId=${account_id}`,
-          },
+        components: {
+          account_onboarding: { enabled: true },
+          account_management: { enabled: true },
+          payments: { enabled: true },
+          payouts: { enabled: true },
+          notification_banner: { enabled: true },
         },
       });
 
-      return jsonResponse({ url: accountLink.url });
+      return jsonResponse({ client_secret: session.client_secret });
     }
 
-    // ================================================================
-    //  ACTION: create-product
-    //  Creates a product + default price on the PLATFORM (not on the
-    //  connected account). Stores the mapping to the connected account
-    //  in the database so the storefront knows where to route payments.
-    // ================================================================
+    // =====================================================================
+    //  create-product — store mapping; price_data created at checkout time
+    // =====================================================================
     if (action === "create-product") {
       requireAuth();
       const { name, description, price_cents, currency, connected_account_id } = body;
-
       if (!name || !price_cents || !connected_account_id) {
         return jsonResponse(
           { error: "name, price_cents, and connected_account_id are required" },
@@ -253,125 +214,82 @@ serve(async (req) => {
         );
       }
 
-      // Create the product at the platform level using the Stripe Client.
-      // The `default_price_data` creates an associated price automatically.
-      const product = await stripeClient.products.create({
-        name,
-        description: description || undefined,
-        default_price_data: {
-          unit_amount: Number(price_cents),
-          currency: currency || "usd",
-        },
-      });
-
-      // Extract the price ID from the newly created product
-      const priceId =
-        typeof product.default_price === "string"
-          ? product.default_price
-          : product.default_price?.id;
-
-      // Persist product → connected account mapping in the database
       await serviceSupabase.from("connect_products").insert({
         user_id: userId,
         team_id: teamId,
-        stripe_product_id: product.id,
-        stripe_price_id: priceId || null,
+        stripe_product_id: "inline", // direct-charge uses inline price_data per checkout
+        stripe_price_id: null,
         connected_account_id,
         name,
         description: description || null,
         price_cents: Number(price_cents),
-        currency: currency || "usd",
+        currency: currency || "cad",
       });
 
-      return jsonResponse({
-        product_id: product.id,
-        price_id: priceId,
-        message: "Product created successfully",
-      });
+      return jsonResponse({ message: "Product created successfully" });
     }
 
-    // ================================================================
-    //  ACTION: list-products
-    //  Lists all products from the connect_products table.
-    //  This is a public action (no auth required) for the storefront.
-    // ================================================================
+    // =====================================================================
+    //  list-products (public)
+    // =====================================================================
     if (action === "list-products") {
       const { data: products, error } = await serviceSupabase
         .from("connect_products")
         .select("*")
         .order("created_at", { ascending: false });
-
-      if (error) {
-        return jsonResponse({ error: error.message }, 500);
-      }
-
+      if (error) return jsonResponse({ error: error.message }, 500);
       return jsonResponse({ products });
     }
 
-    // ================================================================
-    //  ACTION: create-checkout
-    //  Creates a Stripe Checkout Session with a destination charge.
-    //  An application fee is taken from each transaction.
-    //  No auth required — this is for end customers on the storefront.
-    // ================================================================
+    // =====================================================================
+    //  create-checkout — DIRECT CHARGE on the connected account
+    // =====================================================================
     if (action === "create-checkout") {
       const { product_id } = body;
-      if (!product_id) {
-        return jsonResponse({ error: "product_id is required" }, 400);
-      }
+      if (!product_id) return jsonResponse({ error: "product_id is required" }, 400);
 
-      // Look up the product to get connected account and pricing info
       const { data: product, error: prodErr } = await serviceSupabase
         .from("connect_products")
         .select("*")
         .eq("id", product_id)
         .single();
 
-      if (prodErr || !product) {
-        return jsonResponse({ error: "Product not found" }, 404);
-      }
+      if (prodErr || !product) return jsonResponse({ error: "Product not found" }, 404);
 
       const origin = req.headers.get("origin") || "http://localhost:5173";
-
-      // Calculate application fee (e.g., 10% of the price).
-      // Adjust PLATFORM_FEE_PERCENT in your secrets as needed.
       const feePercent = Number(Deno.env.get("PLATFORM_FEE_PERCENT") || "10");
       const applicationFeeAmount = Math.round(product.price_cents * feePercent / 100);
 
-      // Create a Checkout Session using the Stripe Client.
-      // Uses a destination charge: payment goes to the platform, then
-      // the net amount is transferred to the connected account.
-      const session = await stripeClient.checkout.sessions.create({
-        line_items: [
-          {
-            price_data: {
-              currency: product.currency,
-              product_data: {
-                name: product.name,
-                description: product.description || undefined,
+      // Direct charge: pass { stripeAccount } so the session is created
+      // ON the connected account. Seller is merchant of record.
+      const session = await stripeClient.checkout.sessions.create(
+        {
+          mode: "payment",
+          line_items: [
+            {
+              price_data: {
+                currency: product.currency,
+                product_data: {
+                  name: product.name,
+                  description: product.description || undefined,
+                },
+                unit_amount: product.price_cents,
               },
-              unit_amount: product.price_cents,
+              quantity: 1,
             },
-            quantity: 1,
+          ],
+          payment_intent_data: {
+            application_fee_amount: applicationFeeAmount,
           },
-        ],
-        payment_intent_data: {
-          // Platform fee deducted before transferring to connected account
-          application_fee_amount: applicationFeeAmount,
-          transfer_data: {
-            // Funds are routed to this connected account
-            destination: product.connected_account_id,
-          },
+          success_url: `${origin}/connect/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${origin}/connect`,
         },
-        mode: "payment",
-        success_url: `${origin}/connect/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/connect/storefront`,
-      });
+        { stripeAccount: product.connected_account_id },
+      );
 
       return jsonResponse({ url: session.url });
     }
 
-    // If no valid action matched, return an error
     return jsonResponse({ error: `Invalid action: '${action}'` }, 400);
   } catch (error) {
     console.error("Error in stripe-connect-v2:", error);
