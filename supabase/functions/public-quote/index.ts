@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { notifyOwner, formatCurrency, clientDisplayName, appUrl } from "../_shared/notify-owner.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -45,12 +46,31 @@ serve(async (req) => {
       .eq("quote_id", quote_id)
       .order("sort_order", { ascending: true });
 
-    // Record viewed_at timestamp (first view only)
+    // Record viewed_at timestamp (first view only) — and notify the owner
     if (!quote.viewed_at) {
       await supabaseAdmin
         .from("quotes")
         .update({ viewed_at: new Date().toISOString() })
         .eq("id", quote_id);
+
+      const cName = clientDisplayName(quote.clients as any);
+      const amt = formatCurrency(quote.total);
+      await notifyOwner({
+        teamId: quote.team_id,
+        event: "quote_viewed",
+        title: `${cName} opened quote ${quote.quote_number}`,
+        body: amt ? `${amt} • Just viewed for the first time` : "Just viewed for the first time",
+        link: `/quotes/${quote.id}`,
+        entityType: "quote",
+        entityId: quote.id,
+        idempotencySuffix: quote.id,
+        templateData: {
+          clientName: cName,
+          quoteNumber: quote.quote_number,
+          amount: amt,
+          quoteUrl: appUrl(`/quotes/${quote.id}`),
+        },
+      });
     }
 
     const { data: company } = await supabaseAdmin

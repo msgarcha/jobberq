@@ -269,7 +269,13 @@ export type Database = {
           next_invoice_number: number | null
           next_job_number: number | null
           next_quote_number: number | null
+          notification_email: string | null
           notify_low_ratings: boolean
+          notify_on_deposit_paid: boolean
+          notify_on_invoice_paid: boolean
+          notify_on_invoice_viewed: boolean
+          notify_on_quote_approved: boolean
+          notify_on_quote_viewed: boolean
           payout_schedule: string | null
           pdf_accent_color: string | null
           pdf_primary_color: string | null
@@ -310,7 +316,13 @@ export type Database = {
           next_invoice_number?: number | null
           next_job_number?: number | null
           next_quote_number?: number | null
+          notification_email?: string | null
           notify_low_ratings?: boolean
+          notify_on_deposit_paid?: boolean
+          notify_on_invoice_paid?: boolean
+          notify_on_invoice_viewed?: boolean
+          notify_on_quote_approved?: boolean
+          notify_on_quote_viewed?: boolean
           payout_schedule?: string | null
           pdf_accent_color?: string | null
           pdf_primary_color?: string | null
@@ -351,7 +363,13 @@ export type Database = {
           next_invoice_number?: number | null
           next_job_number?: number | null
           next_quote_number?: number | null
+          notification_email?: string | null
           notify_low_ratings?: boolean
+          notify_on_deposit_paid?: boolean
+          notify_on_invoice_paid?: boolean
+          notify_on_invoice_viewed?: boolean
+          notify_on_quote_approved?: boolean
+          notify_on_quote_viewed?: boolean
           payout_schedule?: string | null
           pdf_accent_color?: string | null
           pdf_primary_color?: string | null
@@ -862,6 +880,53 @@ export type Database = {
           },
           {
             foreignKeyName: "jobs_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          link: string | null
+          read_at: string | null
+          team_id: string
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          team_id: string
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          team_id?: string
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
@@ -1925,6 +1990,12 @@ export type Database = {
         | "complete"
         | "invoiced"
         | "on_hold"
+      notification_type:
+        | "quote_viewed"
+        | "quote_approved"
+        | "invoice_viewed"
+        | "deposit_paid"
+        | "invoice_paid"
       payment_method:
         | "cash"
         | "check"
@@ -2070,6 +2141,13 @@ export const Constants = {
       client_status: ["lead", "active", "archived"],
       invoice_status: ["draft", "sent", "viewed", "paid", "overdue"],
       job_status: ["pending", "in_progress", "complete", "invoiced", "on_hold"],
+      notification_type: [
+        "quote_viewed",
+        "quote_approved",
+        "invoice_viewed",
+        "deposit_paid",
+        "invoice_paid",
+      ],
       payment_method: [
         "cash",
         "check",

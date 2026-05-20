@@ -15,6 +15,10 @@ import { template as lowRatingAlert } from './low-rating-alert.tsx'
 import { template as reviewRequest } from './review-request.tsx'
 import { template as onboardingDay2 } from './onboarding-day-2.tsx'
 import { template as onboardingDay7 } from './onboarding-day-7.tsx'
+import { template as quoteViewed } from './quote-viewed.tsx'
+import { template as quoteApproved } from './quote-approved.tsx'
+import { template as invoiceViewed } from './invoice-viewed.tsx'
+import { template as paymentReceived } from './payment-received.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'document-email': documentEmail,
@@ -23,4 +27,8 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'review-request': reviewRequest,
   'onboarding-day-2': onboardingDay2,
   'onboarding-day-7': onboardingDay7,
+  'quote-viewed': quoteViewed,
+  'quote-approved': quoteApproved,
+  'invoice-viewed': invoiceViewed,
+  'payment-received': paymentReceived,
 }

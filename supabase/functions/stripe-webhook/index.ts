@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { notifyOwner, formatCurrency, clientDisplayName, appUrl } from "../_shared/notify-owner.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -129,7 +130,7 @@ serve(async (req) => {
 
           const { data: invoiceData } = await supabaseAdmin
             .from("invoices")
-            .select("team_id, amount_paid, total")
+            .select("team_id, amount_paid, total, invoice_number, id, clients(first_name, last_name, company_name)")
             .eq("id", invoiceId)
             .single();
 
@@ -146,12 +147,36 @@ serve(async (req) => {
           if (invoiceData) {
             const newAmountPaid = Number(invoiceData.amount_paid) + amountPaid;
             const newBalance = Math.max(0, Number(invoiceData.total) - newAmountPaid);
+            const isFull = newBalance <= 0;
             await supabaseAdmin.from("invoices").update({
               amount_paid: newAmountPaid,
               balance_due: newBalance,
-              status: newBalance <= 0 ? "paid" : undefined,
-              paid_at: newBalance <= 0 ? new Date().toISOString() : undefined,
+              status: isFull ? "paid" : undefined,
+              paid_at: isFull ? new Date().toISOString() : undefined,
             }).eq("id", invoiceId);
+
+            const cName = clientDisplayName((invoiceData as any).clients);
+            const amt = formatCurrency(amountPaid);
+            const event = isFull ? "invoice_paid" : "deposit_paid";
+            await notifyOwner({
+              teamId: invoiceData.team_id,
+              event,
+              title: isFull
+                ? `${cName} paid invoice ${invoiceData.invoice_number} in full`
+                : `${cName} sent a deposit on ${invoiceData.invoice_number}`,
+              body: `${amt} received via Stripe`,
+              link: `/invoices/${invoiceData.id}`,
+              entityType: "invoice",
+              entityId: invoiceData.id,
+              idempotencySuffix: pi.id,
+              templateData: {
+                kind: isFull ? "full" : "deposit",
+                clientName: cName,
+                invoiceNumber: invoiceData.invoice_number,
+                amount: amt,
+                invoiceUrl: appUrl(`/invoices/${invoiceData.id}`),
+              },
+            });
           }
 
           console.log(`PaymentIntent succeeded for invoice ${invoiceId}: $${amountPaid}`);
