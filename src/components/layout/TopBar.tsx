@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Bell, Plus, Search, Users, FileText, Receipt, Briefcase, Settings, KeyRound, LogOut, ChevronRight } from "lucide-react";
+import { ArrowLeft, Bell, Plus, Search, Users, FileText, Receipt, Briefcase, Settings, KeyRound, LogOut, ChevronRight, CheckCheck, Eye, CheckCircle2, DollarSign } from "lucide-react";
 import QuickLinqLogo from "@/components/QuickLinqLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,16 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useRecentActivity, formatRelativeTime } from "@/hooks/useInvoices";
+import { formatRelativeTime } from "@/hooks/useInvoices";
+import { useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, type Notification } from "@/hooks/useNotifications";
+
+const TYPE_ICON: Record<string, typeof Eye> = {
+  quote_viewed: Eye,
+  invoice_viewed: Eye,
+  quote_approved: CheckCircle2,
+  deposit_paid: DollarSign,
+  invoice_paid: DollarSign,
+};
 
 export function TopBar() {
   const navigate = useNavigate();
@@ -23,7 +32,9 @@ export function TopBar() {
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
-  const { data: activity } = useRecentActivity();
+  const { data: notifications } = useNotifications();
+  const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -38,51 +49,64 @@ export function TopBar() {
 
   const displayName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "U";
   const initials = displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
-  const hasActivity = !!activity?.length;
+  const unreadCount = (notifications ?? []).filter((n) => !n.read_at).length;
+
+  const handleNotificationClick = (n: Notification) => {
+    if (!n.read_at) markRead.mutate(n.id);
+    if (n.link) navigate(n.link);
+  };
 
   const NotificationDropdown = () => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative rounded-lg h-9 w-9">
           <Bell className="h-4 w-4" />
-          {hasActivity && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-status-danger" />}
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-status-danger text-[10px] font-semibold text-white flex items-center justify-center">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto">
-        <div className="px-3 py-2 border-b">
-          <p className="text-sm font-semibold">Recent Activity</p>
+        <div className="px-3 py-2 border-b flex items-center justify-between">
+          <p className="text-sm font-semibold">Notifications</p>
+          {unreadCount > 0 && (
+            <button
+              onClick={(e) => { e.preventDefault(); markAllRead.mutate(); }}
+              className="text-[11px] text-primary hover:underline flex items-center gap-1"
+            >
+              <CheckCheck className="h-3 w-3" /> Mark all read
+            </button>
+          )}
         </div>
-        {!hasActivity ? (
+        {!notifications?.length ? (
           <div className="px-3 py-6 text-center">
             <Bell className="h-6 w-6 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">No recent activity</p>
+            <p className="text-sm text-muted-foreground">No notifications yet</p>
           </div>
         ) : (
-          activity.slice(0, 6).map((item) => {
-            const Icon = item.type === "quote" ? FileText : Receipt;
-            const path = item.type === "quote" ? `/quotes/${item.id}` : `/invoices/${item.id}`;
+          notifications.slice(0, 12).map((n) => {
+            const Icon = TYPE_ICON[n.type as string] ?? Bell;
             return (
               <DropdownMenuItem
-                key={`${item.type}-${item.id}`}
-                onClick={() => navigate(path)}
-                className="flex items-start gap-3 py-3 cursor-pointer"
+                key={n.id}
+                onClick={() => handleNotificationClick(n)}
+                className={`flex items-start gap-3 py-3 cursor-pointer ${!n.read_at ? "bg-primary/5" : ""}`}
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary mt-0.5">
                   <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{item.text}</p>
-                  <p className="text-xs text-muted-foreground truncate">{item.detail}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{formatRelativeTime(item.time)}</p>
+                  <p className="text-sm font-medium truncate">{n.title}</p>
+                  {n.body && <p className="text-xs text-muted-foreground truncate">{n.body}</p>}
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{formatRelativeTime(n.created_at)}</p>
                 </div>
+                {!n.read_at && <span className="h-2 w-2 rounded-full bg-primary mt-2 shrink-0" />}
               </DropdownMenuItem>
             );
           })
         )}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate("/invoices")} className="justify-center text-xs text-primary">
-          View All Activity <ChevronRight className="h-3 w-3 ml-1" />
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

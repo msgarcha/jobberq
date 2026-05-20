@@ -16,7 +16,7 @@ import { useTeam, useTeamMembers, useTeamInvitations, useSendInvite, useUpdateMe
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { SUBSCRIPTION_TIERS, type TierKey } from "@/lib/subscriptionTiers";
-import { Save, Building2, Upload, CreditCard, CheckCircle2, Crown, Zap, Users, Mail, Trash2, Copy, UserPlus, Star, FileSpreadsheet, ArrowRight, Link2, Unlink, Loader2, ExternalLink, X, Palette } from "lucide-react";
+import { Save, Building2, Upload, CreditCard, CheckCircle2, Crown, Zap, Users, Mail, Trash2, Copy, UserPlus, Star, FileSpreadsheet, ArrowRight, Link2, Unlink, Loader2, ExternalLink, X, Palette, Bell } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -80,6 +80,12 @@ const Settings = () => {
   const [reviewMinStars, setReviewMinStars] = useState(4);
   const [reviewGatingEnabled, setReviewGatingEnabled] = useState(true);
   const [notifyLowRatings, setNotifyLowRatings] = useState(true);
+  const [notifyOnQuoteViewed, setNotifyOnQuoteViewed] = useState(true);
+  const [notifyOnQuoteApproved, setNotifyOnQuoteApproved] = useState(true);
+  const [notifyOnInvoiceViewed, setNotifyOnInvoiceViewed] = useState(true);
+  const [notifyOnDepositPaid, setNotifyOnDepositPaid] = useState(true);
+  const [notifyOnInvoicePaid, setNotifyOnInvoicePaid] = useState(true);
+  const [notificationEmail, setNotificationEmail] = useState("");
 
   // Stripe Connect state
   const [stripeConnectLoading, setStripeConnectLoading] = useState(false);
@@ -189,6 +195,12 @@ const Settings = () => {
       setPdfPrimaryColor((settings as any).pdf_primary_color || "#1a1a1a");
       setPdfAccentColor((settings as any).pdf_accent_color || "#6366f1");
       setPdfStyle((settings as any).pdf_style || "classic");
+      setNotifyOnQuoteViewed((settings as any).notify_on_quote_viewed ?? true);
+      setNotifyOnQuoteApproved((settings as any).notify_on_quote_approved ?? true);
+      setNotifyOnInvoiceViewed((settings as any).notify_on_invoice_viewed ?? true);
+      setNotifyOnDepositPaid((settings as any).notify_on_deposit_paid ?? true);
+      setNotifyOnInvoicePaid((settings as any).notify_on_invoice_paid ?? true);
+      setNotificationEmail((settings as any).notification_email || "");
     }
   }, [settings]);
 
@@ -219,6 +231,12 @@ const Settings = () => {
       pdf_primary_color: pdfPrimaryColor,
       pdf_accent_color: pdfAccentColor,
       pdf_style: pdfStyle,
+      notify_on_quote_viewed: notifyOnQuoteViewed,
+      notify_on_quote_approved: notifyOnQuoteApproved,
+      notify_on_invoice_viewed: notifyOnInvoiceViewed,
+      notify_on_deposit_paid: notifyOnDepositPaid,
+      notify_on_invoice_paid: notifyOnInvoicePaid,
+      notification_email: notificationEmail || null,
     } as any);
   };
 
@@ -288,6 +306,9 @@ const Settings = () => {
               </TabsTrigger>
               <TabsTrigger value="billing" className="gap-1.5">
                 <CreditCard className="h-3.5 w-3.5" /> Billing
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="gap-1.5">
+                <Bell className="h-3.5 w-3.5" /> Alerts
               </TabsTrigger>
               <TabsTrigger value="import" className="gap-1.5">
                 <FileSpreadsheet className="h-3.5 w-3.5" /> Import
@@ -1013,6 +1034,60 @@ const Settings = () => {
                 );
               })}
             </div>
+          </TabsContent>
+
+          {/* Notifications Tab */}
+          <TabsContent value="notifications" className="space-y-5 mt-5">
+            <div className="flex justify-end">
+              <Button onClick={handleSave} disabled={upsert.isPending} className="gap-1.5">
+                <Save className="h-4 w-4" />
+                {upsert.isPending ? "Saving…" : "Save Changes"}
+              </Button>
+            </div>
+            <Card className="shadow-warm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-primary" />
+                  Client Activity Alerts
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Get notified by email and in-app the moment a client interacts with a quote or invoice.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {[
+                  { label: "Quote viewed", desc: "When a client opens a quote for the first time.", val: notifyOnQuoteViewed, set: setNotifyOnQuoteViewed },
+                  { label: "Quote approved", desc: "When a client approves a quote.", val: notifyOnQuoteApproved, set: setNotifyOnQuoteApproved },
+                  { label: "Invoice viewed", desc: "When a client opens an invoice for the first time.", val: notifyOnInvoiceViewed, set: setNotifyOnInvoiceViewed },
+                  { label: "Deposit paid", desc: "When a client pays a deposit on a quote.", val: notifyOnDepositPaid, set: setNotifyOnDepositPaid },
+                  { label: "Invoice paid", desc: "When a client pays an invoice in full.", val: notifyOnInvoicePaid, set: setNotifyOnInvoicePaid },
+                ].map((row, i, arr) => (
+                  <div key={row.label}>
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">{row.label}</Label>
+                        <p className="text-xs text-muted-foreground">{row.desc}</p>
+                      </div>
+                      <Switch checked={row.val} onCheckedChange={row.set} />
+                    </div>
+                    {i < arr.length - 1 && <Separator className="mt-5" />}
+                  </div>
+                ))}
+                <Separator />
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Notification email <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                  <Input
+                    type="email"
+                    value={notificationEmail}
+                    onChange={(e) => setNotificationEmail(e.target.value)}
+                    placeholder="alerts@yourcompany.com"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    If blank, alerts go to your account email.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Import Tab */}
