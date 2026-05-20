@@ -67,7 +67,7 @@ serve(async (req) => {
 
     const { data: quote } = await supabaseAdmin
       .from("quotes")
-      .select("id, status")
+      .select("id, status, team_id, quote_number, total, clients(first_name, last_name, company_name)")
       .eq("id", quote_id)
       .single();
 
@@ -97,6 +97,25 @@ serve(async (req) => {
       .eq("id", quote_id);
 
     if (updateErr) throw updateErr;
+
+    const cName = clientDisplayName((quote as any).clients);
+    const amt = formatCurrency((quote as any).total);
+    await notifyOwner({
+      teamId: (quote as any).team_id,
+      event: "quote_approved",
+      title: `${cName} approved quote ${(quote as any).quote_number}`,
+      body: amt ? `${amt} • Ready to schedule` : "Ready to schedule",
+      link: `/quotes/${quote.id}`,
+      entityType: "quote",
+      entityId: quote.id,
+      idempotencySuffix: quote.id,
+      templateData: {
+        clientName: cName,
+        quoteNumber: (quote as any).quote_number,
+        amount: amt,
+        quoteUrl: appUrl(`/quotes/${quote.id}`),
+      },
+    });
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
