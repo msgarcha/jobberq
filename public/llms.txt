@@ -1,0 +1,8 @@
+# QuickLinq
+
+> Send Quotes. Win Jobs. Get Paid. The all-in-one platform for service businesses to manage clients, quotes, invoices, scheduling, and payments.
+
+## Pages
+
+- [Home](/landing): Product overview, features, pricing, and testimonials for QuickLinq.
+- [How It Works](/how-it-works): Walkthrough of QuickLinq's four-step workflow — quotes, jobs, invoices, and payments.
