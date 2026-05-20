@@ -37,9 +37,9 @@ export default function Landing() {
       <LandingNav />
       <main>
         <HeroSection />
+        <StorytellingTabs />
         <IndustryTicker />
         <CinematicBanner />
-        <StorytellingTabs />
         <StatsBanner />
         <ComparisonSection />
         <FeaturesGrid />
