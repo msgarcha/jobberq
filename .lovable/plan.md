@@ -1,35 +1,84 @@
-# Landing polish, Features page, mobile menu & SEO
+## Current state
 
-## 1. Fix landing flow & section boundaries
-- In `src/pages/Landing.tsx`, move `IndustryTicker` from right after `HeroSection` to right after `CinematicBanner` (the 4-steps section). New order: Hero → CinematicBanner (4 steps) → IndustryTicker → StorytellingTabs → StatsBanner → ComparisonSection → FeaturesGrid → BuiltDifferent → Testimonials → ROI → Pricing → FinalCTA.
-- Add alternating section backgrounds so boundaries are visible: wrap/alter neighboring sections with `bg-background` vs `bg-secondary/30` vs subtle gradient bands, plus a thin `border-t border-border/40` between adjacent same-tone sections. Touch only the section wrapper classNames — no content rewrite.
+The app captures every relevant event but never tells the business owner:
 
-## 2. How It Works page
-- Replace the local `<LandingNav />` usage on `src/pages/HowItWorks.tsx`: it already uses it, but the nav links use in-page `scrollTo("features")` which silently fails on non-landing routes (making the menu feel "inactive"). Update `LandingNav.tsx` so anchor links navigate to `/landing#features` (etc.) when not already on `/landing`, and add a `How It Works` active state via `useLocation`.
-- Visual upgrade for the 4 step blocks: give each step its own accent tint (teal / gold / coral / indigo from existing tokens) for the icon tile + number, add a soft gradient card background, and a connector line on desktop between steps. Keep copy unchanged.
+- `public-quote` edge function stamps `viewed_at` on first client view → no email/notification sent.
+- `public-invoice` edge function records views → nothing sent.
+- `approve-quote` edge function flips quote `status = 'approved'` → nothing sent.
+- `stripe-connect-webhook-v2` handles `payment_intent.succeeded` for deposit and full invoice payments → only updates the invoice row; comment in code literally says `// TODO: Send a notification to the account owner`.
 
-## 3. New Features page
-- Create `src/pages/Features.tsx` with a hero, then one section per feature (Reviews, Jobs, Pipeline, Quotes, Invoicing, Scheduling, AI Linq Assistant, Pricing Forms, Client Hub, Payments). Each section: zig-zag layout with a "dashboard clip" mockup on one side and benefit copy + bullet highlights on the other. Reuse the visual style from `FeaturesGrid`'s `DashboardMockup` — build small focused mockups per feature (Pipeline kanban columns, Reviews stars + request card, AI assistant chat bubble, etc.) using semantic tokens so they match real dashboards. No screenshots from production — pure styled mockups for performance/SEO.
-- Add `/features` route in `src/App.tsx` (public).
-- Add `Features` link to `LandingNav` desktop menu and update `public/sitemap.xml` + `public/llms.txt`.
+So this is a real gap. Plan below adds both **email** (via existing `send-transactional-email` infra on `notify.quicklinq.ca`) and **in-app notifications** with a bell icon, since the user called this "critical".
 
-## 4. Mobile menu (LandingNav)
-- Current nav hides links behind `md:flex` with no hamburger → mobile Safari/Chrome show nothing. Add a `Menu` icon button visible on `< md` that opens a `Sheet` (already in shadcn) from the right with: Features, Industries, Pricing, How It Works, Log In, Get Started.
-- Ensure anchor links route correctly from any page (see point 2).
+## What we'll build
 
-## 5. SEO
-- Add `<Seo>` to the new `Features` page with unique title/description and canonical `/features`.
-- Verify `HowItWorks` and `Landing` already have `<Seo>` (they do) — extend `Seo.tsx` to also emit `og:image` only when provided (optional prop), and `twitter:card="summary_large_image"`.
-- Single H1 per new page, semantic `<section>` + `<h2>` for each feature block, descriptive `alt` on any decorative imagery (use `alt=""` for pure decoration).
-- Add `Features` entry to `public/sitemap.xml` with `<priority>0.8</priority>` and to `public/llms.txt`.
-- Add JSON-LD `ItemList` of features on `/features` and `BreadcrumbList` on `/how-it-works` and `/features`.
+### 1. In-app notifications
+
+New `notifications` table (team-scoped, RLS by `team_id`):
+- `id`, `team_id`, `user_id` (nullable — null = whole team), `type` (enum: `quote_viewed`, `quote_approved`, `invoice_viewed`, `deposit_paid`, `invoice_paid`), `title`, `body`, `link` (e.g. `/quotes/:id`), `read_at`, `created_at`, plus `entity_type` + `entity_id` for dedupe.
+- Realtime enabled so the bell updates live.
+- Bell icon in top bar (desktop nav + mobile header) with unread count and a dropdown list; click marks read and navigates to `link`.
+
+### 2. Notification preferences
+
+Add columns to `company_settings`:
+- `notify_on_quote_viewed` (bool, default true)
+- `notify_on_quote_approved` (bool, default true)
+- `notify_on_invoice_viewed` (bool, default true)
+- `notify_on_deposit_paid` (bool, default true)
+- `notify_on_invoice_paid` (bool, default true)
+- `notification_email` (text, nullable — falls back to team owner's auth email)
+
+Settings page gets a new "Notifications" card with toggles + optional override email.
+
+### 3. Email templates
+
+Four new React Email templates in `_shared/transactional-email-templates/`, all branded to match existing QuickLinq templates (teal `#0d9488`, Poppins-ish system stack, white body):
+
+- `quote-viewed.tsx` — "Marcus just opened your quote QT-1042"
+- `quote-approved.tsx` — "Quote QT-1042 was approved — $3,450"
+- `invoice-viewed.tsx` — "Acme Co. opened invoice INV-2231"
+- `payment-received.tsx` — handles both deposit and full payment with a `kind` prop ("Deposit received" vs "Invoice paid in full"), shows amount, invoice number, client.
+
+Each template includes a CTA button deep-linking back into the app (`https://app.quicklinq.com/...`).
+
+Registered in `registry.ts`.
+
+### 4. Trigger wiring
+
+A small shared helper `_shared/notify-owner.ts` that, given `team_id` + event type + payload:
+1. Loads `company_settings` to check the relevant `notify_on_*` toggle.
+2. Resolves recipient (`notification_email` override, else team owner's auth email via service role).
+3. Inserts a row into `notifications`.
+4. Invokes `send-transactional-email` with the correct template + idempotency key (`${event}-${entity_id}`).
+
+Wired into existing functions (no new edge functions needed):
+
+| Edge function | Event hook |
+|---|---|
+| `public-quote/index.ts` | when `viewed_at` is stamped → `quote_viewed` |
+| `public-invoice/index.ts` | first view → `invoice_viewed` |
+| `approve-quote/index.ts` | after status flips to approved → `quote_approved` |
+| `stripe-connect-webhook-v2/index.ts` | on `payment_intent.succeeded`, branch on `metadata.payment_type` (`deposit` vs `full`) → `deposit_paid` or `invoice_paid` |
+
+Idempotency keys prevent duplicate sends on Stripe webhook retries and quote re-views.
+
+### 5. Settings UI + Bell UI
+
+- `src/pages/Settings.tsx` → new "Notifications" section with the 5 toggles and the override email input.
+- `src/components/notifications/NotificationBell.tsx` → bell + unread badge + dropdown list, used in the existing top nav for both desktop and mobile.
+- `src/hooks/useNotifications.ts` → subscribes to realtime inserts on `notifications` for the current `team_id`.
 
 ## Technical notes
-- Files created: `src/pages/Features.tsx`, `src/components/landing/features/*` (small mockup components per feature, e.g. `PipelineClip.tsx`, `ReviewsClip.tsx`, `AIClip.tsx`, `JobsClip.tsx`).
-- Files edited: `src/pages/Landing.tsx`, `src/pages/HowItWorks.tsx`, `src/components/landing/LandingNav.tsx`, `src/components/Seo.tsx`, `src/App.tsx`, `public/sitemap.xml`, `public/llms.txt`.
-- All colors via semantic tokens from `index.css` / `tailwind.config.ts` — no raw hex in components beyond what's already in the landing files.
-- No backend/data changes.
 
-## Out of scope
-- Real screenshots of the production app (kept as styled mockups for speed and consistency).
-- Rewriting existing landing copy.
+- Email infrastructure (queues, `send-transactional-email`, `notify.quicklinq.ca`) is already set up — we just add templates and call sites.
+- All new DB objects use the existing `team_id` RLS pattern (`has_team_role` / `is_team_member`).
+- `notifications` insert happens from edge functions using service role; reads use authed client filtered by `team_id`.
+- Realtime: `ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;`
+- No changes to Stripe Connect flow or fee logic.
+
+## Out of scope (can do later)
+
+- Push notifications to the iOS Capacitor app.
+- SMS via Twilio.
+- Per-user (not per-team) preferences.
+- Digest mode ("only email me once an hour").
