@@ -44,6 +44,7 @@ import Unsubscribe from "./pages/Unsubscribe";
 import ConnectDashboard from "./pages/ConnectDashboard";
 import ConnectSuccess from "./pages/ConnectSuccess";
 import HowItWorks from "./pages/HowItWorks";
+import Features from "./pages/Features";
 import PricingForms from "./pages/PricingForms";
 import PricingFormBuilder from "./pages/PricingFormBuilder";
 import PublicPricingForm from "./pages/PublicPricingForm";
@@ -62,6 +63,7 @@ const App = () => (
           <Routes>
             {/* Public routes */}
             <Route path="/landing" element={<Landing />} />
+            <Route path="/features" element={<Features />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />

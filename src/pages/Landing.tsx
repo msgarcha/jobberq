@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import LandingNav from "@/components/landing/LandingNav";
 import HeroSection from "@/components/landing/HeroSection";
 import IndustryTicker from "@/components/landing/IndustryTicker";
@@ -15,6 +17,16 @@ import LandingFooter from "@/components/landing/LandingFooter";
 import Seo from "@/components/Seo";
 
 export default function Landing() {
+  const location = useLocation();
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.slice(1);
+      setTimeout(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+      }, 50);
+    }
+  }, [location.hash]);
+
   return (
     <div className="min-h-screen bg-background">
       <Seo
@@ -25,8 +37,8 @@ export default function Landing() {
       <LandingNav />
       <main>
         <HeroSection />
-        <IndustryTicker />
         <CinematicBanner />
+        <IndustryTicker />
         <StorytellingTabs />
         <StatsBanner />
         <ComparisonSection />

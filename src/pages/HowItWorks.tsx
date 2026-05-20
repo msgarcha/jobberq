@@ -12,6 +12,8 @@ const steps = [
     title: "Create & Send Quotes",
     description: "Build professional quotes in minutes. Add line items from your service catalog, apply deposits and discounts, then send with one click. Clients can approve online — no printing, scanning, or phone tag.",
     highlights: ["Custom branding & logo", "Deposit collection", "Client e-approval", "Convert to invoice instantly"],
+    accent: "hsl(170 60% 40%)", // teal
+    tint: "hsl(170 60% 40% / 0.10)",
   },
   {
     number: "02",
@@ -19,6 +21,8 @@ const steps = [
     title: "Schedule & Manage Jobs",
     description: "Turn approved quotes into scheduled jobs. Track status from pending to complete with your pipeline board. Your whole team sees today's schedule at a glance.",
     highlights: ["Drag-and-drop pipeline", "Team schedule view", "Job notes & addresses", "Status tracking"],
+    accent: "hsl(40 80% 50%)", // gold
+    tint: "hsl(40 80% 50% / 0.12)",
   },
   {
     number: "03",
@@ -26,6 +30,8 @@ const steps = [
     title: "Invoice & Track Payments",
     description: "Generate invoices from completed jobs or create them from scratch. Track sent, viewed, and overdue statuses in real time. Set up recurring invoices for repeat clients.",
     highlights: ["Auto-generate from quotes", "Payment tracking", "Recurring invoices", "Overdue reminders"],
+    accent: "hsl(14 80% 55%)", // coral
+    tint: "hsl(14 80% 55% / 0.10)",
   },
   {
     number: "04",
@@ -33,6 +39,8 @@ const steps = [
     title: "Get Paid Fast",
     description: "Accept credit cards, ACH, and online payments through Stripe. Clients pay from a branded payment link — no app download needed. Money hits your bank account in days, not weeks.",
     highlights: ["Online payment links", "Stripe integration", "Save cards on file", "Automatic receipts"],
+    accent: "hsl(220 70% 55%)", // indigo
+    tint: "hsl(220 70% 55% / 0.10)",
   },
 ];
 
@@ -65,27 +73,40 @@ export default function HowItWorks() {
 
       {/* Steps */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
-        <div className="space-y-16 sm:space-y-24">
+        <div className="space-y-12 sm:space-y-16">
           {steps.map((step, i) => (
-            <div key={step.number} className={`flex flex-col ${i % 2 === 1 ? "lg:flex-row-reverse" : "lg:flex-row"} gap-8 lg:gap-16 items-center`}>
-              {/* Icon / Visual */}
+            <div
+              key={step.number}
+              className={`relative flex flex-col ${i % 2 === 1 ? "lg:flex-row-reverse" : "lg:flex-row"} gap-8 lg:gap-16 items-center rounded-3xl p-6 sm:p-10 border border-border/50 shadow-warm`}
+              style={{ background: `linear-gradient(135deg, ${step.tint}, transparent 70%)` }}
+            >
               <div className="flex-shrink-0">
                 <div className="relative">
-                  <div className="h-32 w-32 sm:h-40 sm:w-40 rounded-3xl bg-primary/10 flex items-center justify-center">
-                    <step.icon className="h-16 w-16 sm:h-20 sm:w-20 text-primary" />
+                  <div
+                    className="h-32 w-32 sm:h-40 sm:w-40 rounded-3xl flex items-center justify-center"
+                    style={{ background: step.tint, border: `1px solid ${step.accent}` }}
+                  >
+                    <step.icon className="h-16 w-16 sm:h-20 sm:w-20" style={{ color: step.accent }} />
                   </div>
-                  <span className="absolute -top-3 -left-3 text-6xl sm:text-7xl font-bold text-primary/10 font-display select-none">{step.number}</span>
+                  <span
+                    className="absolute -top-3 -left-3 text-6xl sm:text-7xl font-bold font-display select-none opacity-30"
+                    style={{ color: step.accent }}
+                  >
+                    {step.number}
+                  </span>
                 </div>
               </div>
 
-              {/* Content */}
               <div className="flex-1 text-center lg:text-left">
+                <p className="text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: step.accent }}>
+                  Step {step.number}
+                </p>
                 <h2 className="text-2xl sm:text-3xl font-bold font-display tracking-tight">{step.title}</h2>
                 <p className="mt-4 text-muted-foreground leading-relaxed max-w-lg mx-auto lg:mx-0">{step.description}</p>
                 <ul className="mt-6 grid grid-cols-2 gap-2 max-w-md mx-auto lg:mx-0">
                   {step.highlights.map((h) => (
                     <li key={h} className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: step.accent }} />
                       <span>{h}</span>
                     </li>
                   ))}
