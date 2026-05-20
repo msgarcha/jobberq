@@ -30,7 +30,7 @@ serve(async (req) => {
     // Load invoice with line items and client info
     const { data: invoice, error: invErr } = await supabaseAdmin
       .from("invoices")
-      .select("id, invoice_number, title, subtotal, discount_amount, tax_amount, total, balance_due, amount_paid, status, due_date, created_at, client_id, team_id, clients(first_name, last_name, company_name)")
+      .select("id, invoice_number, title, subtotal, discount_amount, tax_amount, total, balance_due, amount_paid, status, due_date, created_at, client_id, team_id, viewed_at, clients(first_name, last_name, company_name)")
       .eq("id", invoice_id)
       .single();
 
@@ -54,6 +54,33 @@ serve(async (req) => {
       .select("company_name, logo_url, email, phone, address_line1, city, state, zip, stripe_charges_enabled, website")
       .eq("team_id", invoice.team_id)
       .maybeSingle();
+
+    // Record viewed_at (first view only) and notify owner
+    if (!(invoice as any).viewed_at) {
+      await supabaseAdmin
+        .from("invoices")
+        .update({ viewed_at: new Date().toISOString() })
+        .eq("id", invoice_id);
+
+      const cName = clientDisplayName((invoice as any).clients);
+      const amt = formatCurrency(invoice.total);
+      await notifyOwner({
+        teamId: invoice.team_id,
+        event: "invoice_viewed",
+        title: `${cName} opened invoice ${invoice.invoice_number}`,
+        body: amt ? `${amt} • Just viewed for the first time` : "Just viewed for the first time",
+        link: `/invoices/${invoice.id}`,
+        entityType: "invoice",
+        entityId: invoice.id,
+        idempotencySuffix: invoice.id,
+        templateData: {
+          clientName: cName,
+          invoiceNumber: invoice.invoice_number,
+          amount: amt,
+          invoiceUrl: appUrl(`/invoices/${invoice.id}`),
+        },
+      });
+    }
 
     return new Response(
       JSON.stringify({
