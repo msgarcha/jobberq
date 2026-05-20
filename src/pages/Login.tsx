@@ -87,7 +87,9 @@ export default function Login() {
 
   if (resetMode) {
     return (
-      <div className={authShellClassName}>
+      <main className={authShellClassName}>
+        <Seo title="Reset Password — QuickLinq" description="Reset your QuickLinq password." path="/login" />
+
         <div className={authContainerClassName}>
           <div className="mb-4">
             <Link to="/landing" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
