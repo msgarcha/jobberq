@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
 import QuickLinqLogo from '@/components/QuickLinqLogo';
+import Seo from '@/components/Seo';
 
 const authShellClassName = 'min-h-[100svh] bg-background px-4 py-8 sm:py-10';
 const authContainerClassName = 'mx-auto flex w-full max-w-md min-w-0 flex-col';
