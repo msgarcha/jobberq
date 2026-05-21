@@ -54,6 +54,26 @@ const STEPS: DripStep[] = [
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Cron-only endpoint — require the service-role key in the Authorization header.
+  // Constant-time comparison prevents timing attacks.
+  {
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+    const expected = SUPABASE_SERVICE_ROLE_KEY;
+    let ok = token.length > 0 && token.length === expected.length;
+    if (ok) {
+      let diff = 0;
+      for (let i = 0; i < expected.length; i++) diff |= token.charCodeAt(i) ^ expected.charCodeAt(i);
+      ok = diff === 0;
+    }
+    if (!ok) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  }
+
   try {
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const now = Date.now();

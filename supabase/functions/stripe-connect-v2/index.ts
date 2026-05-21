@@ -149,12 +149,26 @@ serve(async (req) => {
     }
 
     // =====================================================================
+    //  Helper — ensure the caller's team owns the given Stripe account_id
+    // =====================================================================
+    const assertOwnsAccount = async (account_id: string) => {
+      const { data: owned } = await serviceSupabase
+        .from("connected_accounts")
+        .select("id")
+        .eq("stripe_account_id", account_id)
+        .eq("team_id", teamId)
+        .maybeSingle();
+      return !!owned;
+    };
+
+    // =====================================================================
     //  get-status
     // =====================================================================
     if (action === "get-status") {
       requireAuth();
       const { account_id } = body;
       if (!account_id) return jsonResponse({ error: "account_id is required" }, 400);
+      if (!(await assertOwnsAccount(account_id))) return jsonResponse({ error: "Forbidden" }, 403);
 
       const account = await (stripeClient as any).v2.core.accounts.retrieve(account_id, {
         include: ["configuration.recipient", "configuration.merchant", "requirements"],
@@ -186,6 +200,7 @@ serve(async (req) => {
       requireAuth();
       const { account_id } = body;
       if (!account_id) return jsonResponse({ error: "account_id is required" }, 400);
+      if (!(await assertOwnsAccount(account_id))) return jsonResponse({ error: "Forbidden" }, 403);
 
       const session = await (stripeClient as any).accountSessions.create({
         account: account_id,
@@ -233,9 +248,11 @@ serve(async (req) => {
     //  list-products (public)
     // =====================================================================
     if (action === "list-products") {
+      // Public storefront — only return columns safe to expose to anonymous callers.
+      // Internal fields (user_id, team_id, connected_account_id, stripe_*) are omitted.
       const { data: products, error } = await serviceSupabase
         .from("connect_products")
-        .select("*")
+        .select("id, name, description, price_cents, currency")
         .order("created_at", { ascending: false });
       if (error) return jsonResponse({ error: error.message }, 500);
       return jsonResponse({ products });

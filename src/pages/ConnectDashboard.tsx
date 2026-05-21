@@ -518,9 +518,6 @@ export default function ConnectDashboard() {
                               <span className="ml-1">Buy</span>
                             </Button>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-2 font-mono truncate">
-                            Seller: {p.connected_account_id}
-                          </p>
                         </CardContent>
                       </Card>
                     ))}
