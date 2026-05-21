@@ -248,9 +248,11 @@ serve(async (req) => {
     //  list-products (public)
     // =====================================================================
     if (action === "list-products") {
+      // Public storefront — only return columns safe to expose to anonymous callers.
+      // Internal fields (user_id, team_id, connected_account_id, stripe_*) are omitted.
       const { data: products, error } = await serviceSupabase
         .from("connect_products")
-        .select("*")
+        .select("id, name, description, price_cents, currency")
         .order("created_at", { ascending: false });
       if (error) return jsonResponse({ error: error.message }, 500);
       return jsonResponse({ products });
