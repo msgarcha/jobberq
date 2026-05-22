@@ -290,6 +290,7 @@ export type Database = {
           stripe_onboarding_complete: boolean
           stripe_payouts_enabled: boolean
           team_id: string | null
+          trade: string | null
           updated_at: string
           user_id: string
           website: string | null
@@ -337,6 +338,7 @@ export type Database = {
           stripe_onboarding_complete?: boolean
           stripe_payouts_enabled?: boolean
           team_id?: string | null
+          trade?: string | null
           updated_at?: string
           user_id: string
           website?: string | null
@@ -384,6 +386,7 @@ export type Database = {
           stripe_onboarding_complete?: boolean
           stripe_payouts_enabled?: boolean
           team_id?: string | null
+          trade?: string | null
           updated_at?: string
           user_id?: string
           website?: string | null
