@@ -166,18 +166,23 @@ export default function Login() {
             <CardContent className={authContentClassName}>
               <form onSubmit={handleVerifyOtp} className={authFormClassName}>
                 <div className="flex justify-center py-2">
-                  <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                  <InputOTP maxLength={8} value={otpCode} onChange={setOtpCode}>
                     <InputOTPGroup>
                       <InputOTPSlot index={0} />
                       <InputOTPSlot index={1} />
                       <InputOTPSlot index={2} />
                       <InputOTPSlot index={3} />
+                    </InputOTPGroup>
+                    <InputOTPSeparator />
+                    <InputOTPGroup>
                       <InputOTPSlot index={4} />
                       <InputOTPSlot index={5} />
+                      <InputOTPSlot index={6} />
+                      <InputOTPSlot index={7} />
                     </InputOTPGroup>
                   </InputOTP>
                 </div>
-                <Button type="submit" className="w-full min-w-0 rounded-lg" disabled={loading || otpCode.length !== 6}>
+                <Button type="submit" className="w-full min-w-0 rounded-lg" disabled={loading || otpCode.length !== 8}>
                   {loading ? 'Verifying…' : 'Verify Email'}
                 </Button>
                 <button
