@@ -107,7 +107,7 @@ const App = () => (
             <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
             <Route path="/reviews" element={<ProtectedRoute><Reviews /></ProtectedRoute>} />
             <Route path="/import" element={<ProtectedRoute><ImportData /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute allowExpired><Settings /></ProtectedRoute>} />
             <Route path="/settings/pricing-forms" element={<ProtectedRoute><PricingForms /></ProtectedRoute>} />
             <Route path="/settings/pricing-forms/:id" element={<ProtectedRoute><PricingFormBuilder /></ProtectedRoute>} />
             <Route path="/connect" element={<ProtectedRoute><ConnectDashboard /></ProtectedRoute>} />
