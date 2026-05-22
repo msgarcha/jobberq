@@ -8,7 +8,7 @@ import { useInView } from "@/hooks/useInView";
 const tiers = [
   {
     name: "Starter",
-    price: "$29",
+    price: "$14",
     period: "/mo",
     desc: "For solo operators getting started.",
     features: ["Up to 50 clients", "Unlimited quotes & invoices", "Job scheduling", "Online payments", "Email support"],
@@ -17,7 +17,7 @@ const tiers = [
   },
   {
     name: "Pro",
-    price: "$79",
+    price: "$29",
     period: "/mo",
     desc: "For growing service businesses.",
     features: ["Unlimited clients", "Team members (up to 5)", "Recurring invoices", "Custom branding", "Priority support", "Reports & analytics"],
@@ -26,7 +26,7 @@ const tiers = [
   },
   {
     name: "Business",
-    price: "$149",
+    price: "$49",
     period: "/mo",
     desc: "For agencies managing multiple crews.",
     features: ["Everything in Pro", "Unlimited team members", "Client portal", "API access", "Dedicated account manager", "Custom integrations"],

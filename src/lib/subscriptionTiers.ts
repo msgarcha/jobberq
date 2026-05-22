@@ -2,10 +2,10 @@
 export const SUBSCRIPTION_TIERS = {
   starter: {
     name: "Starter",
-    price: "$29",
-    priceAmount: 29,
-    priceId: "price_1T8l0lFr0YtqsPW07tE2zaKS",
-    productId: "prod_U6yyGorJZoTTuw",
+    price: "$14",
+    priceAmount: 14,
+    priceId: "price_1Ta2j8KFLt6KnglEa0EVNat8",
+    productId: "prod_UZB5bIhMsXcmZa",
     description: "For solo operators getting started.",
     features: [
       "Up to 50 clients",
@@ -19,10 +19,10 @@ export const SUBSCRIPTION_TIERS = {
   },
   pro: {
     name: "Pro",
-    price: "$79",
-    priceAmount: 79,
-    priceId: "price_1T8l5lFr0YtqsPW0ZFQZhdz9",
-    productId: "prod_U6z3Y8rbHA1uhQ",
+    price: "$29",
+    priceAmount: 29,
+    priceId: "price_1Ta2j9KFLt6KnglEof9oZLDj",
+    productId: "prod_UZB5c821ACqF2q",
     description: "For growing service businesses.",
     features: [
       "Unlimited clients",
@@ -38,10 +38,10 @@ export const SUBSCRIPTION_TIERS = {
   },
   business: {
     name: "Business",
-    price: "$149",
-    priceAmount: 149,
-    priceId: "price_1T8l6DFr0YtqsPW04TSSW5dh",
-    productId: "prod_U6z4mV3LY4CeeP",
+    price: "$49",
+    priceAmount: 49,
+    priceId: "price_1Ta2jAKFLt6KnglEvHUjVzvP",
+    productId: "prod_UZB5tos0Dglji1",
     description: "For agencies managing multiple crews.",
     features: [
       "Everything in Pro",
@@ -58,10 +58,18 @@ export const SUBSCRIPTION_TIERS = {
 
 export type TierKey = keyof typeof SUBSCRIPTION_TIERS;
 
+// Legacy product IDs from the previous $29/$79/$149 pricing — kept so
+// existing subscribers on old products still resolve to the right tier.
+const LEGACY_PRODUCT_IDS: Record<string, TierKey> = {
+  prod_U6yyGorJZoTTuw: "starter",
+  prod_U6z3Y8rbHA1uhQ: "pro",
+  prod_U6z4mV3LY4CeeP: "business",
+};
+
 export function getTierByProductId(productId: string | null): TierKey | null {
   if (!productId) return null;
   for (const [key, tier] of Object.entries(SUBSCRIPTION_TIERS)) {
     if (tier.productId === productId) return key as TierKey;
   }
-  return null;
+  return LEGACY_PRODUCT_IDS[productId] ?? null;
 }
