@@ -94,7 +94,7 @@ export default function Login() {
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otpCode.length !== 6) return;
+    if (otpCode.length !== 8) return;
     setLoading(true);
     const { error } = await supabase.auth.verifyOtp({
       email,
