@@ -1,56 +1,51 @@
-## Problem
+## Rebrand: "trades" → all service businesses
 
-1. **Trial-expired users can't subscribe.** On `/settings?tab=billing`, the buttons still say "Start Free Trial" and clicking returns *"Edge Function returned a non-2xx status code"*. The cause: `create-subscription-checkout` always sends `trial_period_days: 14`, and Stripe rejects a second trial for a customer who already consumed one (which the trial-expired user has).
-2. **New pricing.** Move tiers from $29/$79/$149 to **$14 / $29 / $49 USD**, applied to new signups now and to existing subscribers on next renewal.
+Drop trades-specific wording. Position QuickLinq as the back-office tool for **all service businesses** — trades stay represented as one of many verticals.
 
-## Fix
+### 1. Hero (`src/components/landing/HeroSection.tsx`)
 
-### A. Trial-expired billing flow
+- Headline: "Your craft deserves better than paperwork" → **"Your business deserves better than paperwork"**
+- Subhead: "Built for every trade, from landscapers to electricians." → **"Built for every service business — from salons and clinics to landscapers and electricians."**
+- Trust pill: "Rated 4.9/5 by 2,000+ service pros" → **"Rated 4.9/5 by 2,000+ service businesses"**
+- Mosaic: replace 4 of the 10 photos with new SMB verticals (keep 6 trades for balance). Add:
+  - Column 1: **Hair Salon**, **Dental Clinic**
+  - Column 2: **Massage / Spa**, **Yoga / Pilates**
+  - Mobile horizontal scroll inherits both columns automatically.
+- New Unsplash URLs (same `?w=600&h=800&fit=crop&crop=center` style):
+  - Hair: `photo-1560066984-138dadb4c035`
+  - Dental: `photo-1606811971618-4486d14f3f99`
+  - Massage: `photo-1544161515-4ab6ce6db874`
+  - Yoga: `photo-1518611012118-696072aa579a`
+- Names updated to match (e.g. "Ava M. — Hair Salon", "Dr. Patel — Dental Clinic", etc.).
 
-- **`supabase/functions/create-subscription-checkout/index.ts`**
-  - Read `profiles.trial_ends_at` for the caller.
-  - Compute `eligibleForTrial = !trial_ends_at || new Date(trial_ends_at) > new Date()` (also false if the email already has any non-active Stripe sub history).
-  - Only include `subscription_data.trial_period_days: 14` when `eligibleForTrial` is true; otherwise omit it so checkout charges immediately.
-  - Improve error responses (return clear message, keep 4xx vs 500 distinction).
+### 2. Industry ticker (`src/components/landing/IndustryTicker.tsx`)
 
-- **`src/pages/Settings.tsx` (Billing tab)**
-  - Derive `trialExpired = subscription.trialExpired && !subscription.subscribed`.
-  - Plan-status card: when `trialExpired`, show heading "Trial expired", red/destructive badge, copy *"Choose a plan to continue using QuickLinq."*
-  - Pricing card button label logic:
-    - current plan → "Current Plan" (disabled)
-    - subscribed (different tier) → "Switch plan"
-    - trial active (not subscribed) → "Start Free Trial"
-    - **trial expired (not subscribed) → "Subscribe — {tier.price}/mo"**
-  - Toast errors from `handleCheckout` already surface; keep as is.
+Replace the all-trades list with a mixed list of **31 categories** covering both trades and the screenshot's SMB set:
 
-- **`src/pages/TrialExpired.tsx`** — no logic change; copy already routes to `/settings?tab=billing`. (Optional: tighten wording.)
+Hair Salon, Barbershop, Nail Salon, Massage & Spa, Dental Clinic, Beauty & Aesthetics, Tattoo Studio, Physiotherapy, Personal Training, Yoga & Pilates, Pet Grooming, Photography Studio, Consulting, Medical Clinic, Landscaping, Plumbing, HVAC, Electrical, Roofing, Cleaning, Painting, Handyman, Tree Care, Pest Control, Pool Service, Pressure Washing, Fencing, Flooring, Carpentry, Junk Removal, Snow Removal.
 
-### B. New pricing $14 / $29 / $49
+### 3. Other landing copy
 
-- **Create 3 new monthly USD Stripe prices** (via Stripe tool) on the existing products:
-  - Starter: `$14/mo` on `prod_U6yyGorJZoTTuw`
-  - Pro: `$29/mo` on `prod_U6z3Y8rbHA1uhQ`
-  - Business: `$49/mo` on `prod_U6z4mV3LY4CeeP`
-- **`src/lib/subscriptionTiers.ts`**
-  - Update `price`, `priceAmount`, and `priceId` for each tier to the new values/IDs.
-  - Old `priceId`s are retained only in Stripe (not referenced anywhere else in code).
-- **`src/components/landing/PricingSection.tsx`** — update displayed prices to $14 / $29 / $49 to stay in sync.
+- **`TestimonialsSection.tsx`** — "Loved by service pros everywhere" → **"Loved by service businesses everywhere"**. Swap 1 of the 4 testimonials from a trade to a salon/clinic owner (keep the other 3 trades for continuity).
+- **`StatsBanner.tsx`** — "Service Pros" → **"Service Businesses"**.
+- **`ComparisonSection.tsx`** — "Why service pros are switching" → **"Why service businesses are switching"**.
+- **`FinalCTA.tsx`** — "thousands of service professionals" → **"thousands of service businesses"**.
 
-### C. Existing subscribers — replace at renewal
+### 4. SEO (`index.html`)
 
-- One-time backfill via Stripe tool: for every active/trialing subscription on the three old price IDs, call `update_subscription` swapping the item to the new price with `proration_behavior: "none"`. Stripe keeps the current period at the old price and renews at the new price — no immediate charge, no prorations.
-- No code change to `customer-portal` or webhook handlers required.
+- `<title>`: update to reference service businesses, not trades.
+- `<meta name="description">`: rewrite to cover salons, clinics, studios, trades.
+- `og:title` / `og:description` mirror the above.
+- JSON-LD `Organization.description` updated to match.
 
-## Out of scope
+### Out of scope
 
-- No DB schema changes.
-- Landing page copy beyond price numbers stays the same.
-- Refund/credit logic for current period — Stripe's `none` proration handles it cleanly.
+- In-app copy (dashboard tips, onboarding) — left as-is per your answer.
+- New images for industries beyond the 4 added to the hero mosaic (ticker is text-only).
+- Pricing, auth, billing flows — untouched.
 
-## Verification
+### Technical notes
 
-- Logged-in trial-expired test user clicks "Subscribe — $14/mo" on Starter → Stripe Checkout opens with $14 due today, no trial.
-- A user still inside their trial sees "Start Free Trial" and gets a 14-day trial on checkout.
-- An active subscriber sees "Switch plan" on other tiers and "Current Plan" on theirs.
-- Landing page shows $14/$29/$49.
-- An existing Pro subscriber sees their subscription move to the new $29 price on next renewal (verified via Stripe dashboard list).
+- All edits are presentation-only (string + image-URL changes in JSX). No new dependencies, no schema/edge-function changes.
+- Unsplash URLs follow the existing pattern; no asset uploads needed.
+- After edit I'll mark any related SEO findings as fixed via `seo_chat--update_findings`.

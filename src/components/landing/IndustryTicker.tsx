@@ -1,8 +1,11 @@
 const industries = [
+  "Hair Salon", "Barbershop", "Nail Salon", "Massage & Spa", "Dental Clinic",
+  "Beauty & Aesthetics", "Tattoo Studio", "Physiotherapy", "Personal Training",
+  "Yoga & Pilates", "Pet Grooming", "Photography Studio", "Consulting", "Medical Clinic",
   "Landscaping", "Plumbing", "HVAC", "Electrical", "Roofing",
   "Cleaning", "Painting", "Handyman", "Tree Care", "Pest Control",
   "Pool Service", "Pressure Washing", "Fencing", "Flooring", "Carpentry",
-  "Gutters", "Junk Removal", "Snow Removal",
+  "Junk Removal", "Snow Removal",
 ];
 
 export default function IndustryTicker() {

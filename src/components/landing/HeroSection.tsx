@@ -3,18 +3,18 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield, Star } from "lucide-react";
 
 const columnOneImages = [
-  { src: "https://images.unsplash.com/photo-1768268004427-6fb88cbd1605?w=600&h=800&fit=crop&crop=center", label: "Landscaping", name: "Marcus T." },
+  { src: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=600&h=800&fit=crop&crop=center", label: "Hair Salon", name: "Ava M." },
   { src: "https://images.unsplash.com/photo-1763665814965-b5c4b3547908?w=600&h=800&fit=crop&crop=center", label: "Roofing", name: "Chris W." },
-  { src: "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=600&h=800&fit=crop&crop=center", label: "Plumbing", name: "Sarah K." },
+  { src: "https://images.unsplash.com/photo-1606811971618-4486d14f3f99?w=600&h=800&fit=crop&crop=center", label: "Dental Clinic", name: "Dr. Patel" },
   { src: "https://images.unsplash.com/photo-1758272421751-963195322eaa?w=600&h=800&fit=crop&crop=center", label: "Cleaning", name: "Maria G." },
   { src: "https://images.unsplash.com/photo-1769353086138-19ee65291a04?w=600&h=800&fit=crop&crop=center", label: "Carpentry", name: "Tom B." },
 ];
 
 const columnTwoImages = [
-  { src: "https://images.unsplash.com/photo-1741388222137-c0d3007ec173?w=600&h=800&fit=crop&crop=center", label: "Electrical", name: "James R." },
+  { src: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=600&h=800&fit=crop&crop=center", label: "Massage / Spa", name: "Elena R." },
   { src: "https://images.unsplash.com/photo-1717281234297-3def5ae3eee1?w=600&h=800&fit=crop&crop=center", label: "Painting", name: "David L." },
-  { src: "https://images.unsplash.com/photo-1558382689-c1c29cc9b37e?w=600&h=800&fit=crop&crop=center", label: "HVAC", name: "Kevin P." },
-  { src: "https://images.unsplash.com/photo-1743130940757-42d780087c3a?w=600&h=800&fit=crop&crop=center", label: "Concrete", name: "Lisa H." },
+  { src: "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&h=800&fit=crop&crop=center", label: "Yoga / Pilates", name: "Priya N." },
+  { src: "https://images.unsplash.com/photo-1741388222137-c0d3007ec173?w=600&h=800&fit=crop&crop=center", label: "Electrical", name: "James R." },
   { src: "https://images.unsplash.com/photo-1704475386627-dcfcd97ed51a?w=600&h=800&fit=crop&crop=center", label: "Pressure Wash", name: "Ryan S." },
 ];
 
@@ -61,16 +61,16 @@ export default function HeroSection() {
           {/* Left – Copy */}
           <div className="space-y-8 text-center lg:text-left relative z-10">
             <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium border border-sidebar-primary/40 bg-sidebar-primary/15" style={{ color: "hsl(var(--sidebar-primary))" }}>
-              <Star className="h-3 w-3 fill-current" /> Rated 4.9/5 by 2,000+ service pros
+              <Star className="h-3 w-3 fill-current" /> Rated 4.9/5 by 2,000+ service businesses
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-[3.75rem] xl:text-[4.25rem] font-bold tracking-tight leading-[1.08] text-white">
-              Your craft deserves{" "}
+              Your business deserves{" "}
               <span style={{ color: "#00C9A7" }}>better than paperwork</span>
             </h1>
 
             <p className="text-lg sm:text-xl leading-relaxed max-w-xl mx-auto lg:mx-0 text-white/75">
-              Quotes, invoices, scheduling, and payments — beautifully simple. Built for every trade, from landscapers to electricians.
+              Quotes, invoices, scheduling, and payments — beautifully simple. Built for every service business — from salons and clinics to landscapers and electricians.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
