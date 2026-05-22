@@ -28,9 +28,9 @@ const testimonials = [
     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=faces",
   },
   {
-    quote: "We went from losing leads to closing 80% of quotes. The professional look builds instant trust with homeowners.",
-    name: "Amy Chen",
-    trade: "Fresh Start Cleaning Co.",
+    quote: "Booking, intake forms, and invoices all in one place. My stylists actually love using it — and clients pay before they leave the chair.",
+    name: "Ava Martinez",
+    trade: "Bloom Hair Studio",
     stars: 5,
     avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=faces",
   },
@@ -61,7 +61,7 @@ export default function TestimonialsSection() {
           <div>
             <p className="text-sm font-semibold text-primary mb-3 tracking-wide uppercase">Testimonials</p>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight font-display">
-              Loved by service pros everywhere
+              Loved by service businesses everywhere
             </h2>
           </div>
           <div className="hidden sm:flex gap-2">

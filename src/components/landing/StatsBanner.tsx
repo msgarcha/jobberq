@@ -1,7 +1,7 @@
 import { useInView } from "@/hooks/useInView";
 
 const stats = [
-  { value: "10,000+", label: "Service Pros" },
+  { value: "10,000+", label: "Service Businesses" },
   { value: "2M+", label: "Jobs Completed" },
   { value: "12+ hrs", label: "Saved Weekly" },
   { value: "44%", label: "Revenue Growth" },

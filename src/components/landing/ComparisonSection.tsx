@@ -23,7 +23,7 @@ export default function ComparisonSection() {
             The honest comparison
           </p>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight font-display">
-            Why service pros are switching
+            Why service businesses are switching
           </h2>
           <p className="text-muted-foreground mt-4 max-w-xl mx-auto text-base">
             We built QuickLinq because existing tools charge too much for basics and lock features behind expensive tiers.
