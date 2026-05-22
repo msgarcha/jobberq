@@ -8,6 +8,8 @@ interface SubscriptionState {
   subscribed: boolean;
   isTrialing: boolean;
   trialEndsAt: string | null;
+  trialExpired: boolean;
+  accessRevoked: boolean;
   tier: TierKey | null;
   subscriptionEnd: string | null;
   loading: boolean;
@@ -35,6 +37,8 @@ const defaultSubscription: SubscriptionState = {
   subscribed: false,
   isTrialing: false,
   trialEndsAt: null,
+  trialExpired: false,
+  accessRevoked: false,
   tier: null,
   subscriptionEnd: null,
   loading: true,
@@ -89,10 +93,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         subscribed: data.subscribed || false,
         isTrialing: data.is_trialing || false,
         trialEndsAt: data.trial_ends_at || null,
+        trialExpired: data.trial_expired || false,
+        accessRevoked: data.access_revoked || false,
         tier: getTierByProductId(data.product_id),
         subscriptionEnd: data.subscription_end || null,
         loading: false,
       });
+
+      // If access was revoked server-side, force sign-out locally
+      if (data.access_revoked) {
+        await supabase.auth.signOut();
+      }
     } catch (err) {
       console.error('Subscription check failed:', err);
       setSubscription({ ...defaultSubscription, loading: false });

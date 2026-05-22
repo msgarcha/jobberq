@@ -83,12 +83,24 @@ serve(async (req) => {
     // Also fetch profiles with trial info who may not have stripe subs
     const { data: profiles } = await supabaseAdmin
       .from("profiles")
-      .select("user_id, display_name, trial_ends_at, created_at");
+      .select("user_id, display_name, trial_ends_at, created_at, access_revoked, access_revoked_at");
 
     // Get emails from auth
     const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
     const userMap = new Map(users?.map(u => [u.email, { id: u.id, email: u.email, created_at: u.created_at }]) || []);
     const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+    const profileByEmail = new Map<string, any>();
+    for (const u of users || []) {
+      const p = profileMap.get(u.id);
+      if (u.email && p) profileByEmail.set(u.email, p);
+    }
+
+    // Annotate Stripe subscribers with revoked flag
+    for (const s of allSubscribers) {
+      const p = profileByEmail.get(s.email);
+      s.access_revoked = !!p?.access_revoked;
+      s.access_revoked_at = p?.access_revoked_at || null;
+    }
 
     // Build list of users without subscriptions (trial-only users)
     const subscribedEmails = new Set(allSubscribers.map(s => s.email));
@@ -101,13 +113,15 @@ serve(async (req) => {
           customer_id: null,
           email: user.email || "N/A",
           name: prof?.display_name || user.email || "N/A",
-          status: "trial_only",
+          status: prof?.access_revoked ? "revoked" : "trial_only",
           product_id: null,
           price_id: null,
           current_period_end: null,
           trial_end: prof?.trial_ends_at || null,
           cancel_at_period_end: false,
           created: user.created_at,
+          access_revoked: !!prof?.access_revoked,
+          access_revoked_at: prof?.access_revoked_at || null,
         });
       }
     }

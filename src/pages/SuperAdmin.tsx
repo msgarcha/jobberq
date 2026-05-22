@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { SubscriberTable, type Subscriber } from "@/components/admin/SubscriberTable";
 import { AdminRevenueCharts } from "@/components/admin/AdminRevenueCharts";
 import { ManageSubscriptionDialog } from "@/components/admin/ManageSubscriptionDialog";
+import { AdminUsageTable, type UsageRow } from "@/components/admin/AdminUsageTable";
+import { AccountUsageDrawer } from "@/components/admin/AccountUsageDrawer";
 import { SUBSCRIPTION_TIERS } from "@/lib/subscriptionTiers";
 
 export default function SuperAdmin() {
@@ -21,10 +23,9 @@ export default function SuperAdmin() {
   const [dialogAction, setDialogAction] = useState("");
   const [selectedSub, setSelectedSub] = useState<Subscriber | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [drawerRow, setDrawerRow] = useState<UsageRow | null>(null);
 
-  const headers = session?.access_token
-    ? { Authorization: `Bearer ${session.access_token}` }
-    : {};
+  const headers = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
 
   const { data: subscribersData, isLoading: subsLoading } = useQuery({
     queryKey: ["admin-subscribers"],
@@ -44,16 +45,19 @@ export default function SuperAdmin() {
     },
   });
 
+  const { data: usageData, isLoading: usageLoading } = useQuery({
+    queryKey: ["admin-account-usage"],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("admin-account-usage", { headers });
+      if (error) throw error;
+      return data.rows as UsageRow[];
+    },
+  });
+
   const handleAction = (action: string, subscriber: Subscriber) => {
     setDialogAction(action);
     setSelectedSub(subscriber);
-
-    // Instant actions
-    if (action === "grant_free" || action === "resume") {
-      setDialogOpen(true);
-    } else {
-      setDialogOpen(true);
-    }
+    setDialogOpen(true);
   };
 
   const handleConfirm = useCallback(async (action: string, subscriber: Subscriber, params: any) => {
@@ -75,6 +79,7 @@ export default function SuperAdmin() {
       setDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ["admin-subscribers"] });
       queryClient.invalidateQueries({ queryKey: ["admin-revenue-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-account-usage"] });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
@@ -82,15 +87,31 @@ export default function SuperAdmin() {
     }
   }, [headers, toast, queryClient]);
 
+  const usageToSubscriber = (r: UsageRow): Subscriber => ({
+    subscription_id: null,
+    customer_id: null,
+    email: r.email,
+    name: r.name,
+    status: r.access_revoked ? "revoked" : "trial_only",
+    product_id: null,
+    price_id: null,
+    current_period_end: null,
+    trial_end: r.trial_ends_at,
+    cancel_at_period_end: false,
+    created: r.created_at,
+    access_revoked: r.access_revoked,
+    access_revoked_at: r.access_revoked_at,
+  });
+
   const refreshAll = () => {
     queryClient.invalidateQueries({ queryKey: ["admin-subscribers"] });
     queryClient.invalidateQueries({ queryKey: ["admin-revenue-stats"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-account-usage"] });
   };
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-primary/10">
@@ -109,6 +130,7 @@ export default function SuperAdmin() {
         <Tabs defaultValue="subscribers" className="space-y-4">
           <TabsList>
             <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
+            <TabsTrigger value="usage">Usage</TabsTrigger>
             <TabsTrigger value="revenue">Revenue</TabsTrigger>
             <TabsTrigger value="pricing">Pricing</TabsTrigger>
           </TabsList>
@@ -118,6 +140,16 @@ export default function SuperAdmin() {
               subscribers={subscribersData || []}
               loading={subsLoading}
               onAction={handleAction}
+            />
+          </TabsContent>
+
+          <TabsContent value="usage">
+            <AdminUsageTable
+              rows={usageData || []}
+              loading={usageLoading}
+              onView={(r) => setDrawerRow(r)}
+              onRevoke={(r) => handleAction("revoke_access", usageToSubscriber(r))}
+              onRestore={(r) => handleAction("restore_access", usageToSubscriber(r))}
             />
           </TabsContent>
 
@@ -173,6 +205,12 @@ export default function SuperAdmin() {
         subscriber={selectedSub}
         onConfirm={handleConfirm}
         loading={actionLoading}
+      />
+
+      <AccountUsageDrawer
+        row={drawerRow}
+        open={!!drawerRow}
+        onClose={() => setDrawerRow(null)}
       />
     </div>
   );

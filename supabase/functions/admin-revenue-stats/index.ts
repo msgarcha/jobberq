@@ -68,9 +68,46 @@ serve(async (req) => {
       }
     }
 
-    // Get trialing subs count
-    const trialingSubs = await stripe.subscriptions.list({ status: "trialing", limit: 1 });
-    const trialingCount = trialingSubs.data.length;
+    // Get trialing subs count (paginate)
+    let trialingCount = 0;
+    {
+      let more = true; let after: string | undefined;
+      while (more) {
+        const params: any = { status: "trialing", limit: 100 };
+        if (after) params.starting_after = after;
+        const r = await stripe.subscriptions.list(params);
+        trialingCount += r.data.length;
+        more = r.has_more;
+        if (r.data.length) after = r.data[r.data.length - 1].id;
+      }
+    }
+
+    // App-trial buckets from profiles (users without Stripe subs we already know about)
+    const subscribedEmails = new Set<string>();
+    for (const s of activeSubs) {
+      const c: any = s.customer as any;
+      if (typeof c === "string") continue;
+      if (c?.email) subscribedEmails.add(c.email);
+    }
+    const { data: { users: allUsers } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+    const userIds = (allUsers || []).map(u => u.id);
+    const { data: profs } = await supabaseAdmin
+      .from("profiles")
+      .select("user_id, trial_ends_at, access_revoked")
+      .in("user_id", userIds.length ? userIds : ["00000000-0000-0000-0000-000000000000"]);
+    const profByUser = new Map(profs?.map(p => [p.user_id, p]) || []);
+    const nowMs = Date.now();
+    let appTrialActive = 0;
+    let appTrialExpired = 0;
+    let revokedCount = 0;
+    for (const u of (allUsers || [])) {
+      const p = profByUser.get(u.id) as any;
+      if (p?.access_revoked) { revokedCount++; continue; }
+      if (subscribedEmails.has(u.email || "")) continue;
+      const t = p?.trial_ends_at ? new Date(p.trial_ends_at).getTime() : 0;
+      if (t > nowMs) appTrialActive++;
+      else appTrialExpired++;
+    }
 
     // Get past_due subs
     const pastDueSubs = await stripe.subscriptions.list({ status: "past_due", limit: 100 });
@@ -137,6 +174,9 @@ serve(async (req) => {
       total_revenue: Math.round(totalRevenue * 100) / 100,
       active_subscribers: activeSubs.length,
       trialing_count: trialingCount,
+      app_trial_active: appTrialActive,
+      app_trial_expired: appTrialExpired,
+      revoked_count: revokedCount,
       past_due_count: pastDueSubs.data.length,
       new_this_month: newThisMonth,
       canceled_this_month: canceledSubs.data.length,
