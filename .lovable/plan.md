@@ -1,59 +1,37 @@
-## Goal
+## Issue
 
-Every new signup must verify their email by entering a 6-digit OTP code (sent to their inbox) before they can log in. Replace the current "click the link in your email" verification with an in-app OTP entry screen.
+Your Supabase project is configured to send **8-digit** OTP codes (the value `payload.data.token` in the auth hook is 8 chars, e.g. `00430193`). The email template renders all 8 digits, but:
 
-## Current state
+- The **frontend OTP input only has 6 slots**, so leading `0`s can't be entered and the full code never reaches `verifyOtp`.
+- When you skip the zeros (`430193`), Supabase rejects it because the real token is `00430193`.
 
-- `supabase/auth.users` has email confirmation **required** (auto-confirm disabled — per `mem://auth/verification-policy`).
-- `src/pages/Login.tsx` signup uses `supabase.auth.signUp({ email, password, options: { emailRedirectTo } })` — relies on the confirmation link.
-- Auth emails are custom-branded via `supabase/functions/auth-email-hook` + `_shared/email-templates/signup.tsx` and currently render a **"Verify Email" button** (link-based) with no `{{ .Token }}`.
-- Supabase's `auth-email-hook` payload includes both `token_hash` (link) and `token` (6-digit OTP) for every signup — we just don't surface the OTP today.
+## Fix
 
-## Plan
+Make the verification flow handle 8-digit codes end-to-end. Two coordinated changes:
 
-### 1. Email template — show the OTP code
-Update `supabase/functions/_shared/email-templates/signup.tsx`:
-- Accept a new `token` prop (the 6-digit code).
-- Replace the "Verify Email" button with a large, monospaced, letter-spaced OTP block (e.g. `123 456`) and copy: *"Enter this code in QuickLinq to verify your email. Expires in 1 hour."*
-- Keep brand styling (Poppins, dark teal `hsl(192 60% 22%)`, cream bg) — but per memory, email body bg stays white.
-- Keep a small fallback link underneath ("Or click here") so users on the same device can still one-tap.
+### 1. `src/pages/Login.tsx` — 8-slot OTP input
+- Change the `InputOTP` from 6 slots to **8 slots** (`maxLength={8}`, add `InputOTPSlot` indexes 6 and 7).
+- Insert an `InputOTPSeparator` between slot 3 and 4 (visual `0043 - 0193` grouping, matches the email).
+- Update the submit guard from `otpCode.length !== 6` to `otpCode.length !== 8`.
+- No change to `verifyOtp` itself — it accepts whatever length Supabase issued.
 
-Update `supabase/functions/auth-email-hook/index.ts` to pass `email_data.token` into the `signup` template (today it likely only forwards `token_hash`/`confirmation_url`).
+### 2. `supabase/functions/_shared/email-templates/signup.tsx` — match grouping
+- Update the `formatted` line to render `XXXX XXXX` when the code is 8 chars (currently only handles length 6: `${code.slice(0,3)} ${code.slice(3)}`).
+- Reduce `letterSpacing` slightly (from `8px` → `6px`) so 8 digits + a gap still fit on narrow mobile widths.
+- No prop changes; still receives `token` from the hook.
 
-### 2. Frontend — OTP entry screen
-In `src/pages/Login.tsx`:
-- After a successful `signUp`, instead of just toasting "check your email", switch the form into a **"Verify your email" step** showing the email address and an OTP input (`@/components/ui/input-otp`, 6 slots).
-- On submit, call:
-  ```ts
-  supabase.auth.verifyOtp({ email, token: code, type: 'email' })
-  ```
-- On success → user is signed in (Supabase returns a session); navigate to `redirectTo` (which will hit `/onboarding` via existing `ProtectedRoute` logic).
-- Add **"Resend code"** button (60s cooldown) → `supabase.auth.resend({ type: 'signup', email })`.
-- Add **"Use a different email"** link to reset the flow.
-
-Also handle the case where an **existing unverified user tries to log in** (`signInWithPassword` returns `Email not confirmed`): auto-trigger the resend + show the same OTP screen.
-
-### 3. Keep magic-link fallback working
-The email still contains a clickable link as a backup; the existing default Supabase callback route will continue to work for users who click instead of typing. No route changes required.
-
-### 4. No DB / auth config changes
-- Email confirmation is already required.
-- OTP length (6) and expiry (3600s) are Supabase defaults — no `configure_auth` call needed.
-- No new migrations.
-
-### 5. Deploy
-After editing the template + hook, redeploy `auth-email-hook`.
+### 3. No backend / config changes
+- Do **not** touch `auth-email-hook` — it correctly forwards `payload.data.token`.
+- Do **not** change Supabase OTP length (you'd have to do that manually in the Cloud auth settings UI; `configure_auth` doesn't expose it). Matching the UI to the issued length is the safer fix and works regardless of what length is configured.
 
 ## Files to change
 
-- `supabase/functions/_shared/email-templates/signup.tsx` — show OTP code
-- `supabase/functions/auth-email-hook/index.ts` — forward `token` to template
-- `src/pages/Login.tsx` — add OTP verification step + resend flow
+- `src/pages/Login.tsx` — 8-slot OTP, separator, length guard
+- `supabase/functions/_shared/email-templates/signup.tsx` — 4+4 grouping, tighter letter-spacing
 
 ## Out of scope
 
-- Changing other auth emails (recovery, magic-link, invite) — they keep their current link-based flow.
-- Switching the password-reset flow to OTP.
-- Phone/SMS OTP.
+- Forcing OTP length back to 6 (requires manual Cloud dashboard change; not exposed via tools).
+- Other auth emails (recovery, magic-link) — they don't use OTP in our flow.
 
 Confirm and I'll implement.
