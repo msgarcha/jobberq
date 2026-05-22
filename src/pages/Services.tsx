@@ -79,7 +79,7 @@ const Services = () => {
       description: s.description || "",
       category: s.category || "",
       default_price: s.default_price,
-      tax_rate: s.tax_rate ?? 13,
+      tax_rate: s.tax_rate ?? defaultTaxRate,
       is_active: s.is_active,
     });
     setDialogOpen(true);
