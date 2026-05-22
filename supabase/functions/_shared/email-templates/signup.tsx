@@ -31,8 +31,12 @@ export const SignupEmail = ({
   confirmationUrl,
   token,
 }: SignupEmailProps) => {
-  const code = token || '000000'
-  const formatted = code.length === 6 ? `${code.slice(0, 3)} ${code.slice(3)}` : code
+  const code = token || '00000000'
+  const formatted = code.length === 8
+    ? `${code.slice(0, 4)} ${code.slice(4)}`
+    : code.length === 6
+      ? `${code.slice(0, 3)} ${code.slice(3)}`
+      : code
   return (
     <Html lang="en" dir="ltr">
       <Head />
