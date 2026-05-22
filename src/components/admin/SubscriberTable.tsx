@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { Search, MoreHorizontal, Clock, XCircle, Gift, ArrowUpDown, RotateCcw } from "lucide-react";
+import { Search, MoreHorizontal, Clock, XCircle, Gift, ArrowUpDown, RotateCcw, Ban, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,8 @@ export interface Subscriber {
   trial_end: string | null;
   cancel_at_period_end: boolean;
   created: string;
+  access_revoked?: boolean;
+  access_revoked_at?: string | null;
 }
 
 interface Props {
@@ -43,7 +45,8 @@ function getTierName(productId: string | null): string {
   return "Unknown";
 }
 
-function getStatusBadge(status: string, cancelAtEnd: boolean) {
+function getStatusBadge(status: string, cancelAtEnd: boolean, revoked?: boolean) {
+  if (revoked) return <Badge variant="destructive">Revoked</Badge>;
   if (cancelAtEnd) return <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">Canceling</Badge>;
   const map: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; label: string }> = {
     active: { variant: "default", label: "Active" },
@@ -52,6 +55,7 @@ function getStatusBadge(status: string, cancelAtEnd: boolean) {
     past_due: { variant: "destructive", label: "Past Due" },
     canceled: { variant: "outline", label: "Canceled" },
     unpaid: { variant: "destructive", label: "Unpaid" },
+    revoked: { variant: "destructive", label: "Revoked" },
   };
   const cfg = map[status] || { variant: "outline" as const, label: status };
   return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
@@ -100,6 +104,7 @@ export function SubscriberTable({ subscribers, loading, onAction }: Props) {
             <SelectItem value="trial_only">Trial Only</SelectItem>
             <SelectItem value="past_due">Past Due</SelectItem>
             <SelectItem value="canceled">Canceled</SelectItem>
+            <SelectItem value="revoked">Revoked</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -134,7 +139,7 @@ export function SubscriberTable({ subscribers, loading, onAction }: Props) {
                     </div>
                   </TableCell>
                   <TableCell className="text-sm">{getTierName(sub.product_id)}</TableCell>
-                  <TableCell>{getStatusBadge(sub.status, sub.cancel_at_period_end)}</TableCell>
+                  <TableCell>{getStatusBadge(sub.status, sub.cancel_at_period_end, sub.access_revoked)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {sub.trial_end ? format(new Date(sub.trial_end), "MMM d, yyyy") : "—"}
                   </TableCell>
@@ -163,7 +168,6 @@ export function SubscriberTable({ subscribers, loading, onAction }: Props) {
                             <DropdownMenuItem onClick={() => onAction("grant_free", sub)}>
                               <Gift className="mr-2 h-4 w-4" /> Grant Free Access
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
                             {sub.cancel_at_period_end ? (
                               <DropdownMenuItem onClick={() => onAction("resume", sub)}>
                                 <RotateCcw className="mr-2 h-4 w-4" /> Resume Subscription
@@ -177,6 +181,19 @@ export function SubscriberTable({ subscribers, loading, onAction }: Props) {
                               </DropdownMenuItem>
                             )}
                           </>
+                        )}
+                        <DropdownMenuSeparator />
+                        {sub.access_revoked ? (
+                          <DropdownMenuItem onClick={() => onAction("restore_access", sub)}>
+                            <ShieldCheck className="mr-2 h-4 w-4" /> Restore Access
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            onClick={() => onAction("revoke_access", sub)}
+                            className="text-destructive"
+                          >
+                            <Ban className="mr-2 h-4 w-4" /> Revoke Access
+                          </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
