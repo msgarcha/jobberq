@@ -284,6 +284,7 @@ const Settings = () => {
   const currentTier = subscription.tier;
   const isTrialing = subscription.isTrialing;
   const trialEnd = subscription.trialEndsAt;
+  const trialExpired = subscription.trialExpired && !subscription.subscribed;
 
   return (
     <DashboardLayout>
@@ -931,18 +932,21 @@ const Settings = () => {
           {/* Billing Tab */}
           <TabsContent value="billing" className="space-y-5 mt-5">
             {/* Current Plan Status */}
-            <Card className="shadow-warm border-primary/20">
+            <Card className={`shadow-warm ${trialExpired ? "border-destructive/40" : "border-primary/20"}`}>
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-display font-bold text-lg">
-                        {currentTier ? SUBSCRIPTION_TIERS[currentTier].name : "Free Trial"}
+                        {currentTier ? SUBSCRIPTION_TIERS[currentTier].name : trialExpired ? "Trial expired" : "Free Trial"}
                       </h3>
                       {isTrialing && (
                         <Badge variant="secondary" className="gap-1 text-xs">
                           <Zap className="h-3 w-3" /> Trial
                         </Badge>
+                      )}
+                      {trialExpired && (
+                        <Badge variant="destructive" className="text-xs">Expired</Badge>
                       )}
                       {subscription.subscribed && !isTrialing && (
                         <Badge className="bg-primary text-primary-foreground gap-1 text-xs">
@@ -955,6 +959,8 @@ const Settings = () => {
                         ? `Renews ${format(new Date(subscription.subscriptionEnd), "MMM d, yyyy")}`
                         : isTrialing && trialEnd
                         ? `Trial ends ${format(new Date(trialEnd), "MMM d, yyyy")}`
+                        : trialExpired
+                        ? "Choose a plan below to continue using QuickLinq."
                         : "No active subscription"}
                     </p>
                   </div>
@@ -1017,7 +1023,7 @@ const Settings = () => {
                       </ul>
                       <Button
                         className="w-full"
-                        variant={isCurrentPlan ? "outline" : isPopular ? "default" : "outline"}
+                        variant={isCurrentPlan ? "outline" : isPopular || trialExpired ? "default" : "outline"}
                         disabled={isCurrentPlan || !!checkoutLoading}
                         onClick={() => handleCheckout(key)}
                       >
@@ -1027,6 +1033,8 @@ const Settings = () => {
                           ? "Loading…"
                           : subscription.subscribed
                           ? "Switch Plan"
+                          : trialExpired
+                          ? `Subscribe — ${tier.price}/mo`
                           : "Start Free Trial"}
                       </Button>
                     </CardContent>
