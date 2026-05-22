@@ -2,48 +2,55 @@
 // Uses a service-role client to atomically increment counters via RPC.
 // Note: This is an ad-hoc table-based limiter (no native primitive yet) — simple but effective.
 
-export type Tier = "trial" | "paid" | "super_admin";
+export type Tier = "trial" | "paid" | "expired" | "revoked" | "super_admin";
 
 interface Caps {
   perMinute: number;
   perDay: number;
 }
 
-const CAPS: Record<Tier, Caps> = {
+const CAPS: Record<Exclude<Tier, "expired" | "revoked" | "super_admin">, Caps> = {
   trial: { perMinute: 5, perDay: 50 },
   paid: { perMinute: 30, perDay: 500 },
-  super_admin: { perMinute: 1_000_000, perDay: 1_000_000 },
 };
 
 export interface QuotaResult {
   ok: boolean;
-  reason?: "minute" | "day";
+  reason?: "minute" | "day" | "expired" | "revoked";
   retryAfterSec?: number;
   remaining?: { minute: number; day: number };
 }
 
 /**
  * Resolve the user's tier:
+ *  - revoked   if profiles.access_revoked
  *  - super_admin if profiles.is_super_admin
- *  - trial if trial_ends_at is still in the future
- *  - else paid (they retained access past trial)
+ *  - paid      if they have an active Stripe subscription (caller passes hasActiveSub)
+ *  - trial     if trial_ends_at is still in the future
+ *  - expired   trial ended, no subscription
  */
-export async function resolveTier(adminClient: any, userId: string): Promise<Tier> {
+export async function resolveTier(
+  adminClient: any,
+  userId: string,
+  hasActiveSub = false,
+): Promise<Tier> {
   const { data: prof } = await adminClient
     .from("profiles")
-    .select("is_super_admin, trial_ends_at")
+    .select("is_super_admin, trial_ends_at, access_revoked")
     .eq("user_id", userId)
     .maybeSingle();
+  if (prof?.access_revoked) return "revoked";
   if (prof?.is_super_admin) return "super_admin";
+  if (hasActiveSub) return "paid";
   if (prof?.trial_ends_at && new Date(prof.trial_ends_at).getTime() > Date.now()) {
     return "trial";
   }
-  return "paid";
+  return "expired";
 }
 
 /**
  * Atomically increment per-minute and per-day counters for (userId, fnName)
- * and reject if either cap is exceeded.
+ * and reject if either cap is exceeded. Also rejects revoked / expired-trial users.
  */
 export async function enforceAiQuota(
   adminClient: any,
@@ -52,6 +59,8 @@ export async function enforceAiQuota(
   tier: Tier,
 ): Promise<QuotaResult> {
   if (tier === "super_admin") return { ok: true };
+  if (tier === "revoked") return { ok: false, reason: "revoked" };
+  if (tier === "expired") return { ok: false, reason: "expired" };
 
   const caps = CAPS[tier];
   const now = new Date();
@@ -104,23 +113,42 @@ export async function enforceAiQuota(
 }
 
 export function quotaResponse(result: QuotaResult, corsHeaders: Record<string, string>) {
-  const isMinute = result.reason === "minute";
-  const message = isMinute
-    ? "Too many AI requests right now — please wait a minute and try again."
-    : "You've hit your daily AI limit. Upgrade to keep using Linq, or try again tomorrow.";
+  let message: string;
+  let status = 429;
+  let upgrade_required = false;
+  switch (result.reason) {
+    case "minute":
+      message = "Too many AI requests right now — please wait a minute and try again.";
+      break;
+    case "day":
+      message = "You've hit your daily AI limit. Upgrade to keep using Linq, or try again tomorrow.";
+      upgrade_required = true;
+      break;
+    case "expired":
+      message = "Your free trial has ended. Upgrade to continue using Linq.";
+      upgrade_required = true;
+      status = 402;
+      break;
+    case "revoked":
+      message = "Your account access has been revoked. Please contact support.";
+      status = 403;
+      break;
+    default:
+      message = "AI request blocked.";
+  }
   return new Response(
     JSON.stringify({
       error: message,
       reason: result.reason,
       retry_after: result.retryAfterSec,
-      upgrade_required: result.reason === "day",
+      upgrade_required,
     }),
     {
-      status: 429,
+      status,
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json",
-        "Retry-After": String(result.retryAfterSec ?? 60),
+        ...(result.retryAfterSec ? { "Retry-After": String(result.retryAfterSec) } : {}),
       },
     },
   );

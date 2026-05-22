@@ -108,6 +108,52 @@ serve(async (req) => {
         break;
       }
 
+      case "revoke_access": {
+        if (!customer_email) throw new Error("customer_email required");
+        const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+        const targetUser = users?.find(u => u.email === customer_email);
+        if (!targetUser) throw new Error("User not found");
+
+        // Don't let admins revoke another super admin
+        const { data: targetProfile } = await supabaseAdmin
+          .from("profiles").select("is_super_admin").eq("user_id", targetUser.id).single();
+        if (targetProfile?.is_super_admin) throw new Error("Cannot revoke a super admin");
+
+        await supabaseAdmin.from("profiles").update({
+          access_revoked: true,
+          access_revoked_at: new Date().toISOString(),
+          trial_ends_at: new Date().toISOString(),
+        }).eq("user_id", targetUser.id);
+
+        // Cancel any active Stripe sub immediately
+        if (subscription_id) {
+          try { await stripe.subscriptions.cancel(subscription_id); } catch (e) { console.error("stripe cancel failed", e); }
+        }
+
+        // Sign user out of all sessions
+        try { await supabaseAdmin.auth.admin.signOut(targetUser.id, "global"); } catch (e) { console.error("signOut failed", e); }
+
+        result = { success: true, message: `Access revoked for ${customer_email}` };
+        break;
+      }
+
+      case "restore_access": {
+        if (!customer_email) throw new Error("customer_email required");
+        const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+        const targetUser = users?.find(u => u.email === customer_email);
+        if (!targetUser) throw new Error("User not found");
+        const newTrialEnd = params.trial_end_date
+          ? new Date(params.trial_end_date).toISOString()
+          : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+        await supabaseAdmin.from("profiles").update({
+          access_revoked: false,
+          access_revoked_at: null,
+          trial_ends_at: newTrialEnd,
+        }).eq("user_id", targetUser.id);
+        result = { success: true, message: `Access restored for ${customer_email}` };
+        break;
+      }
+
       default:
         throw new Error(`Unknown action: ${action}`);
     }

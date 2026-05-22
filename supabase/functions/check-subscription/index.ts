@@ -32,91 +32,63 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
     if (claimsError || !claimsData?.claims) throw new Error(`Auth error: ${claimsError?.message || "Invalid token"}`);
-    
+
     const userId = claimsData.claims.sub as string;
     const email = claimsData.claims.email as string;
     if (!email) throw new Error("User not authenticated");
     logStep("User authenticated", { email });
 
+    // Load profile flags up front
+    const { data: profile } = await supabaseClient
+      .from("profiles")
+      .select("trial_ends_at, access_revoked, is_super_admin")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const trialEndsAt = profile?.trial_ends_at || null;
+    const accessRevoked = !!profile?.access_revoked;
+    const isSuperAdmin = !!profile?.is_super_admin;
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email, limit: 1 });
 
-    if (customers.data.length === 0) {
-      logStep("No Stripe customer found");
-      // Check trial from profiles
-      const { data: profile } = await supabaseClient
-        .from("profiles")
-        .select("trial_ends_at")
-         .eq("user_id", userId)
-        .single();
-
-      const trialEndsAt = profile?.trial_ends_at || null;
-      const isTrialing = trialEndsAt ? new Date(trialEndsAt) > new Date() : false;
-
-      return new Response(JSON.stringify({
-        subscribed: false,
-        is_trialing: isTrialing,
-        trial_ends_at: trialEndsAt,
-        product_id: null,
-        subscription_end: null,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const customerId = customers.data[0].id;
-    logStep("Found customer", { customerId });
-
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-      limit: 1,
-    });
-
-    // Also check trialing subscriptions
-    const trialingSubs = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "trialing",
-      limit: 1,
-    });
-
-    const allSubs = [...subscriptions.data, ...trialingSubs.data];
-    const hasActiveSub = allSubs.length > 0;
-
+    let subscribed = false;
     let productId: string | null = null;
     let subscriptionEnd: string | null = null;
     let isTrialing = false;
 
-    if (hasActiveSub) {
-      const sub = allSubs[0];
-      subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
-      productId = sub.items.data[0].price.product as string;
-      isTrialing = sub.status === "trialing";
-      logStep("Active subscription", { productId, isTrialing, end: subscriptionEnd });
-    } else {
-      // Fall back to DB trial
-      const { data: profile } = await supabaseClient
-        .from("profiles")
-        .select("trial_ends_at")
-        .eq("user_id", userId)
-        .single();
-      const trialEndsAt = profile?.trial_ends_at || null;
-      isTrialing = trialEndsAt ? new Date(trialEndsAt) > new Date() : false;
+    if (customers.data.length > 0) {
+      const customerId = customers.data[0].id;
+      logStep("Found customer", { customerId });
+      const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
+      const trialingSubs = await stripe.subscriptions.list({ customer: customerId, status: "trialing", limit: 1 });
+      const allSubs = [...subscriptions.data, ...trialingSubs.data];
 
-      return new Response(JSON.stringify({
-        subscribed: false,
-        is_trialing: isTrialing,
-        trial_ends_at: trialEndsAt,
-        product_id: null,
-        subscription_end: null,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (allSubs.length > 0) {
+        const sub = allSubs[0];
+        subscribed = true;
+        subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
+        productId = sub.items.data[0].price.product as string;
+        isTrialing = sub.status === "trialing";
+        logStep("Active subscription", { productId, isTrialing, end: subscriptionEnd });
+      }
     }
 
+    // App-trial logic (no Stripe sub): isTrialing if trial in future
+    if (!subscribed) {
+      isTrialing = trialEndsAt ? new Date(trialEndsAt) > new Date() : false;
+    }
+
+    // Trial considered expired only when not subscribed, not trialing, and not super admin
+    const trialExpired = !subscribed && !isTrialing && !isSuperAdmin;
+
     return new Response(JSON.stringify({
-      subscribed: true,
+      subscribed,
       is_trialing: isTrialing,
+      trial_ends_at: trialEndsAt,
+      trial_expired: trialExpired,
+      access_revoked: accessRevoked,
+      is_super_admin: isSuperAdmin,
       product_id: productId,
       subscription_end: subscriptionEnd,
     }), {
