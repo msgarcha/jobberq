@@ -85,6 +85,8 @@ export default function Onboarding() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const upsert = useUpsertCompanySettings();
+  const { data: team } = useTeam();
+  const { toast } = useToast();
   const [step, setStep] = useState(1);
 
   // Step 1 — trade
@@ -94,6 +96,7 @@ export default function Onboarding() {
   // Step 2 — business
   const [companyName, setCompanyName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [logoUploading, setLogoUploading] = useState(false);
 
   // Step 3 — address
   const [addressLine1, setAddressLine1] = useState("");
