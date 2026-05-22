@@ -1277,6 +1277,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          access_revoked: boolean
+          access_revoked_at: string | null
           avatar_url: string | null
           created_at: string
           display_name: string | null
@@ -1287,6 +1289,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          access_revoked?: boolean
+          access_revoked_at?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
@@ -1297,6 +1301,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          access_revoked?: boolean
+          access_revoked_at?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
