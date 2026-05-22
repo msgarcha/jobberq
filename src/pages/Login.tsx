@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from '@/components/ui/input-otp';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
 import QuickLinqLogo from '@/components/QuickLinqLogo';
@@ -94,7 +94,7 @@ export default function Login() {
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (otpCode.length !== 6) return;
+    if (otpCode.length !== 8) return;
     setLoading(true);
     const { error } = await supabase.auth.verifyOtp({
       email,
@@ -166,18 +166,23 @@ export default function Login() {
             <CardContent className={authContentClassName}>
               <form onSubmit={handleVerifyOtp} className={authFormClassName}>
                 <div className="flex justify-center py-2">
-                  <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                  <InputOTP maxLength={8} value={otpCode} onChange={setOtpCode}>
                     <InputOTPGroup>
                       <InputOTPSlot index={0} />
                       <InputOTPSlot index={1} />
                       <InputOTPSlot index={2} />
                       <InputOTPSlot index={3} />
+                    </InputOTPGroup>
+                    <InputOTPSeparator />
+                    <InputOTPGroup>
                       <InputOTPSlot index={4} />
                       <InputOTPSlot index={5} />
+                      <InputOTPSlot index={6} />
+                      <InputOTPSlot index={7} />
                     </InputOTPGroup>
                   </InputOTP>
                 </div>
-                <Button type="submit" className="w-full min-w-0 rounded-lg" disabled={loading || otpCode.length !== 6}>
+                <Button type="submit" className="w-full min-w-0 rounded-lg" disabled={loading || otpCode.length !== 8}>
                   {loading ? 'Verifying…' : 'Verify Email'}
                 </Button>
                 <button
