@@ -263,15 +263,79 @@ export default function Onboarding() {
                     />
                   </div>
                   <div>
-                    <Label>Logo URL (optional)</Label>
-                    <Input
-                      value={logoUrl}
-                      onChange={(e) => setLogoUrl(e.target.value)}
-                      placeholder="https://example.com/logo.png"
-                      className="mt-1.5"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      You can add or change this later in Settings.
+                    <Label>Logo (optional)</Label>
+                    <div className="mt-1.5 flex items-center gap-3">
+                      {logoUrl ? (
+                        <div className="relative">
+                          <img
+                            src={logoUrl}
+                            alt="Company logo"
+                            className="h-16 w-16 rounded-lg object-contain border border-border bg-background"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setLogoUrl("")}
+                            className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-background border border-border flex items-center justify-center hover:bg-muted transition-colors"
+                            aria-label="Remove logo"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="h-16 w-16 rounded-lg border border-dashed border-border bg-muted/30 flex items-center justify-center text-muted-foreground">
+                          <Building2 className="h-6 w-6" />
+                        </div>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={logoUploading}
+                        onClick={() => document.getElementById("onboarding-logo-input")?.click()}
+                        className="gap-2"
+                      >
+                        {logoUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                        {logoUrl ? "Change logo" : "Upload logo"}
+                      </Button>
+                      <input
+                        id="onboarding-logo-input"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const teamId = team?.team_id;
+                          if (!teamId) {
+                            toast({ title: "Setting up your workspace…", description: "Please try again in a moment.", variant: "destructive" });
+                            e.target.value = "";
+                            return;
+                          }
+                          setLogoUploading(true);
+                          try {
+                            const ext = (file.name.split(".").pop() || "png").toLowerCase();
+                            const path = `${teamId}/logo.${ext}`;
+                            const { error: upErr } = await supabase.storage
+                              .from("company-assets")
+                              .upload(path, file, { upsert: true });
+                            if (upErr) throw upErr;
+                            const { data: urlData } = supabase.storage
+                              .from("company-assets")
+                              .getPublicUrl(path);
+                            // Cache-bust so the new file shows immediately
+                            setLogoUrl(`${urlData.publicUrl}?v=${Date.now()}`);
+                            toast({ title: "Logo uploaded" });
+                          } catch (err: any) {
+                            toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+                          } finally {
+                            setLogoUploading(false);
+                            e.target.value = "";
+                          }
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Appears on quotes and invoices. You can change this later in Settings.
                     </p>
                   </div>
                 </div>
