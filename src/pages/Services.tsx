@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Wrench, ChevronRight, Search, Package } from "lucide-react";
 import { useServices, useCreateService, useUpdateService, useDeleteService, type Service } from "@/hooks/useServices";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
