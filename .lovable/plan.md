@@ -1,77 +1,87 @@
-## Goal
-Transform onboarding into a guided startup-style wizard that captures the user's **trade**, business basics, and defaults — then automatically seeds **5 AI-generated starter services** while showing a "Preparing your dashboard" animation before landing on the home screen.
+# Super Admin: Usage, Access Control & Trial Enforcement
 
-## New Flow (6 steps)
+## Current state findings
 
+- **Trial expiry today does nothing.** `resolveTier()` in `supabase/functions/_shared/rate-limit.ts` returns `"paid"` once `trial_ends_at` passes, even if the user never subscribed — so they keep full app access with higher AI caps. There is no app-level gate on routes or document creation.
+- Super Admin already lists subscribers + trial-only users, can extend/cancel/resume subscriptions and extend app trial. There is **no usage view** and **no way to revoke a user**.
+- Trial counts exist in revenue stats KPI (`trialing_count`) but not broken out clearly.
+
+---
+
+## 1. Usage Dashboard (new "Usage" tab in `/super-admin`)
+
+New edge function `admin-account-usage` (super-admin gated):
+
+Input: `{ user_id?, email? }` (lookup) or no args = list all accounts with rollups.
+
+Returns per account:
+- `team_id`, `email`, `display_name`, `created_at`, `trial_ends_at`, `subscribed`, `tier`
+- Counts (lifetime + last 30 days): `quotes`, `invoices`, `clients`, `jobs`, `payments_total_cents`
+- AI usage: sum from `ai_usage_counters` last 30 days, grouped by `function_name`, plus today's count
+- `ai_actions` count last 30 days
+
+UI: new component `AdminUsageTable.tsx`
+- Searchable table of accounts (email, plan, quotes, invoices, AI calls 30d, last activity)
+- Row click opens `AccountUsageDrawer` with: KPI cards, AI usage by function (bar chart via existing recharts), spark counts for quotes/invoices/clients over 30d.
+
+## 2. Revoke Access
+
+Add `profiles.access_revoked boolean default false` and `access_revoked_at timestamptz` via migration.
+
+`admin-manage-subscription` gains two actions:
+- `revoke_access`: sets `access_revoked=true`, sets `trial_ends_at = now()`, signs the user out of all sessions (`auth.admin.signOut(user_id, 'global')`), and if they have an active Stripe sub, cancels immediately.
+- `restore_access`: clears `access_revoked`, optionally extends trial 14 days.
+
+Enforcement:
+- `check-subscription` returns `access_revoked` flag.
+- `AuthContext` exposes `accessRevoked`; new top-level guard in `App.tsx` (or `ProtectedRoute`) redirects revoked users to a `/access-revoked` page.
+- `_shared/rate-limit.ts` short-circuits all AI calls when revoked.
+- RLS-side: optional follow-up; primary defense is auth gate + Stripe cancel.
+
+UI: SubscriberTable + new UsageTable get a "Revoke access" menu item (with confirm dialog) and "Restore access" for revoked rows. Revoked rows show a red badge.
+
+## 3. Trials Counter
+
+`admin-revenue-stats` already returns `trialing_count` (Stripe trialing). Extend it to also return:
+- `app_trial_active`: profiles with `trial_ends_at > now()` AND no Stripe sub
+- `app_trial_expired_unconverted`: profiles where `trial_ends_at < now()` AND no Stripe sub AND not revoked (these are the users currently slipping through)
+
+Show 3 KPI tiles on Revenue tab: "Stripe trialing", "App trials active", "Expired trials (not converted)". Clicking "Expired trials" filters the Subscribers/Usage tab to that segment.
+
+## 4. Trial-Expiry Enforcement (the bug)
+
+Today: expired-trial-without-sub → treated as `paid` tier and allowed in. Fix:
+
+- New tier `"expired"` in `_shared/rate-limit.ts`. `resolveTier` returns `expired` when `trial_ends_at <= now()` AND no active Stripe subscription. `enforceAiQuota` rejects with 402 `upgrade_required`.
+- `check-subscription` adds `trial_expired: boolean` to its response.
+- Frontend: `AuthContext` exposes `trialExpired`. New guard renders a `<TrialExpiredScreen />` (upgrade CTA → existing checkout flow) for app routes, while keeping `/settings/billing` and `/auth` reachable. Super admins bypass.
+- Mutating server actions for quotes/invoices/AI already gated through edge functions where applicable; for direct-RLS inserts, add a client-side check using `trialExpired` to disable "New Quote/Invoice" buttons and show upgrade banner.
+
+## Technical changes
+
+```text
+DB migration
+  ALTER TABLE profiles
+    ADD COLUMN access_revoked boolean NOT NULL DEFAULT false,
+    ADD COLUMN access_revoked_at timestamptz;
+
+Edge functions
+  NEW   supabase/functions/admin-account-usage/index.ts
+  EDIT  supabase/functions/admin-manage-subscription/index.ts  (+revoke_access, +restore_access)
+  EDIT  supabase/functions/admin-revenue-stats/index.ts        (+app trial buckets)
+  EDIT  supabase/functions/check-subscription/index.ts         (+access_revoked, +trial_expired)
+  EDIT  supabase/functions/_shared/rate-limit.ts               ("expired" tier + reject)
+
+Frontend
+  NEW   src/components/admin/AdminUsageTable.tsx
+  NEW   src/components/admin/AccountUsageDrawer.tsx
+  NEW   src/pages/TrialExpired.tsx  +  src/pages/AccessRevoked.tsx
+  EDIT  src/pages/SuperAdmin.tsx              (Usage tab, expired-trial KPI)
+  EDIT  src/components/admin/SubscriberTable.tsx (revoke / restore actions, revoked badge)
+  EDIT  src/components/admin/ManageSubscriptionDialog.tsx (confirm dialog for revoke/restore)
+  EDIT  src/components/admin/AdminRevenueCharts.tsx (3 trial KPI tiles)
+  EDIT  src/contexts/AuthContext.tsx          (accessRevoked, trialExpired)
+  EDIT  src/components/ProtectedRoute.tsx (or App.tsx) — gate revoked/expired users
 ```
-1. Pick Trade  →  2. Business Name & Logo  →  3. Address & Contact
-       ↓
-4. Defaults (tax, terms, prefixes)  →  5. Review  →  6. Preparing Dashboard ✨
-```
 
-### Step 1 — Choose Trade (NEW)
-Grid of selectable cards (icon + label) for common trades, plus "Other" with free-text:
-- Landscaping, Lawn Care, Plumbing, Electrical, HVAC, Roofing, Painting, Cleaning, Handyman, Carpentry, Flooring, Pressure Washing, Snow Removal, Pest Control, General Contractor, Other
-
-Selected trade drives the AI service generation in step 6.
-
-### Steps 2–4
-Keep existing Company / Address / Defaults steps (already built), restyled as part of the new 6-step shell.
-
-### Step 5 — Review
-Read-only summary card of everything entered with edit-pencils that jump back to the relevant step.
-
-### Step 6 — Preparing Dashboard (NEW)
-Full-screen animated loader (Linq logo pulse + animated checklist):
-- ✓ Creating your workspace
-- ✓ Saving company details
-- ⠋ Generating starter services for {trade}…
-- ⠋ Personalizing your dashboard
-
-During this step we:
-1. `upsert` company_settings (now includes `trade`)
-2. Invoke new edge function `generate-starter-services` → inserts 5 rows into `services_catalog`
-3. Send welcome email (existing)
-4. Navigate to `/` with a brief confetti/fade-in
-
-## Technical Changes
-
-### Database (migration)
-- Add `trade text` column to `company_settings`.
-
-### Edge function — `generate-starter-services` (NEW)
-- Auth: validate JWT, get user + team_id.
-- Input: `{ trade: string }`.
-- Calls Lovable AI (`google/gemini-3-flash-preview`) with tool-calling to return structured JSON:
-  ```
-  { services: [{ name, description, default_price, category }] x5 }
-  ```
-- Inserts the 5 rows into `services_catalog` (user_id, team_id, is_active=true).
-- Uses existing `enforceAiQuota` pattern for rate limiting.
-- Returns `{ created: 5 }`.
-
-### Frontend
-- `src/pages/Onboarding.tsx` — rebuild as 6-step wizard:
-  - New `TradeSelector` step (card grid, animated select).
-  - Reuse existing Company/Address/Defaults step content.
-  - New `ReviewStep` component.
-  - New `PreparingDashboard` step with framer-motion animated checklist, sequential task completion as promises resolve.
-- Use existing `Progress` + step indicator pattern, expand to 6 stops.
-- Add trade icons from `lucide-react` (Sprout, Wrench, Zap, Thermometer, Home, Paintbrush, Sparkles, Hammer, etc.).
-
-### Files Created
-- `supabase/migrations/<ts>_add_trade_to_company_settings.sql`
-- `supabase/functions/generate-starter-services/index.ts`
-- `src/components/onboarding/TradeStep.tsx`
-- `src/components/onboarding/ReviewStep.tsx`
-- `src/components/onboarding/PreparingDashboard.tsx`
-
-### Files Edited
-- `src/pages/Onboarding.tsx` (refactor into wizard shell)
-- `src/hooks/useCompanySettings.ts` (no change needed — types regenerate from migration)
-
-## Notes / Decisions
-- AI generation is best-effort: if it fails, we still proceed to dashboard and toast a soft warning ("We'll suggest services later"). Onboarding never gets blocked by AI.
-- Services are inserted as `is_active=true` with sensible default prices the AI proposes; user can edit anytime in Services page.
-- "Other" trade still triggers AI generation using the free-text label.
-- All animations use framer-motion (already used elsewhere) — no new deps.
+All admin endpoints continue to require `is_super_admin` (already enforced). Audit logging follows existing super-admin pattern.
