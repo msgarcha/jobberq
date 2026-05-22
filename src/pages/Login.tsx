@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
 import QuickLinqLogo from '@/components/QuickLinqLogo';
@@ -30,11 +31,27 @@ export default function Login() {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [resetMode, setResetMode] = useState(false);
+  const [otpMode, setOtpMode] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   const redirectTo = searchParams.get('redirect') || '/';
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
+  const startOtpFlow = (forEmail: string) => {
+    setEmail(forEmail);
+    setOtpMode(true);
+    setOtpCode('');
+    setResendCooldown(60);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +59,13 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
+      if (/confirm|verif/i.test(error.message)) {
+        // Trigger resend and switch to OTP entry
+        await supabase.auth.resend({ type: 'signup', email });
+        toast({ title: 'Verify your email', description: 'We sent a 6-digit code to your inbox.' });
+        startOtpFlow(email);
+        return;
+      }
       toast({ title: 'Login failed', description: error.message, variant: 'destructive' });
     } else {
       navigate(redirectTo);
@@ -63,10 +87,40 @@ export default function Login() {
     if (error) {
       toast({ title: 'Sign up failed', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Account created', description: 'Please check your email and click the verification link before logging in.' });
-      setEmail('');
-      setPassword('');
-      setDisplayName('');
+      toast({ title: 'Check your email', description: 'Enter the 6-digit code we just sent you.' });
+      startOtpFlow(email);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otpCode.length !== 6) return;
+    setLoading(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: otpCode,
+      type: 'email',
+    });
+    setLoading(false);
+    if (error) {
+      toast({ title: 'Verification failed', description: error.message, variant: 'destructive' });
+      setOtpCode('');
+    } else {
+      toast({ title: 'Email verified', description: 'Welcome to QuickLinq!' });
+      navigate(redirectTo);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+    setLoading(true);
+    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    setLoading(false);
+    if (error) {
+      toast({ title: 'Could not resend', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Code sent', description: 'Check your inbox for a new code.' });
+      setResendCooldown(60);
     }
   };
 
@@ -84,6 +138,63 @@ export default function Login() {
       setResetMode(false);
     }
   };
+
+  if (otpMode) {
+    return (
+      <main className={authShellClassName}>
+        <Seo title="Verify Email — QuickLinq" description="Enter the 6-digit code we sent you." path="/login" />
+        <div className={authContainerClassName}>
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={() => { setOtpMode(false); setOtpCode(''); }}
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" /> Use a different email
+            </button>
+          </div>
+          <Card className={authCardClassName}>
+            <CardHeader className={authHeaderClassName}>
+              <Link to="/landing" className="mx-auto mb-4 flex max-w-full items-center justify-center hover:opacity-90 transition-opacity">
+                <QuickLinqLogo size={44} type="full" variant="dark" className="h-11 w-auto max-w-[13rem] sm:max-w-[15rem]" />
+              </Link>
+              <CardTitle className="text-2xl">Verify your email</CardTitle>
+              <CardDescription>
+                Enter the 6-digit code we sent to <span className="font-medium text-foreground">{email}</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className={authContentClassName}>
+              <form onSubmit={handleVerifyOtp} className={authFormClassName}>
+                <div className="flex justify-center py-2">
+                  <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+                <Button type="submit" className="w-full min-w-0 rounded-lg" disabled={loading || otpCode.length !== 6}>
+                  {loading ? 'Verifying…' : 'Verify Email'}
+                </Button>
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={resendCooldown > 0 || loading}
+                  className="w-full text-sm text-muted-foreground hover:text-foreground text-center py-1 transition-colors disabled:opacity-50"
+                >
+                  {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
+                </button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+    );
+  }
 
   if (resetMode) {
     return (
