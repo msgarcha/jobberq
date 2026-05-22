@@ -16,6 +16,9 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { useUpsertCompanySettings } from "@/hooks/useCompanySettings";
+import { useTeam } from "@/hooks/useTeam";
+import { useToast } from "@/hooks/use-toast";
+import { Upload, X } from "lucide-react";
 import {
   Briefcase,
   Building2,
