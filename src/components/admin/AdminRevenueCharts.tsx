@@ -1,5 +1,5 @@
 import {
-  DollarSign, Users, TrendingUp, AlertTriangle, UserPlus, UserMinus,
+  DollarSign, Users, TrendingUp, AlertTriangle, UserPlus, UserMinus, Clock, Ban,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -11,6 +11,9 @@ interface RevenueStats {
   total_revenue: number;
   active_subscribers: number;
   trialing_count: number;
+  app_trial_active?: number;
+  app_trial_expired?: number;
+  revoked_count?: number;
   past_due_count: number;
   new_this_month: number;
   canceled_this_month: number;
@@ -62,13 +65,16 @@ export function AdminRevenueCharts({ stats, loading }: Props) {
   return (
     <div className="space-y-6">
       {/* KPI Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <KPI icon={DollarSign} label="MRR" value={fmt(stats.mrr)} />
         <KPI icon={TrendingUp} label="Revenue (12mo)" value={fmt(stats.total_revenue)} />
         <KPI icon={Users} label="Active Subs" value={String(stats.active_subscribers)} />
-        <KPI icon={Users} label="Trialing" value={String(stats.trialing_count)} />
+        <KPI icon={Users} label="Stripe Trialing" value={String(stats.trialing_count)} />
+        <KPI icon={Clock} label="App Trials Active" value={String(stats.app_trial_active ?? 0)} />
+        <KPI icon={AlertTriangle} label="Trials Expired (no plan)" value={String(stats.app_trial_expired ?? 0)} />
         <KPI icon={UserPlus} label="New This Month" value={String(stats.new_this_month)} />
         <KPI icon={UserMinus} label="Churned This Mo." value={String(stats.canceled_this_month)} />
+        <KPI icon={Ban} label="Revoked" value={String(stats.revoked_count ?? 0)} />
       </div>
 
       {stats.past_due_count > 0 && (
