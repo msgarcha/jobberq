@@ -1,87 +1,59 @@
-# Super Admin: Usage, Access Control & Trial Enforcement
+## Goal
 
-## Current state findings
+Every new signup must verify their email by entering a 6-digit OTP code (sent to their inbox) before they can log in. Replace the current "click the link in your email" verification with an in-app OTP entry screen.
 
-- **Trial expiry today does nothing.** `resolveTier()` in `supabase/functions/_shared/rate-limit.ts` returns `"paid"` once `trial_ends_at` passes, even if the user never subscribed — so they keep full app access with higher AI caps. There is no app-level gate on routes or document creation.
-- Super Admin already lists subscribers + trial-only users, can extend/cancel/resume subscriptions and extend app trial. There is **no usage view** and **no way to revoke a user**.
-- Trial counts exist in revenue stats KPI (`trialing_count`) but not broken out clearly.
+## Current state
 
----
+- `supabase/auth.users` has email confirmation **required** (auto-confirm disabled — per `mem://auth/verification-policy`).
+- `src/pages/Login.tsx` signup uses `supabase.auth.signUp({ email, password, options: { emailRedirectTo } })` — relies on the confirmation link.
+- Auth emails are custom-branded via `supabase/functions/auth-email-hook` + `_shared/email-templates/signup.tsx` and currently render a **"Verify Email" button** (link-based) with no `{{ .Token }}`.
+- Supabase's `auth-email-hook` payload includes both `token_hash` (link) and `token` (6-digit OTP) for every signup — we just don't surface the OTP today.
 
-## 1. Usage Dashboard (new "Usage" tab in `/super-admin`)
+## Plan
 
-New edge function `admin-account-usage` (super-admin gated):
+### 1. Email template — show the OTP code
+Update `supabase/functions/_shared/email-templates/signup.tsx`:
+- Accept a new `token` prop (the 6-digit code).
+- Replace the "Verify Email" button with a large, monospaced, letter-spaced OTP block (e.g. `123 456`) and copy: *"Enter this code in QuickLinq to verify your email. Expires in 1 hour."*
+- Keep brand styling (Poppins, dark teal `hsl(192 60% 22%)`, cream bg) — but per memory, email body bg stays white.
+- Keep a small fallback link underneath ("Or click here") so users on the same device can still one-tap.
 
-Input: `{ user_id?, email? }` (lookup) or no args = list all accounts with rollups.
+Update `supabase/functions/auth-email-hook/index.ts` to pass `email_data.token` into the `signup` template (today it likely only forwards `token_hash`/`confirmation_url`).
 
-Returns per account:
-- `team_id`, `email`, `display_name`, `created_at`, `trial_ends_at`, `subscribed`, `tier`
-- Counts (lifetime + last 30 days): `quotes`, `invoices`, `clients`, `jobs`, `payments_total_cents`
-- AI usage: sum from `ai_usage_counters` last 30 days, grouped by `function_name`, plus today's count
-- `ai_actions` count last 30 days
+### 2. Frontend — OTP entry screen
+In `src/pages/Login.tsx`:
+- After a successful `signUp`, instead of just toasting "check your email", switch the form into a **"Verify your email" step** showing the email address and an OTP input (`@/components/ui/input-otp`, 6 slots).
+- On submit, call:
+  ```ts
+  supabase.auth.verifyOtp({ email, token: code, type: 'email' })
+  ```
+- On success → user is signed in (Supabase returns a session); navigate to `redirectTo` (which will hit `/onboarding` via existing `ProtectedRoute` logic).
+- Add **"Resend code"** button (60s cooldown) → `supabase.auth.resend({ type: 'signup', email })`.
+- Add **"Use a different email"** link to reset the flow.
 
-UI: new component `AdminUsageTable.tsx`
-- Searchable table of accounts (email, plan, quotes, invoices, AI calls 30d, last activity)
-- Row click opens `AccountUsageDrawer` with: KPI cards, AI usage by function (bar chart via existing recharts), spark counts for quotes/invoices/clients over 30d.
+Also handle the case where an **existing unverified user tries to log in** (`signInWithPassword` returns `Email not confirmed`): auto-trigger the resend + show the same OTP screen.
 
-## 2. Revoke Access
+### 3. Keep magic-link fallback working
+The email still contains a clickable link as a backup; the existing default Supabase callback route will continue to work for users who click instead of typing. No route changes required.
 
-Add `profiles.access_revoked boolean default false` and `access_revoked_at timestamptz` via migration.
+### 4. No DB / auth config changes
+- Email confirmation is already required.
+- OTP length (6) and expiry (3600s) are Supabase defaults — no `configure_auth` call needed.
+- No new migrations.
 
-`admin-manage-subscription` gains two actions:
-- `revoke_access`: sets `access_revoked=true`, sets `trial_ends_at = now()`, signs the user out of all sessions (`auth.admin.signOut(user_id, 'global')`), and if they have an active Stripe sub, cancels immediately.
-- `restore_access`: clears `access_revoked`, optionally extends trial 14 days.
+### 5. Deploy
+After editing the template + hook, redeploy `auth-email-hook`.
 
-Enforcement:
-- `check-subscription` returns `access_revoked` flag.
-- `AuthContext` exposes `accessRevoked`; new top-level guard in `App.tsx` (or `ProtectedRoute`) redirects revoked users to a `/access-revoked` page.
-- `_shared/rate-limit.ts` short-circuits all AI calls when revoked.
-- RLS-side: optional follow-up; primary defense is auth gate + Stripe cancel.
+## Files to change
 
-UI: SubscriberTable + new UsageTable get a "Revoke access" menu item (with confirm dialog) and "Restore access" for revoked rows. Revoked rows show a red badge.
+- `supabase/functions/_shared/email-templates/signup.tsx` — show OTP code
+- `supabase/functions/auth-email-hook/index.ts` — forward `token` to template
+- `src/pages/Login.tsx` — add OTP verification step + resend flow
 
-## 3. Trials Counter
+## Out of scope
 
-`admin-revenue-stats` already returns `trialing_count` (Stripe trialing). Extend it to also return:
-- `app_trial_active`: profiles with `trial_ends_at > now()` AND no Stripe sub
-- `app_trial_expired_unconverted`: profiles where `trial_ends_at < now()` AND no Stripe sub AND not revoked (these are the users currently slipping through)
+- Changing other auth emails (recovery, magic-link, invite) — they keep their current link-based flow.
+- Switching the password-reset flow to OTP.
+- Phone/SMS OTP.
 
-Show 3 KPI tiles on Revenue tab: "Stripe trialing", "App trials active", "Expired trials (not converted)". Clicking "Expired trials" filters the Subscribers/Usage tab to that segment.
-
-## 4. Trial-Expiry Enforcement (the bug)
-
-Today: expired-trial-without-sub → treated as `paid` tier and allowed in. Fix:
-
-- New tier `"expired"` in `_shared/rate-limit.ts`. `resolveTier` returns `expired` when `trial_ends_at <= now()` AND no active Stripe subscription. `enforceAiQuota` rejects with 402 `upgrade_required`.
-- `check-subscription` adds `trial_expired: boolean` to its response.
-- Frontend: `AuthContext` exposes `trialExpired`. New guard renders a `<TrialExpiredScreen />` (upgrade CTA → existing checkout flow) for app routes, while keeping `/settings/billing` and `/auth` reachable. Super admins bypass.
-- Mutating server actions for quotes/invoices/AI already gated through edge functions where applicable; for direct-RLS inserts, add a client-side check using `trialExpired` to disable "New Quote/Invoice" buttons and show upgrade banner.
-
-## Technical changes
-
-```text
-DB migration
-  ALTER TABLE profiles
-    ADD COLUMN access_revoked boolean NOT NULL DEFAULT false,
-    ADD COLUMN access_revoked_at timestamptz;
-
-Edge functions
-  NEW   supabase/functions/admin-account-usage/index.ts
-  EDIT  supabase/functions/admin-manage-subscription/index.ts  (+revoke_access, +restore_access)
-  EDIT  supabase/functions/admin-revenue-stats/index.ts        (+app trial buckets)
-  EDIT  supabase/functions/check-subscription/index.ts         (+access_revoked, +trial_expired)
-  EDIT  supabase/functions/_shared/rate-limit.ts               ("expired" tier + reject)
-
-Frontend
-  NEW   src/components/admin/AdminUsageTable.tsx
-  NEW   src/components/admin/AccountUsageDrawer.tsx
-  NEW   src/pages/TrialExpired.tsx  +  src/pages/AccessRevoked.tsx
-  EDIT  src/pages/SuperAdmin.tsx              (Usage tab, expired-trial KPI)
-  EDIT  src/components/admin/SubscriberTable.tsx (revoke / restore actions, revoked badge)
-  EDIT  src/components/admin/ManageSubscriptionDialog.tsx (confirm dialog for revoke/restore)
-  EDIT  src/components/admin/AdminRevenueCharts.tsx (3 trial KPI tiles)
-  EDIT  src/contexts/AuthContext.tsx          (accessRevoked, trialExpired)
-  EDIT  src/components/ProtectedRoute.tsx (or App.tsx) — gate revoked/expired users
-```
-
-All admin endpoints continue to require `is_super_admin` (already enforced). Audit logging follows existing super-admin pattern.
+Confirm and I'll implement.
