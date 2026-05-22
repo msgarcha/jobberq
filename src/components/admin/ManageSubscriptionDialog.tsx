@@ -49,6 +49,12 @@ export function ManageSubscriptionDialog({ open, onClose, action, subscriber, on
       case "resume":
         onConfirm("resume", subscriber, {});
         break;
+      case "revoke_access":
+        onConfirm("revoke_access", subscriber, {});
+        break;
+      case "restore_access":
+        onConfirm("restore_access", subscriber, { trial_end_date: trialEndDate });
+        break;
     }
   };
 
@@ -58,6 +64,8 @@ export function ManageSubscriptionDialog({ open, onClose, action, subscriber, on
     cancel: "Cancel Subscription",
     grant_free: "Grant Free Access",
     resume: "Resume Subscription",
+    revoke_access: "Revoke Access",
+    restore_access: "Restore Access",
   };
 
   return (
@@ -136,6 +144,31 @@ export function ManageSubscriptionDialog({ open, onClose, action, subscriber, on
               This will un-cancel the subscription so it continues past the current billing period.
             </p>
           )}
+
+          {action === "revoke_access" && (
+            <div className="space-y-2 text-sm">
+              <p className="text-destructive font-medium">
+                This will immediately sign the user out and block all access.
+              </p>
+              <p className="text-muted-foreground">
+                Their data is preserved. Any active Stripe subscription will be canceled immediately. Use "Restore Access" to bring them back.
+              </p>
+            </div>
+          )}
+
+          {action === "restore_access" && (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Re-enable access and give them a fresh trial through this date:
+              </p>
+              <Input
+                type="date"
+                value={trialEndDate}
+                onChange={(e) => setTrialEndDate(e.target.value)}
+                min={format(new Date(), "yyyy-MM-dd")}
+              />
+            </div>
+          )}
         </div>
 
         <DialogFooter>
@@ -145,7 +178,7 @@ export function ManageSubscriptionDialog({ open, onClose, action, subscriber, on
           <Button
             onClick={handleConfirm}
             disabled={loading || (action === "change_tier" && !newPriceId)}
-            variant={action === "cancel" && cancelImmediate ? "destructive" : "default"}
+            variant={(action === "cancel" && cancelImmediate) || action === "revoke_access" ? "destructive" : "default"}
           >
             {loading ? "Processing..." : "Confirm"}
           </Button>
