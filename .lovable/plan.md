@@ -1,84 +1,77 @@
-## Current state
+## Goal
+Transform onboarding into a guided startup-style wizard that captures the user's **trade**, business basics, and defaults — then automatically seeds **5 AI-generated starter services** while showing a "Preparing your dashboard" animation before landing on the home screen.
 
-The app captures every relevant event but never tells the business owner:
+## New Flow (6 steps)
 
-- `public-quote` edge function stamps `viewed_at` on first client view → no email/notification sent.
-- `public-invoice` edge function records views → nothing sent.
-- `approve-quote` edge function flips quote `status = 'approved'` → nothing sent.
-- `stripe-connect-webhook-v2` handles `payment_intent.succeeded` for deposit and full invoice payments → only updates the invoice row; comment in code literally says `// TODO: Send a notification to the account owner`.
+```
+1. Pick Trade  →  2. Business Name & Logo  →  3. Address & Contact
+       ↓
+4. Defaults (tax, terms, prefixes)  →  5. Review  →  6. Preparing Dashboard ✨
+```
 
-So this is a real gap. Plan below adds both **email** (via existing `send-transactional-email` infra on `notify.quicklinq.ca`) and **in-app notifications** with a bell icon, since the user called this "critical".
+### Step 1 — Choose Trade (NEW)
+Grid of selectable cards (icon + label) for common trades, plus "Other" with free-text:
+- Landscaping, Lawn Care, Plumbing, Electrical, HVAC, Roofing, Painting, Cleaning, Handyman, Carpentry, Flooring, Pressure Washing, Snow Removal, Pest Control, General Contractor, Other
 
-## What we'll build
+Selected trade drives the AI service generation in step 6.
 
-### 1. In-app notifications
+### Steps 2–4
+Keep existing Company / Address / Defaults steps (already built), restyled as part of the new 6-step shell.
 
-New `notifications` table (team-scoped, RLS by `team_id`):
-- `id`, `team_id`, `user_id` (nullable — null = whole team), `type` (enum: `quote_viewed`, `quote_approved`, `invoice_viewed`, `deposit_paid`, `invoice_paid`), `title`, `body`, `link` (e.g. `/quotes/:id`), `read_at`, `created_at`, plus `entity_type` + `entity_id` for dedupe.
-- Realtime enabled so the bell updates live.
-- Bell icon in top bar (desktop nav + mobile header) with unread count and a dropdown list; click marks read and navigates to `link`.
+### Step 5 — Review
+Read-only summary card of everything entered with edit-pencils that jump back to the relevant step.
 
-### 2. Notification preferences
+### Step 6 — Preparing Dashboard (NEW)
+Full-screen animated loader (Linq logo pulse + animated checklist):
+- ✓ Creating your workspace
+- ✓ Saving company details
+- ⠋ Generating starter services for {trade}…
+- ⠋ Personalizing your dashboard
 
-Add columns to `company_settings`:
-- `notify_on_quote_viewed` (bool, default true)
-- `notify_on_quote_approved` (bool, default true)
-- `notify_on_invoice_viewed` (bool, default true)
-- `notify_on_deposit_paid` (bool, default true)
-- `notify_on_invoice_paid` (bool, default true)
-- `notification_email` (text, nullable — falls back to team owner's auth email)
+During this step we:
+1. `upsert` company_settings (now includes `trade`)
+2. Invoke new edge function `generate-starter-services` → inserts 5 rows into `services_catalog`
+3. Send welcome email (existing)
+4. Navigate to `/` with a brief confetti/fade-in
 
-Settings page gets a new "Notifications" card with toggles + optional override email.
+## Technical Changes
 
-### 3. Email templates
+### Database (migration)
+- Add `trade text` column to `company_settings`.
 
-Four new React Email templates in `_shared/transactional-email-templates/`, all branded to match existing QuickLinq templates (teal `#0d9488`, Poppins-ish system stack, white body):
+### Edge function — `generate-starter-services` (NEW)
+- Auth: validate JWT, get user + team_id.
+- Input: `{ trade: string }`.
+- Calls Lovable AI (`google/gemini-3-flash-preview`) with tool-calling to return structured JSON:
+  ```
+  { services: [{ name, description, default_price, category }] x5 }
+  ```
+- Inserts the 5 rows into `services_catalog` (user_id, team_id, is_active=true).
+- Uses existing `enforceAiQuota` pattern for rate limiting.
+- Returns `{ created: 5 }`.
 
-- `quote-viewed.tsx` — "Marcus just opened your quote QT-1042"
-- `quote-approved.tsx` — "Quote QT-1042 was approved — $3,450"
-- `invoice-viewed.tsx` — "Acme Co. opened invoice INV-2231"
-- `payment-received.tsx` — handles both deposit and full payment with a `kind` prop ("Deposit received" vs "Invoice paid in full"), shows amount, invoice number, client.
+### Frontend
+- `src/pages/Onboarding.tsx` — rebuild as 6-step wizard:
+  - New `TradeSelector` step (card grid, animated select).
+  - Reuse existing Company/Address/Defaults step content.
+  - New `ReviewStep` component.
+  - New `PreparingDashboard` step with framer-motion animated checklist, sequential task completion as promises resolve.
+- Use existing `Progress` + step indicator pattern, expand to 6 stops.
+- Add trade icons from `lucide-react` (Sprout, Wrench, Zap, Thermometer, Home, Paintbrush, Sparkles, Hammer, etc.).
 
-Each template includes a CTA button deep-linking back into the app (`https://app.quicklinq.com/...`).
+### Files Created
+- `supabase/migrations/<ts>_add_trade_to_company_settings.sql`
+- `supabase/functions/generate-starter-services/index.ts`
+- `src/components/onboarding/TradeStep.tsx`
+- `src/components/onboarding/ReviewStep.tsx`
+- `src/components/onboarding/PreparingDashboard.tsx`
 
-Registered in `registry.ts`.
+### Files Edited
+- `src/pages/Onboarding.tsx` (refactor into wizard shell)
+- `src/hooks/useCompanySettings.ts` (no change needed — types regenerate from migration)
 
-### 4. Trigger wiring
-
-A small shared helper `_shared/notify-owner.ts` that, given `team_id` + event type + payload:
-1. Loads `company_settings` to check the relevant `notify_on_*` toggle.
-2. Resolves recipient (`notification_email` override, else team owner's auth email via service role).
-3. Inserts a row into `notifications`.
-4. Invokes `send-transactional-email` with the correct template + idempotency key (`${event}-${entity_id}`).
-
-Wired into existing functions (no new edge functions needed):
-
-| Edge function | Event hook |
-|---|---|
-| `public-quote/index.ts` | when `viewed_at` is stamped → `quote_viewed` |
-| `public-invoice/index.ts` | first view → `invoice_viewed` |
-| `approve-quote/index.ts` | after status flips to approved → `quote_approved` |
-| `stripe-connect-webhook-v2/index.ts` | on `payment_intent.succeeded`, branch on `metadata.payment_type` (`deposit` vs `full`) → `deposit_paid` or `invoice_paid` |
-
-Idempotency keys prevent duplicate sends on Stripe webhook retries and quote re-views.
-
-### 5. Settings UI + Bell UI
-
-- `src/pages/Settings.tsx` → new "Notifications" section with the 5 toggles and the override email input.
-- `src/components/notifications/NotificationBell.tsx` → bell + unread badge + dropdown list, used in the existing top nav for both desktop and mobile.
-- `src/hooks/useNotifications.ts` → subscribes to realtime inserts on `notifications` for the current `team_id`.
-
-## Technical notes
-
-- Email infrastructure (queues, `send-transactional-email`, `notify.quicklinq.ca`) is already set up — we just add templates and call sites.
-- All new DB objects use the existing `team_id` RLS pattern (`has_team_role` / `is_team_member`).
-- `notifications` insert happens from edge functions using service role; reads use authed client filtered by `team_id`.
-- Realtime: `ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;`
-- No changes to Stripe Connect flow or fee logic.
-
-## Out of scope (can do later)
-
-- Push notifications to the iOS Capacitor app.
-- SMS via Twilio.
-- Per-user (not per-team) preferences.
-- Digest mode ("only email me once an hour").
+## Notes / Decisions
+- AI generation is best-effort: if it fails, we still proceed to dashboard and toast a soft warning ("We'll suggest services later"). Onboarding never gets blocked by AI.
+- Services are inserted as `is_active=true` with sensible default prices the AI proposes; user can edit anytime in Services page.
+- "Other" trade still triggers AI generation using the free-text label.
+- All animations use framer-motion (already used elsewhere) — no new deps.
