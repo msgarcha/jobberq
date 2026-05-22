@@ -160,7 +160,7 @@ export default function Login() {
               </Link>
               <CardTitle className="text-2xl">Verify your email</CardTitle>
               <CardDescription>
-                Enter the 6-digit code we sent to <span className="font-medium text-foreground">{email}</span>
+                Enter the 8-digit code we sent to <span className="font-medium text-foreground">{email}</span>
               </CardDescription>
             </CardHeader>
             <CardContent className={authContentClassName}>
