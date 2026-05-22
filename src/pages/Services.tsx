@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Wrench, ChevronRight, Search, Package } from "lucide-react";
 import { useServices, useCreateService, useUpdateService, useDeleteService, type Service } from "@/hooks/useServices";
+import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,15 +58,17 @@ const Services = () => {
   const createService = useCreateService();
   const updateService = useUpdateService();
   const deleteService = useDeleteService();
+  const { data: companySettings } = useCompanySettings();
+  const defaultTaxRate = companySettings?.default_tax_rate != null ? Number(companySettings.default_tax_rate) : 0;
 
   const form = useForm<ServiceFormValues>({
     resolver: zodResolver(serviceSchema),
-    defaultValues: { name: "", description: "", category: "", default_price: 0, tax_rate: 13, is_active: true },
+    defaultValues: { name: "", description: "", category: "", default_price: 0, tax_rate: defaultTaxRate, is_active: true },
   });
 
   const openCreate = () => {
     setEditing(null);
-    form.reset({ name: "", description: "", category: "", default_price: 0, tax_rate: 13, is_active: true });
+    form.reset({ name: "", description: "", category: "", default_price: 0, tax_rate: defaultTaxRate, is_active: true });
     setDialogOpen(true);
   };
 
@@ -76,7 +79,7 @@ const Services = () => {
       description: s.description || "",
       category: s.category || "",
       default_price: s.default_price,
-      tax_rate: s.tax_rate ?? 13,
+      tax_rate: s.tax_rate ?? defaultTaxRate,
       is_active: s.is_active,
     });
     setDialogOpen(true);
