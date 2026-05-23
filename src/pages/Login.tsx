@@ -12,6 +12,7 @@ import { ArrowLeft } from 'lucide-react';
 import QuickLinqLogo from '@/components/QuickLinqLogo';
 import Seo from '@/components/Seo';
 import { Checkbox } from '@/components/ui/checkbox';
+import { getAppOrigin, getAuthRedirectOrigin, isProdMarketingHost } from '@/lib/hosts';
 
 const TERMS_VERSION = '2026-05-23';
 
