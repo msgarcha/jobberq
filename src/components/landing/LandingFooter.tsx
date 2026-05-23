@@ -43,6 +43,7 @@ export default function LandingFooter() {
               <li><button onClick={() => navigate("/how-it-works")} className="hover:text-foreground transition-colors">About</button></li>
               <li><button onClick={() => navigate("/privacy")} className="hover:text-foreground transition-colors">Privacy Policy</button></li>
               <li><button onClick={() => navigate("/terms")} className="hover:text-foreground transition-colors">Terms of Service</button></li>
+              <li><button onClick={() => navigate("/dpa")} className="hover:text-foreground transition-colors">Data Processing Addendum</button></li>
               <li><a href="mailto:support@quicklinq.app" className="hover:text-foreground transition-colors">Contact</a></li>
             </ul>
           </div>
