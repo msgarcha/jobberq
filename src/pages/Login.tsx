@@ -45,6 +45,16 @@ export default function Login() {
 
   const redirectTo = searchParams.get('redirect') || '/';
 
+  // If a user lands on /login on the marketing host in production, bounce
+  // them to secure.quicklinq.app/login so the Supabase session is created
+  // on the authenticated-app origin (localStorage is per-origin).
+  useEffect(() => {
+    if (isProdMarketingHost()) {
+      const target = `${getAppOrigin()}/login${window.location.search}`;
+      window.location.replace(target);
+    }
+  }, []);
+
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const t = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
