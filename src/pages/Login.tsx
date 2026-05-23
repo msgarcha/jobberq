@@ -12,6 +12,7 @@ import { ArrowLeft } from 'lucide-react';
 import QuickLinqLogo from '@/components/QuickLinqLogo';
 import Seo from '@/components/Seo';
 import { Checkbox } from '@/components/ui/checkbox';
+import { getAppOrigin, getAuthRedirectOrigin, isProdMarketingHost } from '@/lib/hosts';
 
 const TERMS_VERSION = '2026-05-23';
 
@@ -43,6 +44,16 @@ export default function Login() {
   const { toast } = useToast();
 
   const redirectTo = searchParams.get('redirect') || '/';
+
+  // If a user lands on /login on the marketing host in production, bounce
+  // them to secure.quicklinq.app/login so the Supabase session is created
+  // on the authenticated-app origin (localStorage is per-origin).
+  useEffect(() => {
+    if (isProdMarketingHost()) {
+      const target = `${getAppOrigin()}/login${window.location.search}`;
+      window.location.replace(target);
+    }
+  }, []);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -92,7 +103,7 @@ export default function Login() {
           terms_version: TERMS_VERSION,
           terms_accepted_at: new Date().toISOString(),
         },
-        emailRedirectTo: `${window.location.origin}${redirectTo}`,
+        emailRedirectTo: `${getAuthRedirectOrigin()}${redirectTo}`,
       },
     });
     setLoading(false);
@@ -152,7 +163,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${getAuthRedirectOrigin()}/reset-password`,
     });
     setLoading(false);
     if (error) {
