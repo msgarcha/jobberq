@@ -44,7 +44,18 @@ export default function LegalLayout({
             <p className="text-sm text-muted-foreground">
               Last updated: {lastUpdated} &middot; Version {version}
             </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              <a
+                href={`${path}.html`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-foreground"
+              >
+                View plain-HTML version
+              </a>
+            </p>
           </header>
+
 
           <div className="text-sm text-foreground/90 leading-relaxed mb-10">{intro}</div>
 
