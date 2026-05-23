@@ -50,6 +50,8 @@ import PricingFormBuilder from "./pages/PricingFormBuilder";
 import PublicPricingForm from "./pages/PublicPricingForm";
 import Leads from "./pages/Leads";
 import LeadDetail from "./pages/LeadDetail";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +67,8 @@ const App = () => (
             <Route path="/landing" element={<Landing />} />
             <Route path="/features" element={<Features />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/accept-invite" element={<AcceptInvite />} />

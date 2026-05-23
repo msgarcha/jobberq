@@ -11,6 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
 import QuickLinqLogo from '@/components/QuickLinqLogo';
 import Seo from '@/components/Seo';
+import { Checkbox } from '@/components/ui/checkbox';
+
+const TERMS_VERSION = '2026-05-23';
 
 const authShellClassName = 'min-h-[100svh] bg-background px-4 py-8 sm:py-10';
 const authContainerClassName = 'mx-auto flex w-full max-w-md min-w-0 flex-col';
@@ -34,6 +37,7 @@ export default function Login() {
   const [otpMode, setOtpMode] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -74,12 +78,20 @@ export default function Login() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!acceptTerms) {
+      toast({ title: 'Please accept the Terms', description: 'You must agree to the Terms of Service and Privacy Policy to create an account.', variant: 'destructive' });
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { display_name: displayName },
+        data: {
+          display_name: displayName,
+          terms_version: TERMS_VERSION,
+          terms_accepted_at: new Date().toISOString(),
+        },
         emailRedirectTo: `${window.location.origin}${redirectTo}`,
       },
     });
@@ -91,6 +103,7 @@ export default function Login() {
       startOtpFlow(email);
     }
   };
+
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +119,16 @@ export default function Login() {
       toast({ title: 'Verification failed', description: error.message, variant: 'destructive' });
       setOtpCode('');
     } else {
+      // Persist terms acceptance to profile (best-effort; non-blocking)
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase
+            .from('profiles')
+            .update({ terms_accepted_at: new Date().toISOString(), terms_version: TERMS_VERSION })
+            .eq('user_id', user.id);
+        }
+      } catch { /* best effort */ }
       toast({ title: 'Email verified', description: 'Welcome to QuickLinq!' });
       navigate(redirectTo);
     }
@@ -123,6 +146,7 @@ export default function Login() {
       setResendCooldown(60);
     }
   };
+
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -296,7 +320,21 @@ export default function Login() {
                     <Label htmlFor="signup-password">Password</Label>
                     <Input id="signup-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className={authInputClassName} />
                   </div>
-                  <Button type="submit" className="w-full min-w-0 rounded-lg" disabled={loading}>
+                  <div className="flex items-start gap-2 pt-1">
+                    <Checkbox
+                      id="signup-terms"
+                      checked={acceptTerms}
+                      onCheckedChange={(v) => setAcceptTerms(v === true)}
+                      className="mt-0.5"
+                    />
+                    <Label htmlFor="signup-terms" className="text-xs font-normal leading-relaxed text-muted-foreground cursor-pointer">
+                      I agree to the{' '}
+                      <Link to="/terms" target="_blank" className="text-foreground underline hover:text-primary">Terms of Service</Link>
+                      {' '}and{' '}
+                      <Link to="/privacy" target="_blank" className="text-foreground underline hover:text-primary">Privacy Policy</Link>.
+                    </Label>
+                  </div>
+                  <Button type="submit" className="w-full min-w-0 rounded-lg" disabled={loading || !acceptTerms}>
                     {loading ? 'Creating account…' : 'Create Account'}
                   </Button>
                 </form>

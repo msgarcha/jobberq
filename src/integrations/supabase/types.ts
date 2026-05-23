@@ -1284,6 +1284,8 @@ export type Database = {
           display_name: string | null
           id: string
           is_super_admin: boolean
+          terms_accepted_at: string | null
+          terms_version: string | null
           trial_ends_at: string | null
           updated_at: string
           user_id: string
@@ -1296,6 +1298,8 @@ export type Database = {
           display_name?: string | null
           id?: string
           is_super_admin?: boolean
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           trial_ends_at?: string | null
           updated_at?: string
           user_id: string
@@ -1308,6 +1312,8 @@ export type Database = {
           display_name?: string | null
           id?: string
           is_super_admin?: boolean
+          terms_accepted_at?: string | null
+          terms_version?: string | null
           trial_ends_at?: string | null
           updated_at?: string
           user_id?: string
