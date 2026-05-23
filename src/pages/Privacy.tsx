@@ -244,8 +244,6 @@ export default function Privacy() {
       <p>
         <strong>Quiresoft Technologies Inc. &mdash; Privacy Officer</strong>
         <br />
-        British Columbia, Canada
-        <br />
         Email: <a href="mailto:privacy@quicklinq.app">privacy@quicklinq.app</a> &middot; Legal:{" "}
         <a href="mailto:legal@quicklinq.app">legal@quicklinq.app</a>
       </p>
