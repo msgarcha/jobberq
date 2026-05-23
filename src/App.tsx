@@ -56,9 +56,27 @@ import Dpa from "./pages/Dpa";
 
 const queryClient = new QueryClient();
 
+import { useEffect } from "react";
+import { isProdAppHost } from "@/lib/hosts";
+
+function HostMeta() {
+  useEffect(() => {
+    if (!isProdAppHost()) return;
+    let tag = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
+    if (!tag) {
+      tag = document.createElement('meta');
+      tag.name = 'robots';
+      document.head.appendChild(tag);
+    }
+    tag.content = 'noindex, nofollow';
+  }, []);
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <HostMeta />
       <TooltipProvider>
         <Toaster />
         <Sonner />
