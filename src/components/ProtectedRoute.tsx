@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { isNative } from '@/lib/native/platform';
+import { getAppOrigin, isProdMarketingHost } from '@/lib/hosts';
 import TrialExpired from '@/pages/TrialExpired';
 import AccessRevoked from '@/pages/AccessRevoked';
 
