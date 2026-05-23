@@ -78,12 +78,20 @@ export default function Login() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!acceptTerms) {
+      toast({ title: 'Please accept the Terms', description: 'You must agree to the Terms of Service and Privacy Policy to create an account.', variant: 'destructive' });
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { display_name: displayName },
+        data: {
+          display_name: displayName,
+          terms_version: TERMS_VERSION,
+          terms_accepted_at: new Date().toISOString(),
+        },
         emailRedirectTo: `${window.location.origin}${redirectTo}`,
       },
     });
@@ -95,6 +103,7 @@ export default function Login() {
       startOtpFlow(email);
     }
   };
+
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
