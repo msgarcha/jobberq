@@ -1,45 +1,39 @@
-# Quick win: Crawlable static legal pages
+## Replace legal docs with exact PDF text
 
-## Problem
+Use the uploaded PDF text verbatim for Terms of Service, Privacy Policy, and the new Data Processing Addendum. Omit all address placeholders ("[Insert registered office mailing address, city, postal code]") per user instruction.
 
-`/terms` and `/privacy` are React routes — fetchers that don't execute JS (LinkedIn, Slack, Facebook OG previewer, ChatGPT, plain `curl`, generic legal/compliance scrapers) see only the empty SPA shell. Lovable's verified-crawler prerendering covers Googlebot/Bingbot but not these.
+### Key content changes vs current docs
+- **Dates**: Last updated May 22, 2026 · Version 2026-05-22.
+- **No Quiresoft application/transaction fee** (replaces previous "10% platform fee" text). Only Stripe processing fees apply.
+- New sections added to Terms: Force Majeure (17), Security & Breach Notification (16), expanded Indemnification with mutual obligations, expanded AI section disclosing Google/OpenAI via Lovable AI Gateway and no-training commitment.
+- Privacy adds: Quebec Law 25 references, CASL section (14), Automated Decision-Making (11), 90-day deletion retention, sub-processor notice.
+- **New page**: Data Processing Addendum (Part C) — 8 sections.
 
-## Fix
+### Files to update
 
-Ship a static HTML mirror of each legal document under `public/`, served as plain HTML with no JS dependency. The React routes stay as-is for the styled in-app experience.
+1. **`src/pages/Terms.tsx`** — rewrite section list and JSX body to match the PDF's 21 sections verbatim. Remove "10% fee" language. Update lastUpdated/version constants. Contact section: list emails only (legal@, support@), no mailing address line.
 
-## Changes
+2. **`src/pages/Privacy.tsx`** — rewrite to 16 sections matching PDF verbatim (adds Automated Decision-Making, CASL, expanded security/breach). Update dates. Contact section: emails only.
 
-### 1. New static files
+3. **`src/pages/Dpa.tsx`** (new) — Part C Data Processing Addendum, 8 sections, using existing `LegalLayout`.
 
-- `public/terms.html` — full Terms of Service text, mirrors `src/pages/Terms.tsx` content verbatim (all 19 sections, headings, lists, Stripe links, 10% fee, BC governing law, contact emails). Self-contained: inline `<style>` block with system fonts + minimal typography, no external CSS, no JS. Includes proper `<title>`, `<meta name="description">`, `<link rel="canonical" href="https://quicklinq.app/terms">`, OG tags, and corporate attribution footer.
-- `public/privacy.html` — same treatment for Privacy Policy (all 14 sections), canonical `https://quicklinq.app/privacy`.
+4. **`src/App.tsx`** — add route `/dpa` → `Dpa` page (lazy import alongside Terms/Privacy).
 
-Both files cross-link to each other and to `https://quicklinq.app/` home.
+5. **`src/components/landing/LandingFooter.tsx`** — add "Data Processing Addendum" link next to Terms/Privacy.
 
-### 2. React pages add a "plain HTML version" link
+6. **`public/terms.html`** — regenerate static HTML mirror with exact new text (no address).
 
-In `src/components/legal/LegalLayout.tsx`, add a small link in the header area: "View plain-text version" → opens `/terms.html` or `/privacy.html` (path derived from the existing `path` prop by appending `.html`). Opens in a new tab.
+7. **`public/privacy.html`** — regenerate static HTML mirror with exact new text (no address).
 
-### 3. Sitemap
+8. **`public/dpa.html`** (new) — static HTML mirror of the DPA.
 
-Add `/terms.html` and `/privacy.html` as additional `<url>` entries in `public/sitemap.xml` alongside the existing `/terms` and `/privacy` so both surfaces are discoverable.
+9. **`public/sitemap.xml`** — add `/dpa` and `/dpa.html` entries.
 
-### 4. Nothing else changes
+### Out of scope
+- No changes to signup consent checkbox (already implemented).
+- No database/schema changes.
+- No address fields anywhere (user explicitly said "Do not add any address").
+- Section numbering inside Privacy "Sharing" references "Section 13" for cookies (per PDF) — kept as-is even though older copy said Section 12.
 
-- React routes `/terms` and `/privacy` keep working unchanged for in-app navigation and Googlebot (via Lovable prerendering).
-- Signup consent flow, footer links, database schema — untouched.
-- No new dependencies, no router changes, no SSR migration.
-
-## How crawlers benefit
-
-- `curl https://quicklinq.app/terms.html` returns full document text immediately — no JS required.
-- LinkedIn / Slack / Facebook OG scrapers reading `/terms.html` get accurate title + description.
-- Legal/compliance bots that auto-archive ToS pages (e.g. ToSDR, regulator scrapers) can index the full text.
-- Humans linking to either URL get a readable, branded plain-HTML doc.
-
-## Out of scope
-
-- TanStack Start / SSR migration (separate large project).
-- Per-route OG images.
-- Versioned historical archive of past Terms versions.
+### Verification
+After build, `curl https://quicklinq.app/terms.html | head` to confirm static mirror serves full text; spot-check React routes /terms, /privacy, /dpa render with new headings.
