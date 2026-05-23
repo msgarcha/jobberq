@@ -41,14 +41,17 @@ export default function LandingFooter() {
             <h4 className="text-sm font-semibold mb-3 font-display">Company</h4>
             <ul className="space-y-2 text-xs text-muted-foreground">
               <li><button onClick={() => navigate("/how-it-works")} className="hover:text-foreground transition-colors">About</button></li>
-              <li><button onClick={() => navigate("/landing")} className="hover:text-foreground transition-colors">Privacy Policy</button></li>
-              <li><button onClick={() => navigate("/landing")} className="hover:text-foreground transition-colors">Terms of Service</button></li>
-              <li><a href="mailto:support@quicklinq.com" className="hover:text-foreground transition-colors">Contact</a></li>
+              <li><button onClick={() => navigate("/privacy")} className="hover:text-foreground transition-colors">Privacy Policy</button></li>
+              <li><button onClick={() => navigate("/terms")} className="hover:text-foreground transition-colors">Terms of Service</button></li>
+              <li><a href="mailto:support@quicklinq.app" className="hover:text-foreground transition-colors">Contact</a></li>
             </ul>
           </div>
         </div>
-        <div className="border-t border-border/50 pt-6 text-center">
-          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} QuickLinq. All rights reserved.</p>
+        <div className="border-t border-border/50 pt-6 text-center space-y-2">
+          <p className="text-xs text-muted-foreground">
+            QuickLinq is a product of <span className="text-foreground font-medium">Quiresoft Technologies Inc.</span>, a company registered in British Columbia, Canada.
+          </p>
+          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Quiresoft Technologies Inc. All rights reserved.</p>
         </div>
       </div>
     </footer>
