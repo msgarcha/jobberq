@@ -11,6 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
 import QuickLinqLogo from '@/components/QuickLinqLogo';
 import Seo from '@/components/Seo';
+import { Checkbox } from '@/components/ui/checkbox';
+
+const TERMS_VERSION = '2026-05-23';
 
 const authShellClassName = 'min-h-[100svh] bg-background px-4 py-8 sm:py-10';
 const authContainerClassName = 'mx-auto flex w-full max-w-md min-w-0 flex-col';
@@ -34,6 +37,7 @@ export default function Login() {
   const [otpMode, setOtpMode] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
