@@ -103,7 +103,7 @@ export default function Login() {
           terms_version: TERMS_VERSION,
           terms_accepted_at: new Date().toISOString(),
         },
-        emailRedirectTo: `${window.location.origin}${redirectTo}`,
+        emailRedirectTo: `${getAuthRedirectOrigin()}${redirectTo}`,
       },
     });
     setLoading(false);
