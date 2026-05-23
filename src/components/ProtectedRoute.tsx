@@ -18,6 +18,17 @@ export function ProtectedRoute({ children, skipOnboardingCheck, allowExpired }: 
   const location = useLocation();
   const { data: settings, isLoading: settingsLoading } = useCompanySettings();
 
+  // Defense in depth: if a logged-in user somehow lands on an authenticated
+  // route on the marketing host (quicklinq.app), bounce them to the secure
+  // subdomain at the same path. Preview / localhost / native are unaffected.
+  useEffect(() => {
+    if (user && isProdMarketingHost()) {
+      window.location.replace(
+        `${getAppOrigin()}${location.pathname}${location.search}${location.hash}`
+      );
+    }
+  }, [user, location.pathname, location.search, location.hash]);
+
   if (loading || (user && !skipOnboardingCheck && settingsLoading)) {
     return (
       <div className="flex h-screen items-center justify-center">
