@@ -134,11 +134,19 @@ export default function Login() {
     }
   };
 
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+    setLoading(true);
+    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    setLoading(false);
+    if (error) {
+      toast({ title: 'Could not resend', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: 'Code sent', description: 'Check your inbox for a new code.' });
       setResendCooldown(60);
     }
   };
+
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
