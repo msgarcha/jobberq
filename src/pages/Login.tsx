@@ -119,18 +119,21 @@ export default function Login() {
       toast({ title: 'Verification failed', description: error.message, variant: 'destructive' });
       setOtpCode('');
     } else {
+      // Persist terms acceptance to profile (best-effort; non-blocking)
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase
+            .from('profiles')
+            .update({ terms_accepted_at: new Date().toISOString(), terms_version: TERMS_VERSION })
+            .eq('user_id', user.id);
+        }
+      } catch { /* best effort */ }
       toast({ title: 'Email verified', description: 'Welcome to QuickLinq!' });
       navigate(redirectTo);
     }
   };
 
-  const handleResendOtp = async () => {
-    if (resendCooldown > 0) return;
-    setLoading(true);
-    const { error } = await supabase.auth.resend({ type: 'signup', email });
-    setLoading(false);
-    if (error) {
-      toast({ title: 'Could not resend', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: 'Code sent', description: 'Check your inbox for a new code.' });
       setResendCooldown(60);
