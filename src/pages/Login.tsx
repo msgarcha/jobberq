@@ -320,7 +320,21 @@ export default function Login() {
                     <Label htmlFor="signup-password">Password</Label>
                     <Input id="signup-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className={authInputClassName} />
                   </div>
-                  <Button type="submit" className="w-full min-w-0 rounded-lg" disabled={loading}>
+                  <div className="flex items-start gap-2 pt-1">
+                    <Checkbox
+                      id="signup-terms"
+                      checked={acceptTerms}
+                      onCheckedChange={(v) => setAcceptTerms(v === true)}
+                      className="mt-0.5"
+                    />
+                    <Label htmlFor="signup-terms" className="text-xs font-normal leading-relaxed text-muted-foreground cursor-pointer">
+                      I agree to the{' '}
+                      <Link to="/terms" target="_blank" className="text-foreground underline hover:text-primary">Terms of Service</Link>
+                      {' '}and{' '}
+                      <Link to="/privacy" target="_blank" className="text-foreground underline hover:text-primary">Privacy Policy</Link>.
+                    </Label>
+                  </div>
+                  <Button type="submit" className="w-full min-w-0 rounded-lg" disabled={loading || !acceptTerms}>
                     {loading ? 'Creating account…' : 'Create Account'}
                   </Button>
                 </form>
