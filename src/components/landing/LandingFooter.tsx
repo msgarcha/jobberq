@@ -50,7 +50,7 @@ export default function LandingFooter() {
         </div>
         <div className="border-t border-border/50 pt-6 text-center space-y-2">
           <p className="text-xs text-muted-foreground">
-            QuickLinq is a product of <span className="text-foreground font-medium">Quiresoft Technologies Inc.</span>, a company registered in British Columbia, Canada.
+            QuickLinq is a product of <span className="text-foreground font-medium">Quiresoft Technologies Inc.</span>.
           </p>
           <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Quiresoft Technologies Inc. All rights reserved.</p>
         </div>

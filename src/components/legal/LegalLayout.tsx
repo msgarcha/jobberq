@@ -83,15 +83,13 @@ export default function LegalLayout({
 
           <div className="mt-16 pt-8 border-t border-border/60 text-xs text-muted-foreground">
             <p className="mb-2">
-              QuickLinq is a product operated by <strong className="text-foreground">Quiresoft Technologies Inc.</strong>,
-              a corporation registered in British Columbia, Canada. QuickLinq is a wholly-owned
-              subsidiary product of Quiresoft Technologies Inc.
+              QuickLinq is a product operated by <strong className="text-foreground">Quiresoft Technologies Inc.</strong>.
             </p>
             <p>
               See also our{" "}
-              <Link to="/terms" className="underline hover:text-foreground">Terms of Service</Link>{" "}
-              and{" "}
-              <Link to="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>.
+              <Link to="/terms" className="underline hover:text-foreground">Terms of Service</Link>,{" "}
+              <Link to="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>, and{" "}
+              <Link to="/dpa" className="underline hover:text-foreground">Data Processing Addendum</Link>.
             </p>
           </div>
         </div>

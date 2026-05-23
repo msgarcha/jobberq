@@ -365,8 +365,6 @@ export default function Terms() {
       <p>
         <strong>Quiresoft Technologies Inc.</strong>
         <br />
-        British Columbia, Canada
-        <br />
         Legal: <a href="mailto:legal@quicklinq.app">legal@quicklinq.app</a> &middot; Support:{" "}
         <a href="mailto:support@quicklinq.app">support@quicklinq.app</a>
       </p>
