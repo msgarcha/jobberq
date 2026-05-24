@@ -1,31 +1,39 @@
-## What's actually happening
+## Replace legal docs with exact PDF text
 
-I reproduced the loop by visiting `https://secure.quicklinq.app/login` in a fresh browser. The platform itself responds with a redirect back to `https://quicklinq.app/login` (the request to `secure.*` is `net::ERR_ABORTED` and the URL flips to `quicklinq.app` before our React code can run). Then `Login.tsx` reads `isProdMarketingHost()` and sends the user back to `secure.*` — and the loop continues.
+Use the uploaded PDF text verbatim for Terms of Service, Privacy Policy, and the new Data Processing Addendum. Omit all address placeholders ("[Insert registered office mailing address, city, postal code]") per user instruction.
 
-So this is **not** an app code bug. All four custom domains (`quicklinq.app`, `www.quicklinq.app`, `quicklinq.ca`, `secure.quicklinq.app`) are connected in Lovable, but `quicklinq.app` is set as the **Primary domain**, which makes Lovable 301-redirect every other custom domain to it. As long as that's true, the split cannot work — `secure.*` will always be sent to `quicklinq.app`.
+### Key content changes vs current docs
+- **Dates**: Last updated May 22, 2026 · Version 2026-05-22.
+- **No Quiresoft application/transaction fee** (replaces previous "10% platform fee" text). Only Stripe processing fees apply.
+- New sections added to Terms: Force Majeure (17), Security & Breach Notification (16), expanded Indemnification with mutual obligations, expanded AI section disclosing Google/OpenAI via Lovable AI Gateway and no-training commitment.
+- Privacy adds: Quebec Law 25 references, CASL section (14), Automated Decision-Making (11), 90-day deletion retention, sub-processor notice.
+- **New page**: Data Processing Addendum (Part C) — 8 sections.
 
-## Fix (no code change required to start)
+### Files to update
 
-You need to flip the Primary-domain setting so `secure.quicklinq.app` serves on its own instead of being redirected.
+1. **`src/pages/Terms.tsx`** — rewrite section list and JSX body to match the PDF's 21 sections verbatim. Remove "10% fee" language. Update lastUpdated/version constants. Contact section: list emails only (legal@, support@), no mailing address line.
 
-**Where:** Project Settings → Project section → Domains.
+2. **`src/pages/Privacy.tsx`** — rewrite to 16 sections matching PDF verbatim (adds Automated Decision-Making, CASL, expanded security/breach). Update dates. Contact section: emails only.
 
-There are two possible UI states:
+3. **`src/pages/Dpa.tsx`** (new) — Part C Data Processing Addendum, 8 sections, using existing `LegalLayout`.
 
-1. If Lovable lets you mark `secure.quicklinq.app` as its own **Primary** independently of `quicklinq.app` (i.e. two co-primaries, each serving itself, neither redirecting to the other), do that. The split will work immediately after Publish.
-2. If Lovable forces a single Primary across all custom domains in one project, the split as designed **cannot** work in one project — the platform will always force secondary domains to redirect to the primary. In that case the realistic options are:
-   - Host the marketing site (`quicklinq.app`, `www.quicklinq.app`, `quicklinq.ca`) in a **separate Lovable project** that only serves the landing/legal pages, and keep this project on `secure.quicklinq.app` as its own Primary. This is the clean, production-grade split.
-   - Or drop the split and let the app live on whatever domain the user came in on.
+4. **`src/App.tsx`** — add route `/dpa` → `Dpa` page (lazy import alongside Terms/Privacy).
 
-## What I'll do in code, depending on outcome
+5. **`src/components/landing/LandingFooter.tsx`** — add "Data Processing Addendum" link next to Terms/Privacy.
 
-- **If option 1 works:** no code changes needed. The existing `src/lib/hosts.ts` / `Login.tsx` / `ProtectedRoute.tsx` / `AuthContext.tsx` logic is already correct and will start behaving as intended once the platform stops redirecting.
-- **If option 2 (separate marketing project):** I'll trim this project so it serves only `secure.quicklinq.app` plus app routes (no `/landing`, `/features`, `/pricing`, etc., which would move to the marketing project). The host helpers stay; the marketing-host redirect becomes a no-op because this project no longer answers those hostnames.
-- **If you choose to drop the split entirely later:** I'll remove the marketing→secure auto-redirect in `Login.tsx`, the secure→marketing redirect in `AuthContext.signOut`, and the defense-in-depth redirect in `ProtectedRoute.tsx`, and stop using `getAuthRedirectOrigin` (revert to `window.location.origin`).
+6. **`public/terms.html`** — regenerate static HTML mirror with exact new text (no address).
 
-## Action requested from you
+7. **`public/privacy.html`** — regenerate static HTML mirror with exact new text (no address).
 
-1. Open Project Settings → Domains and check whether `secure.quicklinq.app` can be set so it does **not** auto-redirect to `quicklinq.app` (look for a "Primary" toggle / "Redirect to primary" option on each row).
-2. Tell me which case you're in (1 or 2 above), and I'll either confirm we're done after Publish, or move the marketing pages into a separate project.
+8. **`public/dpa.html`** (new) — static HTML mirror of the DPA.
 
-Until the platform setting is changed, no amount of React code can prevent the loop, because the redirect happens before our JS runs.
+9. **`public/sitemap.xml`** — add `/dpa` and `/dpa.html` entries.
+
+### Out of scope
+- No changes to signup consent checkbox (already implemented).
+- No database/schema changes.
+- No address fields anywhere (user explicitly said "Do not add any address").
+- Section numbering inside Privacy "Sharing" references "Section 13" for cookies (per PDF) — kept as-is even though older copy said Section 12.
+
+### Verification
+After build, `curl https://quicklinq.app/terms.html | head` to confirm static mirror serves full text; spot-check React routes /terms, /privacy, /dpa render with new headings.

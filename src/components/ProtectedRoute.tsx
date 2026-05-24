@@ -1,9 +1,7 @@
-import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useCompanySettings } from '@/hooks/useCompanySettings';
 import { isNative } from '@/lib/native/platform';
-import { getAppOrigin, isProdMarketingHost } from '@/lib/hosts';
 import TrialExpired from '@/pages/TrialExpired';
 import AccessRevoked from '@/pages/AccessRevoked';
 
@@ -17,17 +15,6 @@ export function ProtectedRoute({ children, skipOnboardingCheck, allowExpired }: 
   const { user, loading, subscription, isSuperAdmin } = useAuth();
   const location = useLocation();
   const { data: settings, isLoading: settingsLoading } = useCompanySettings();
-
-  // Defense in depth: if a logged-in user somehow lands on an authenticated
-  // route on the marketing host (quicklinq.app), bounce them to the secure
-  // subdomain at the same path. Preview / localhost / native are unaffected.
-  useEffect(() => {
-    if (user && isProdMarketingHost()) {
-      window.location.replace(
-        `${getAppOrigin()}${location.pathname}${location.search}${location.hash}`
-      );
-    }
-  }, [user, location.pathname, location.search, location.hash]);
 
   if (loading || (user && !skipOnboardingCheck && settingsLoading)) {
     return (

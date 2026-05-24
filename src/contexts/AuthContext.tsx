@@ -189,12 +189,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    // If we're on the production secure subdomain, send the user back to the
-    // marketing site so they don't see the (now-empty) app shell.
-    const { isProdAppHost, getMarketingOrigin } = await import('@/lib/hosts');
-    if (isProdAppHost()) {
-      window.location.replace(getMarketingOrigin() + '/');
-    }
   };
 
   return (
