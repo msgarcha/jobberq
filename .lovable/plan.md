@@ -1,69 +1,31 @@
-# Move logged-in app to `secure.quicklinq.app`
+## What's actually happening
 
-Goal: After login, the browser URL should be on `secure.quicklinq.app` (the authenticated app), while `quicklinq.app` / `www.quicklinq.app` remain the marketing/landing site. Nothing should break for existing users.
+I reproduced the loop by visiting `https://secure.quicklinq.app/login` in a fresh browser. The platform itself responds with a redirect back to `https://quicklinq.app/login` (the request to `secure.*` is `net::ERR_ABORTED` and the URL flips to `quicklinq.app` before our React code can run). Then `Login.tsx` reads `isProdMarketingHost()` and sends the user back to `secure.*` — and the loop continues.
 
-## How it will work
+So this is **not** an app code bug. All four custom domains (`quicklinq.app`, `www.quicklinq.app`, `quicklinq.ca`, `secure.quicklinq.app`) are connected in Lovable, but `quicklinq.app` is set as the **Primary domain**, which makes Lovable 301-redirect every other custom domain to it. As long as that's true, the split cannot work — `secure.*` will always be sent to `quicklinq.app`.
 
-Lovable hosting serves the same built app under every custom domain attached to the project. So `secure.quicklinq.app` will serve the same React app — we just use the **hostname** to decide what to render and where to redirect.
+## Fix (no code change required to start)
 
-```text
-quicklinq.app / www.quicklinq.app   → public routes only (/, /landing, /login, /signup, /privacy, /terms, /dpa, /reset-password)
-secure.quicklinq.app                → authenticated app routes (/dashboard, /projects, /clients, etc.)
-```
+You need to flip the Primary-domain setting so `secure.quicklinq.app` serves on its own instead of being redirected.
 
-## Steps
+**Where:** Project Settings → Project section → Domains.
 
-### 1. Add the subdomain in Lovable
-- Project Settings → Domains → Connect Domain → enter `secure.quicklinq.app`.
-- Add DNS at the registrar (one A record `secure → 185.158.133.1`, plus the `_lovable` TXT verification record Lovable shows).
-- Wait for status to become Active (SSL auto-provisions).
-- Keep `quicklinq.app` as the Primary domain. Do not change anything about the existing domains.
+There are two possible UI states:
 
-### 2. Post-login redirect
-In the login success handler (and signup-confirmed handler), after `supabase.auth.signInWithPassword` resolves successfully:
-- If `window.location.hostname !== 'secure.quicklinq.app'` AND we're on a production quicklinq host, do a full-page redirect:
-  `window.location.replace('https://secure.quicklinq.app' + intendedPath)`
-- On `localhost` and `*.lovable.app` preview hosts, skip the redirect (keep current behavior so dev/preview keeps working).
+1. If Lovable lets you mark `secure.quicklinq.app` as its own **Primary** independently of `quicklinq.app` (i.e. two co-primaries, each serving itself, neither redirecting to the other), do that. The split will work immediately after Publish.
+2. If Lovable forces a single Primary across all custom domains in one project, the split as designed **cannot** work in one project — the platform will always force secondary domains to redirect to the primary. In that case the realistic options are:
+   - Host the marketing site (`quicklinq.app`, `www.quicklinq.app`, `quicklinq.ca`) in a **separate Lovable project** that only serves the landing/legal pages, and keep this project on `secure.quicklinq.app` as its own Primary. This is the clean, production-grade split.
+   - Or drop the split and let the app live on whatever domain the user came in on.
 
-### 3. Post-logout redirect
-In the sign-out handler:
-- If on `secure.quicklinq.app`, redirect to `https://quicklinq.app/` after `supabase.auth.signOut()`.
-- Preview/localhost: stay where you are.
+## What I'll do in code, depending on outcome
 
-### 4. Guard the routes per hostname (defense in depth)
-A small `HostnameGuard` wrapper (or logic inside the existing `ProtectedRoute` / `PublicRoute`) that runs once on mount:
-- On `quicklinq.app` / `www.quicklinq.app`: if the user lands on an authenticated route while logged in, redirect to `https://secure.quicklinq.app{pathname}`.
-- On `secure.quicklinq.app`: if the user is on a public-only route (`/landing`), redirect to `/dashboard`; if not logged in on a protected route, send them to `https://quicklinq.app/login`.
-- Preview/localhost: bypass entirely.
+- **If option 1 works:** no code changes needed. The existing `src/lib/hosts.ts` / `Login.tsx` / `ProtectedRoute.tsx` / `AuthContext.tsx` logic is already correct and will start behaving as intended once the platform stops redirecting.
+- **If option 2 (separate marketing project):** I'll trim this project so it serves only `secure.quicklinq.app` plus app routes (no `/landing`, `/features`, `/pricing`, etc., which would move to the marketing project). The host helpers stay; the marketing-host redirect becomes a no-op because this project no longer answers those hostnames.
+- **If you choose to drop the split entirely later:** I'll remove the marketing→secure auto-redirect in `Login.tsx`, the secure→marketing redirect in `AuthContext.signOut`, and the defense-in-depth redirect in `ProtectedRoute.tsx`, and stop using `getAuthRedirectOrigin` (revert to `window.location.origin`).
 
-### 5. Supabase auth config
-- Add `https://secure.quicklinq.app` (and `https://secure.quicklinq.app/reset-password`) to the Site URL / Redirect URLs allow-list in Lovable Cloud auth settings so magic links, OAuth callbacks, and password-reset emails work on the new host.
-- Update the `emailRedirectTo` and `resetPasswordForEmail` redirect to point at `https://secure.quicklinq.app` when the user is signing up/resetting from production.
+## Action requested from you
 
-### 6. Cookies / session
-- Supabase stores its session in `localStorage`, which is **per-origin**. Moving from `quicklinq.app` to `secure.quicklinq.app` is a different origin, so the session does NOT auto-transfer.
-- That's fine for the login flow (the user authenticates after the redirect lands on `secure.quicklinq.app`) — we just need to make sure `signInWithPassword` runs on `secure.quicklinq.app`, not on the marketing host. Two options:
-  - **A (simpler, recommended):** Keep `/login` only on `secure.quicklinq.app`. The marketing site's "Log in" button links to `https://secure.quicklinq.app/login`. The login form runs on `secure`, creates the session on `secure`, then routes to `/dashboard`. No cross-origin session needed.
-  - **B:** Allow login on both, then redirect — requires an extra round-trip and a short-lived token; more complexity, no real upside.
+1. Open Project Settings → Domains and check whether `secure.quicklinq.app` can be set so it does **not** auto-redirect to `quicklinq.app` (look for a "Primary" toggle / "Redirect to primary" option on each row).
+2. Tell me which case you're in (1 or 2 above), and I'll either confirm we're done after Publish, or move the marketing pages into a separate project.
 
-Plan goes with **option A**.
-
-### 7. SEO / canonicals
-- Add `noindex` meta on `secure.quicklinq.app` (the app shell shouldn't be indexed).
-- Keep the existing canonical tags on the marketing pages pointing at `https://quicklinq.app/...`.
-- Sitemap stays on `quicklinq.app` and does not list `secure.*`.
-
-## What does NOT change
-- Existing routes, components, Supabase project, RLS, edge functions, Stripe, PWA manifest scope, Capacitor iOS shell — all untouched.
-- `quicklinq.ca` and `www.quicklinq.app` keep redirecting/serving as today.
-
-## Rollout order (safe)
-1. Add `secure.quicklinq.app` in Lovable + DNS. Wait for Active.
-2. Update Supabase redirect URL allow-list.
-3. Ship the code changes (login redirect, logout redirect, hostname guard, marketing "Log in" link → `secure.*`).
-4. Publish. Verify on prod: marketing on `quicklinq.app`, login lands on `secure.quicklinq.app/dashboard`.
-5. Roll back is a one-line revert of the redirect — DNS can stay.
-
-## Open questions
-1. Confirm: marketing pages = `/`, `/landing`, `/login`, `/signup`, `/privacy`, `/terms`, `/dpa`, `/reset-password`. Everything else = authenticated app on `secure.*`. Correct?
-2. Should the iOS Capacitor app also point at `secure.quicklinq.app` for its webview/deep links? (Recommend yes.)
+Until the platform setting is changed, no amount of React code can prevent the loop, because the redirect happens before our JS runs.
