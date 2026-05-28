@@ -247,7 +247,7 @@ export default function PublicInvoicePay() {
     );
   }
 
-  const stripePromise = getStripe();
+
 
   return (
     <div className="min-h-screen bg-[hsl(40,23%,96%)] print-public-page">
