@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { getStripe } from "@/lib/stripe";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, CreditCard, Lock, CheckCircle2, AlertCircle, FileText, Phone, Mail, Globe, Download } from "lucide-react";
@@ -47,9 +47,10 @@ interface InvoiceData {
     stripe_charges_enabled: boolean;
     website?: string | null;
   } | null;
+  stripe_publishable_key?: string | null;
 }
 
-function PaymentForm({ invoiceId, amount, onSuccess }: { invoiceId: string; amount: number; onSuccess: () => void }) {
+function PaymentForm({ amount, onSuccess }: { amount: number; onSuccess: () => void }) {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
@@ -63,28 +64,18 @@ function PaymentForm({ invoiceId, amount, onSuccess }: { invoiceId: string; amou
     setError(null);
 
     try {
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/create-payment-intent`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ invoice_id: invoiceId, amount, public_pay: true }),
-        }
-      );
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const { error: submitError } = await elements.submit();
+      if (submitError) throw new Error(submitError.message);
 
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) throw new Error("Card element not found");
-
-      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
-        data.client_secret,
-        { payment_method: { card: cardElement } }
-      );
+      const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        redirect: "if_required",
+      });
 
       if (stripeError) throw new Error(stripeError.message);
       if (paymentIntent?.status === "succeeded") {
+        onSuccess();
+      } else if (paymentIntent?.status === "processing") {
         onSuccess();
       }
     } catch (err: any) {
@@ -96,21 +87,12 @@ function PaymentForm({ invoiceId, amount, onSuccess }: { invoiceId: string; amou
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="rounded-lg border border-[hsl(40,15%,88%)] bg-white p-4">
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: "16px",
-                color: "#1a2a3a",
-                fontFamily: "system-ui, sans-serif",
-                "::placeholder": { color: "#9ca3af" },
-              },
-              invalid: { color: "#ef4444" },
-            },
-          }}
-        />
-      </div>
+      <PaymentElement
+        options={{
+          layout: "tabs",
+          wallets: { applePay: "auto", googlePay: "auto" },
+        }}
+      />
 
       {error && (
         <div className="flex items-center gap-2 text-sm text-[hsl(0,60%,52%)] bg-[hsl(0,60%,97%)] rounded-lg p-3">
@@ -146,6 +128,14 @@ export default function PublicInvoicePay() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+
+  const publishableKey = data?.stripe_publishable_key || null;
+
+  const stripePromise = useMemo<Promise<Stripe | null> | null>(
+    () => (publishableKey ? loadStripe(publishableKey) : null),
+    [publishableKey]
+  );
 
   useEffect(() => {
     if (!invoiceId) return;
@@ -172,6 +162,37 @@ export default function PublicInvoicePay() {
       setLoading(false);
     }
   };
+
+  // Create a PaymentIntent once we know the invoice is payable.
+  useEffect(() => {
+    if (!data) return;
+    const { invoice, company } = data;
+    const balance = Number(invoice.balance_due);
+    const payable =
+      balance > 0 &&
+      invoice.status !== "paid" &&
+      company?.stripe_charges_enabled &&
+      data.stripe_publishable_key;
+    if (!payable || clientSecret) return;
+
+    (async () => {
+      try {
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const res = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/create-payment-intent`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ invoice_id: invoice.id, amount: balance, public_pay: true }),
+          }
+        );
+        const result = await res.json();
+        if (result.client_secret) setClientSecret(result.client_secret);
+      } catch {
+        // Payment section will fall back to "not available" messaging.
+      }
+    })();
+  }, [data, clientSecret]);
 
   if (loading) {
     return (
@@ -226,7 +247,7 @@ export default function PublicInvoicePay() {
     );
   }
 
-  const stripePromise = getStripe();
+
 
   return (
     <div className="min-h-screen bg-[hsl(40,23%,96%)] print-public-page">
@@ -330,24 +351,31 @@ export default function PublicInvoicePay() {
           </div>
 
           {/* Payment Section */}
-          {balanceDue > 0 && company?.stripe_charges_enabled && stripePromise ? (
+          {balanceDue > 0 && company?.stripe_charges_enabled && stripePromise && clientSecret ? (
             <div className="px-6 py-5 bg-[hsl(40,23%,96%)] border-t border-[hsl(40,15%,88%)] no-print">
               <h3 className="text-sm font-semibold text-[hsl(200,30%,14%)] mb-3 flex items-center gap-2">
                 <CreditCard className="h-4 w-4" /> Pay Now
               </h3>
-              <Elements stripe={stripePromise}>
-                <PaymentForm
-                  invoiceId={invoice.id}
-                  amount={balanceDue}
-                  onSuccess={() => setPaid(true)}
-                />
+              <Elements
+                stripe={stripePromise}
+                options={{
+                  clientSecret,
+                  appearance: { theme: "stripe", variables: { colorPrimary: "#1a6b7a" } },
+                }}
+              >
+                <PaymentForm amount={balanceDue} onSuccess={() => setPaid(true)} />
               </Elements>
+            </div>
+          ) : balanceDue > 0 && company?.stripe_charges_enabled && stripePromise ? (
+            <div className="px-6 py-5 bg-[hsl(40,23%,96%)] border-t border-[hsl(40,15%,88%)] flex items-center justify-center gap-2 text-sm text-[hsl(200,10%,46%)] no-print">
+              <Loader2 className="h-4 w-4 animate-spin" /> Preparing secure payment…
             </div>
           ) : balanceDue > 0 ? (
             <div className="px-6 py-5 bg-[hsl(40,23%,96%)] border-t border-[hsl(40,15%,88%)] text-center text-sm text-[hsl(200,10%,46%)]">
               Online payment is not available for this invoice. Please contact {company?.company_name || "the business"} directly.
             </div>
           ) : null}
+
 
           {/* Download PDF */}
           <div className="px-6 py-4 border-t border-[hsl(40,15%,88%)] no-print">

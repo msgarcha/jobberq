@@ -1,39 +1,46 @@
-## Replace legal docs with exact PDF text
+## Why the payment option is missing
 
-Use the uploaded PDF text verbatim for Terms of Service, Privacy Policy, and the new Data Processing Addendum. Omit all address placeholders ("[Insert registered office mailing address, city, postal code]") per user instruction.
+The invoice is configured correctly. In the database for this link:
+- `balance_due` = $2.10 (greater than 0)
+- `stripe_charges_enabled` = true
+- connected Stripe account is onboarded
 
-### Key content changes vs current docs
-- **Dates**: Last updated May 22, 2026 · Version 2026-05-22.
-- **No Quiresoft application/transaction fee** (replaces previous "10% platform fee" text). Only Stripe processing fees apply.
-- New sections added to Terms: Force Majeure (17), Security & Breach Notification (16), expanded Indemnification with mutual obligations, expanded AI section disclosing Google/OpenAI via Lovable AI Gateway and no-training commitment.
-- Privacy adds: Quebec Law 25 references, CASL section (14), Automated Decision-Making (11), 90-day deletion retention, sub-processor notice.
-- **New page**: Data Processing Addendum (Part C) — 8 sections.
+The public pay page (`src/pages/PublicInvoicePay.tsx`) only renders the "Pay Now" section when **all three** of these are true:
 
-### Files to update
+```text
+balanceDue > 0  AND  company.stripe_charges_enabled  AND  stripePromise
+```
 
-1. **`src/pages/Terms.tsx`** — rewrite section list and JSX body to match the PDF's 21 sections verbatim. Remove "10% fee" language. Update lastUpdated/version constants. Contact section: list emails only (legal@, support@), no mailing address line.
+The first two are fine. The third — `stripePromise` — is produced by `getStripe()` in `src/lib/stripe.ts`, which reads `import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY`. That variable is **not present in the frontend build**, so `getStripe()` returns `null`, the gate fails, and the page shows "Online payment is not available."
 
-2. **`src/pages/Privacy.tsx`** — rewrite to 16 sections matching PDF verbatim (adds Automated Decision-Making, CASL, expanded security/breach). Update dates. Contact section: emails only.
+The Stripe publishable key currently lives only as a backend secret (`STRIPE_PUBLISHABLE_KEY`), so the browser never receives it. A publishable key is safe to expose to the browser, so the fix is to deliver it to the page.
 
-3. **`src/pages/Dpa.tsx`** (new) — Part C Data Processing Addendum, 8 sections, using existing `LegalLayout`.
+## What I'll build
 
-4. **`src/App.tsx`** — add route `/dpa` → `Dpa` page (lazy import alongside Terms/Privacy).
+### Part 1 — Make online card payment appear (the actual bug)
 
-5. **`src/components/landing/LandingFooter.tsx`** — add "Data Processing Addendum" link next to Terms/Privacy.
+1. **Return the publishable key from the backend.** Extend the `public-invoice` edge function to also return `stripe_publishable_key` (read from the existing `STRIPE_PUBLISHABLE_KEY` secret). This is publishable and safe to send to the browser.
+2. **Use that key on the pay page.** In `PublicInvoicePay.tsx`, initialize Stripe from the key returned by the function (via `loadStripe(...)`) instead of relying on the missing build-time env var. The "Pay Now" gate then becomes `balanceDue > 0 && stripe_charges_enabled && <key present>`.
 
-6. **`public/terms.html`** — regenerate static HTML mirror with exact new text (no address).
+This alone restores the card-entry form on the invoice link.
 
-7. **`public/privacy.html`** — regenerate static HTML mirror with exact new text (no address).
+### Part 2 — Add Apple Pay & Google Pay (card + wallets in one widget)
 
-8. **`public/dpa.html`** (new) — static HTML mirror of the DPA.
+The current form uses Stripe's `CardElement`, which is card-fields only — no Apple Pay. To get "enter card OR Apple Pay" I'll switch the public pay page to Stripe's **Payment Element**, which automatically shows the card form plus Apple Pay (on Safari/iOS) and Google Pay (on Chrome/Android) when available.
 
-9. **`public/sitemap.xml`** — add `/dpa` and `/dpa.html` entries.
+1. On page load (for the public link), call `create-payment-intent` to get a `client_secret` for the balance due (the function already supports `public_pay` and already routes funds to the connected account via destination charges).
+2. Mount `<Elements stripe={...} options={{ clientSecret }}>` with `<PaymentElement />` and confirm with `stripe.confirmPayment(...)`.
+3. **Apple Pay domain registration (required by Stripe).** Apple Pay only renders on domains registered with Stripe as payment-method domains. I'll register the live domains (`quicklinq.app`, `www.quicklinq.app`, and the preview domain) on the platform Stripe account. Because payments are destination charges on the platform account, registering on the platform account is sufficient. Google Pay needs no domain registration.
 
-### Out of scope
-- No changes to signup consent checkbox (already implemented).
-- No database/schema changes.
-- No address fields anywhere (user explicitly said "Do not add any address").
-- Section numbering inside Privacy "Sharing" references "Section 13" for cookies (per PDF) — kept as-is even though older copy said Section 12.
+## Technical notes / decisions to confirm
 
-### Verification
-After build, `curl https://quicklinq.app/terms.html | head` to confirm static mirror serves full text; spot-check React routes /terms, /privacy, /dpa render with new headings.
+- **Live vs test mode:** Apple Pay buttons only appear in **live mode** on a registered HTTPS domain — they will not show in the Lovable preview iframe even after the code change. We should verify against the live `quicklinq.app` URL. Google Pay can appear in test mode.
+- **Other pages using `getStripe()`** (`ManualCardEntry`, `CollectPaymentSheet` inside the authenticated app) have the same missing-key issue. If you want, I can apply the same key-delivery fix there so in-app manual card entry also works. Tell me if that's in scope or if this is public-link only.
+- No database or schema changes are required.
+
+## Suggested order
+
+1. Part 1 first (one edge-function tweak + one page change) so the card payment option is restored immediately — verifiable on the live link.
+2. Part 2 (Payment Element migration + Apple Pay domain registration) for wallet support.
+
+If you'd rather keep it simple, I can do **only Part 1** (restore card payments) and skip Apple Pay for now. Otherwise I'll do both.

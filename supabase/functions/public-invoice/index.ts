@@ -82,11 +82,17 @@ serve(async (req) => {
       });
     }
 
+    // Only ever expose a *publishable* key (pk_...) to the browser. Never leak a
+    // secret key, even if the secret was misconfigured with the wrong value.
+    const rawKey = Deno.env.get("STRIPE_PUBLISHABLE_KEY") ?? "";
+    const publishableKey = rawKey.startsWith("pk_") ? rawKey : null;
+
     return new Response(
       JSON.stringify({
         invoice,
         line_items: lineItems || [],
         company,
+        stripe_publishable_key: publishableKey,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
