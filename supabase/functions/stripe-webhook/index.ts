@@ -191,7 +191,7 @@ serve(async (req) => {
 
           const { data: invoiceData } = await supabaseAdmin
             .from("invoices")
-            .select("team_id, amount_paid, total, invoice_number, id, clients(first_name, last_name, company_name)")
+            .select("team_id, amount_paid, total, invoice_number, id, clients(first_name, last_name, company_name, email)")
             .eq("id", invoiceId)
             .single();
 
