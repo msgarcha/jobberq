@@ -351,24 +351,31 @@ export default function PublicInvoicePay() {
           </div>
 
           {/* Payment Section */}
-          {balanceDue > 0 && company?.stripe_charges_enabled && stripePromise ? (
+          {balanceDue > 0 && company?.stripe_charges_enabled && stripePromise && clientSecret ? (
             <div className="px-6 py-5 bg-[hsl(40,23%,96%)] border-t border-[hsl(40,15%,88%)] no-print">
               <h3 className="text-sm font-semibold text-[hsl(200,30%,14%)] mb-3 flex items-center gap-2">
                 <CreditCard className="h-4 w-4" /> Pay Now
               </h3>
-              <Elements stripe={stripePromise}>
-                <PaymentForm
-                  invoiceId={invoice.id}
-                  amount={balanceDue}
-                  onSuccess={() => setPaid(true)}
-                />
+              <Elements
+                stripe={stripePromise}
+                options={{
+                  clientSecret,
+                  appearance: { theme: "stripe", variables: { colorPrimary: "#1a6b7a" } },
+                }}
+              >
+                <PaymentForm amount={balanceDue} onSuccess={() => setPaid(true)} />
               </Elements>
+            </div>
+          ) : balanceDue > 0 && company?.stripe_charges_enabled && stripePromise ? (
+            <div className="px-6 py-5 bg-[hsl(40,23%,96%)] border-t border-[hsl(40,15%,88%)] flex items-center justify-center gap-2 text-sm text-[hsl(200,10%,46%)] no-print">
+              <Loader2 className="h-4 w-4 animate-spin" /> Preparing secure payment…
             </div>
           ) : balanceDue > 0 ? (
             <div className="px-6 py-5 bg-[hsl(40,23%,96%)] border-t border-[hsl(40,15%,88%)] text-center text-sm text-[hsl(200,10%,46%)]">
               Online payment is not available for this invoice. Please contact {company?.company_name || "the business"} directly.
             </div>
           ) : null}
+
 
           {/* Download PDF */}
           <div className="px-6 py-4 border-t border-[hsl(40,15%,88%)] no-print">
