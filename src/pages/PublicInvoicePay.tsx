@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { getStripe } from "@/lib/stripe";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, CreditCard, Lock, CheckCircle2, AlertCircle, FileText, Phone, Mail, Globe, Download } from "lucide-react";
