@@ -32,4 +32,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'quote-approved': quoteApproved,
   'invoice-viewed': invoiceViewed,
   'payment-received': paymentReceived,
+  'payment-receipt': paymentReceipt,
 }
