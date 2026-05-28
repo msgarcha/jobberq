@@ -136,6 +136,7 @@ serve(async (req) => {
     const piParams: any = {
       amount: amountCents,
       currency: "cad",
+      automatic_payment_methods: { enabled: true },
       metadata: {
         invoice_id,
         user_id: userId || invoice.user_id,
