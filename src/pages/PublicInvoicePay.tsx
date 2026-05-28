@@ -47,9 +47,10 @@ interface InvoiceData {
     stripe_charges_enabled: boolean;
     website?: string | null;
   } | null;
+  stripe_publishable_key?: string | null;
 }
 
-function PaymentForm({ invoiceId, amount, onSuccess }: { invoiceId: string; amount: number; onSuccess: () => void }) {
+function PaymentForm({ amount, onSuccess }: { amount: number; onSuccess: () => void }) {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
@@ -63,28 +64,18 @@ function PaymentForm({ invoiceId, amount, onSuccess }: { invoiceId: string; amou
     setError(null);
 
     try {
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/create-payment-intent`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ invoice_id: invoiceId, amount, public_pay: true }),
-        }
-      );
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const { error: submitError } = await elements.submit();
+      if (submitError) throw new Error(submitError.message);
 
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) throw new Error("Card element not found");
-
-      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
-        data.client_secret,
-        { payment_method: { card: cardElement } }
-      );
+      const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        redirect: "if_required",
+      });
 
       if (stripeError) throw new Error(stripeError.message);
       if (paymentIntent?.status === "succeeded") {
+        onSuccess();
+      } else if (paymentIntent?.status === "processing") {
         onSuccess();
       }
     } catch (err: any) {
@@ -96,21 +87,12 @@ function PaymentForm({ invoiceId, amount, onSuccess }: { invoiceId: string; amou
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="rounded-lg border border-[hsl(40,15%,88%)] bg-white p-4">
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: "16px",
-                color: "#1a2a3a",
-                fontFamily: "system-ui, sans-serif",
-                "::placeholder": { color: "#9ca3af" },
-              },
-              invalid: { color: "#ef4444" },
-            },
-          }}
-        />
-      </div>
+      <PaymentElement
+        options={{
+          layout: "tabs",
+          wallets: { applePay: "auto", googlePay: "auto" },
+        }}
+      />
 
       {error && (
         <div className="flex items-center gap-2 text-sm text-[hsl(0,60%,52%)] bg-[hsl(0,60%,97%)] rounded-lg p-3">
