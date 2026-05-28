@@ -87,6 +87,7 @@ serve(async (req) => {
         invoice,
         line_items: lineItems || [],
         company,
+        stripe_publishable_key: Deno.env.get("STRIPE_PUBLISHABLE_KEY") ?? null,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
