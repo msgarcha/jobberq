@@ -238,6 +238,11 @@ serve(async (req) => {
                 invoiceUrl: appUrl(`/invoices/${invoiceData.id}`),
               },
             });
+
+            // When fully paid, email the CLIENT a branded receipt with the paid-invoice PDF.
+            if (isFull) {
+              await sendClientReceipt(supabaseAdmin, invoiceData);
+            }
           }
 
           console.log(`PaymentIntent succeeded for invoice ${invoiceId}: $${amountPaid}`);
