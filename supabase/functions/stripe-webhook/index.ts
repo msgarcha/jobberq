@@ -149,7 +149,7 @@ serve(async (req) => {
       // Update invoice totals
       const { data: invoice } = await supabaseAdmin
         .from("invoices")
-        .select("amount_paid, total")
+        .select("id, team_id, invoice_number, amount_paid, total, clients(first_name, last_name, company_name, email)")
         .eq("id", invoiceId)
         .single();
 
@@ -167,6 +167,11 @@ serve(async (req) => {
             paid_at: isPaid ? new Date().toISOString() : undefined,
           })
           .eq("id", invoiceId);
+
+        // When fully paid, email the CLIENT a branded receipt with the paid-invoice PDF.
+        if (isPaid) {
+          await sendClientReceipt(supabaseAdmin, invoice);
+        }
       }
 
       console.log(`Checkout payment recorded for invoice ${invoiceId}: $${amountPaid}`);
