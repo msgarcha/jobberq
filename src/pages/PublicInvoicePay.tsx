@@ -128,6 +128,14 @@ export default function PublicInvoicePay() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+
+  const publishableKey = data?.stripe_publishable_key || null;
+
+  const stripePromise = useMemo<Promise<Stripe | null> | null>(
+    () => (publishableKey ? loadStripe(publishableKey) : null),
+    [publishableKey]
+  );
 
   useEffect(() => {
     if (!invoiceId) return;
@@ -154,6 +162,37 @@ export default function PublicInvoicePay() {
       setLoading(false);
     }
   };
+
+  // Create a PaymentIntent once we know the invoice is payable.
+  useEffect(() => {
+    if (!data) return;
+    const { invoice, company } = data;
+    const balance = Number(invoice.balance_due);
+    const payable =
+      balance > 0 &&
+      invoice.status !== "paid" &&
+      company?.stripe_charges_enabled &&
+      data.stripe_publishable_key;
+    if (!payable || clientSecret) return;
+
+    (async () => {
+      try {
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const res = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/create-payment-intent`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ invoice_id: invoice.id, amount: balance, public_pay: true }),
+          }
+        );
+        const result = await res.json();
+        if (result.client_secret) setClientSecret(result.client_secret);
+      } catch {
+        // Payment section will fall back to "not available" messaging.
+      }
+    })();
+  }, [data, clientSecret]);
 
   if (loading) {
     return (
