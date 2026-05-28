@@ -1,46 +1,40 @@
-## Why the payment option is missing
+# Auto Payment Receipt to Client (with PDF)
 
-The invoice is configured correctly. In the database for this link:
-- `balance_due` = $2.10 (greater than 0)
-- `stripe_charges_enabled` = true
-- connected Stripe account is onboarded
+## Goal
+When an online payment makes an invoice fully paid, automatically email the **client** a branded "Payment received" message — like the Jobber screenshot — containing both a **Download receipt (PDF)** button and a **View invoice online** button. This sends only when the invoice becomes paid in full.
 
-The public pay page (`src/pages/PublicInvoicePay.tsx`) only renders the "Pay Now" section when **all three** of these are true:
+## Current behavior
+- Online payments go through `create-payment-intent` (destination charge on the platform account) → the `stripe-webhook` function handles `payment_intent.succeeded`, records the payment, marks the invoice paid, and notifies **only the business owner** (`notifyOwner`). The client gets nothing.
+- Invoice PDFs are only generated in the browser today (`PrintableInvoice.tsx`) — there is no server-side PDF.
+- The branded email domain (`notify.quicklinq.ca`) is verified and ready.
 
-```text
-balanceDue > 0  AND  company.stripe_charges_enabled  AND  stripePromise
-```
+## What will change
 
-The first two are fine. The third — `stripePromise` — is produced by `getStripe()` in `src/lib/stripe.ts`, which reads `import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY`. That variable is **not present in the frontend build**, so `getStripe()` returns `null`, the gate fails, and the page shows "Online payment is not available."
+### 1. Server-side PDF generation (new edge function `generate-invoice-pdf`)
+- Accepts an `invoice_id`, loads the invoice, line items (`invoice_line_items`), client, and company settings (logo, name, address, brand colors) using the service role.
+- Renders a clean, branded **paid invoice / receipt** PDF (company header, bill-to, line items, totals, a "PAID" marker, payment date and amount).
+- Uploads it to a new public storage bucket `invoice-receipts` under an unguessable random path, and returns the public URL. Re-uses the URL if already generated (idempotent).
 
-The Stripe publishable key currently lives only as a backend secret (`STRIPE_PUBLISHABLE_KEY`), so the browser never receives it. A publishable key is safe to expose to the browser, so the fix is to deliver it to the page.
+### 2. New client-facing email template `payment-receipt`
+- A "Payment received" template styled in QuickLinq branding (mirrors the Jobber layout: headline, the paid amount, invoice number, date, company name).
+- Two buttons: **Download receipt (PDF)** (the generated PDF URL) and **View invoice online** (`/pay/:invoiceId`).
+- Registered in the transactional email `registry.ts`. Sent to the client's email via the existing `send-transactional-email` function.
 
-## What I'll build
+### 3. Hook into the payment webhook
+- In `stripe-webhook` (`payment_intent.succeeded`, and the equivalent `checkout.session.completed` path), after the invoice is marked **paid in full**:
+  1. Call `generate-invoice-pdf` to produce the receipt PDF.
+  2. Send the `payment-receipt` email to the client (only if the client has an email).
+  3. Keep the existing owner notification unchanged.
+- Uses an idempotency key derived from the payment intent id so retries never double-send.
+- Skips silently for partial/deposit payments (per your choice: full payment only).
 
-### Part 1 — Make online card payment appear (the actual bug)
+## Notes / trade-offs
+- The email system cannot physically attach files, so the PDF is delivered as a secure download link/button — this is the same pattern Jobber uses and the file is a real, downloadable PDF.
+- Only fires for **online** payments (Stripe). Manually recorded payments won't trigger it unless you later ask for that.
 
-1. **Return the publishable key from the backend.** Extend the `public-invoice` edge function to also return `stripe_publishable_key` (read from the existing `STRIPE_PUBLISHABLE_KEY` secret). This is publishable and safe to send to the browser.
-2. **Use that key on the pay page.** In `PublicInvoicePay.tsx`, initialize Stripe from the key returned by the function (via `loadStripe(...)`) instead of relying on the missing build-time env var. The "Pay Now" gate then becomes `balanceDue > 0 && stripe_charges_enabled && <key present>`.
-
-This alone restores the card-entry form on the invoice link.
-
-### Part 2 — Add Apple Pay & Google Pay (card + wallets in one widget)
-
-The current form uses Stripe's `CardElement`, which is card-fields only — no Apple Pay. To get "enter card OR Apple Pay" I'll switch the public pay page to Stripe's **Payment Element**, which automatically shows the card form plus Apple Pay (on Safari/iOS) and Google Pay (on Chrome/Android) when available.
-
-1. On page load (for the public link), call `create-payment-intent` to get a `client_secret` for the balance due (the function already supports `public_pay` and already routes funds to the connected account via destination charges).
-2. Mount `<Elements stripe={...} options={{ clientSecret }}>` with `<PaymentElement />` and confirm with `stripe.confirmPayment(...)`.
-3. **Apple Pay domain registration (required by Stripe).** Apple Pay only renders on domains registered with Stripe as payment-method domains. I'll register the live domains (`quicklinq.app`, `www.quicklinq.app`, and the preview domain) on the platform Stripe account. Because payments are destination charges on the platform account, registering on the platform account is sufficient. Google Pay needs no domain registration.
-
-## Technical notes / decisions to confirm
-
-- **Live vs test mode:** Apple Pay buttons only appear in **live mode** on a registered HTTPS domain — they will not show in the Lovable preview iframe even after the code change. We should verify against the live `quicklinq.app` URL. Google Pay can appear in test mode.
-- **Other pages using `getStripe()`** (`ManualCardEntry`, `CollectPaymentSheet` inside the authenticated app) have the same missing-key issue. If you want, I can apply the same key-delivery fix there so in-app manual card entry also works. Tell me if that's in scope or if this is public-link only.
-- No database or schema changes are required.
-
-## Suggested order
-
-1. Part 1 first (one edge-function tweak + one page change) so the card payment option is restored immediately — verifiable on the live link.
-2. Part 2 (Payment Element migration + Apple Pay domain registration) for wallet support.
-
-If you'd rather keep it simple, I can do **only Part 1** (restore card payments) and skip Apple Pay for now. Otherwise I'll do both.
+## Technical details
+- New bucket `invoice-receipts` (public read) created via migration with appropriate policies; PDFs stored at random UUID paths.
+- `generate-invoice-pdf` built with `pdf-lib` (Deno-compatible), `verify_jwt = false`, called internally by the webhook with the service role.
+- Receipt email reuses `send-transactional-email`; new template added to `_shared/transactional-email-templates/` and `registry.ts`.
+- Webhook changes are additive to `stripe-webhook/index.ts`; `notifyOwner` flow stays intact.
+- After edits: deploy `generate-invoice-pdf`, `send-transactional-email`, and `stripe-webhook`.

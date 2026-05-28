@@ -3,6 +3,67 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { notifyOwner, formatCurrency, clientDisplayName, appUrl } from "../_shared/notify-owner.ts";
 
+// Send a "Payment received" receipt email to the CLIENT when an invoice is fully paid.
+// Best-effort: never throws — logs errors so the webhook keeps returning 200.
+async function sendClientReceipt(admin: any, invoice: any) {
+  try {
+    const client = invoice?.clients;
+    const email = client?.email;
+    if (!email) {
+      console.log(`[receipt] no client email for invoice ${invoice?.id}, skipping`);
+      return;
+    }
+
+    // 1. Generate the paid-invoice PDF receipt (best-effort)
+    let receiptUrl = "";
+    try {
+      const { data: pdfRes, error: pdfErr } = await admin.functions.invoke("generate-invoice-pdf", {
+        body: { invoice_id: invoice.id },
+      });
+      if (pdfErr) console.error("[receipt] PDF generation error:", pdfErr);
+      else receiptUrl = pdfRes?.url || "";
+    } catch (e) {
+      console.error("[receipt] PDF invoke failed:", e);
+    }
+
+    // 2. Company name for branding
+    const { data: company } = await admin
+      .from("company_settings")
+      .select("company_name")
+      .eq("team_id", invoice.team_id)
+      .maybeSingle();
+
+    const cName = clientDisplayName(client);
+    const paymentDate = new Date().toLocaleDateString("en-CA", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+
+    // 3. Send the receipt email to the client (idempotent per invoice)
+    const { error: invokeErr } = await admin.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "payment-receipt",
+        recipientEmail: email,
+        idempotencyKey: `receipt-${invoice.id}`,
+        templateData: {
+          companyName: company?.company_name || "",
+          clientName: client?.first_name || cName,
+          invoiceNumber: invoice.invoice_number,
+          amount: formatCurrency(invoice.total),
+          paymentDate,
+          receiptUrl,
+          invoiceUrl: `https://quicklinq.app/pay/${invoice.id}`,
+        },
+      },
+    });
+    if (invokeErr) console.error("[receipt] email invoke error:", invokeErr);
+    else console.log(`[receipt] sent to client for invoice ${invoice.id}`);
+  } catch (e) {
+    console.error("[receipt] sendClientReceipt failed:", e);
+  }
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -88,7 +149,7 @@ serve(async (req) => {
       // Update invoice totals
       const { data: invoice } = await supabaseAdmin
         .from("invoices")
-        .select("amount_paid, total")
+        .select("id, team_id, invoice_number, amount_paid, total, clients(first_name, last_name, company_name, email)")
         .eq("id", invoiceId)
         .single();
 
@@ -106,6 +167,11 @@ serve(async (req) => {
             paid_at: isPaid ? new Date().toISOString() : undefined,
           })
           .eq("id", invoiceId);
+
+        // When fully paid, email the CLIENT a branded receipt with the paid-invoice PDF.
+        if (isPaid) {
+          await sendClientReceipt(supabaseAdmin, invoice);
+        }
       }
 
       console.log(`Checkout payment recorded for invoice ${invoiceId}: $${amountPaid}`);
@@ -130,7 +196,7 @@ serve(async (req) => {
 
           const { data: invoiceData } = await supabaseAdmin
             .from("invoices")
-            .select("team_id, amount_paid, total, invoice_number, id, clients(first_name, last_name, company_name)")
+            .select("team_id, amount_paid, total, invoice_number, id, clients(first_name, last_name, company_name, email)")
             .eq("id", invoiceId)
             .single();
 
@@ -177,6 +243,11 @@ serve(async (req) => {
                 invoiceUrl: appUrl(`/invoices/${invoiceData.id}`),
               },
             });
+
+            // When fully paid, email the CLIENT a branded receipt with the paid-invoice PDF.
+            if (isFull) {
+              await sendClientReceipt(supabaseAdmin, invoiceData);
+            }
           }
 
           console.log(`PaymentIntent succeeded for invoice ${invoiceId}: $${amountPaid}`);

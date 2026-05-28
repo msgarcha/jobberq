@@ -694,6 +694,7 @@ export type Database = {
           paid_at: string | null
           payment_terms: string | null
           quote_id: string | null
+          receipt_pdf_url: string | null
           recurring_end: string | null
           recurring_frequency:
             | Database["public"]["Enums"]["recurring_frequency"]
@@ -726,6 +727,7 @@ export type Database = {
           paid_at?: string | null
           payment_terms?: string | null
           quote_id?: string | null
+          receipt_pdf_url?: string | null
           recurring_end?: string | null
           recurring_frequency?:
             | Database["public"]["Enums"]["recurring_frequency"]
@@ -758,6 +760,7 @@ export type Database = {
           paid_at?: string | null
           payment_terms?: string | null
           quote_id?: string | null
+          receipt_pdf_url?: string | null
           recurring_end?: string | null
           recurring_frequency?:
             | Database["public"]["Enums"]["recurring_frequency"]
