@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { finalizeOnlineInvoicePayment } from "../_shared/finalize-online-payment.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -135,41 +136,13 @@ serve(async (req) => {
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
       );
 
-      const { data: membership } = await supabase
-        .from("team_members")
-        .select("team_id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      await serviceSupabase.from("payments").insert({
-        invoice_id,
-        user_id: user.id,
-        team_id: membership?.team_id,
+      await finalizeOnlineInvoicePayment(serviceSupabase, {
+        invoiceId: invoice_id,
+        paymentIntentId: paymentIntent.id,
         amount: chargeAmount,
-        payment_method: "credit_card",
-        stripe_payment_id: paymentIntent.id,
+        userId: user.id,
         notes: `Charged saved card ending in ${savedCard.card_last4}`,
       });
-
-      const { data: invoice } = await serviceSupabase
-        .from("invoices")
-        .select("amount_paid, total")
-        .eq("id", invoice_id)
-        .single();
-
-      if (invoice) {
-        const newAmountPaid = Number(invoice.amount_paid) + chargeAmount;
-        const newBalance = Number(invoice.total) - newAmountPaid;
-        const updates: any = {
-          amount_paid: newAmountPaid,
-          balance_due: Math.max(0, newBalance),
-        };
-        if (newBalance <= 0) {
-          updates.status = "paid";
-          updates.paid_at = new Date().toISOString();
-        }
-        await serviceSupabase.from("invoices").update(updates).eq("id", invoice_id);
-      }
     }
 
     return new Response(
