@@ -13,6 +13,7 @@ interface EmailDocumentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   type: "invoice" | "quote";
+  mode?: "document" | "receipt";
   documentId: string;
   documentNumber: string;
   documentTitle?: string | null;
@@ -28,6 +29,7 @@ export function EmailDocumentDialog({
   open,
   onOpenChange,
   type,
+  mode = "document",
   documentId,
   documentNumber,
   documentTitle,
@@ -38,15 +40,21 @@ export function EmailDocumentDialog({
   balanceDue,
   dueDate,
 }: EmailDocumentDialogProps) {
-  const label = type === "invoice" ? "Invoice" : "Estimate";
-  const defaultSubject = `${label} from ${companyName || "Us"} — ${documentNumber}`;
+  const label = type === "invoice" ? (mode === "receipt" ? "Receipt" : "Invoice") : "Estimate";
+  const defaultSubject = mode === "receipt"
+    ? `Payment receipt from ${companyName || "Us"} — ${documentNumber}`
+    : `${label} from ${companyName || "Us"} — ${documentNumber}`;
 
   const amount = type === "invoice" ? (balanceDue ?? total ?? 0) : (total ?? 0);
   const amountLabel = type === "invoice" ? "balance due" : "total";
 
   const defaultBody = `Hi ${clientName || "there"},
 
-${type === "invoice"
+${type === "invoice" && mode === "receipt"
+    ? `Thanks for your payment. Your receipt for ${documentNumber} is ready.
+
+You can view this paid invoice online using the link below.`
+    : type === "invoice"
     ? `Please find attached your invoice ${documentNumber}. The ${amountLabel} is $${amount.toFixed(2)}${dueDate ? `, due by ${new Date(dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}.
 
 You can view and pay this invoice online using the link below.`
@@ -123,7 +131,11 @@ ${companyName || ""}`.trim();
       const ctaUrl = type === "invoice"
         ? `${origin}/pay/${documentId}`
         : `${origin}/quote/view/${documentId}`;
-      const ctaLabel = type === "invoice" ? "View & Pay Invoice" : "View & Approve Estimate";
+      const ctaLabel = type === "invoice"
+        ? mode === "receipt"
+          ? "View Paid Invoice"
+          : "View & Pay Invoice"
+        : "View & Approve Estimate";
 
       const emailPayload = {
         templateName: "document-email",
@@ -162,7 +174,7 @@ ${companyName || ""}`.trim();
       }
 
       // Update document status to "sent"
-      if (type === "invoice") {
+       if (type === "invoice" && mode !== "receipt") {
         await supabase.from("invoices").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", documentId);
       } else {
         await supabase.from("quotes").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", documentId);
