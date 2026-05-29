@@ -11,7 +11,7 @@ import { CollectPaymentSheet } from "@/components/invoice/CollectPaymentSheet";
 import { EmailDocumentDialog } from "@/components/EmailDocumentDialog";
 import { useInvoice, useInvoiceLineItems, useUpdateInvoice, useDeleteInvoice, usePayments, useDuplicateInvoice } from "@/hooks/useInvoices";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
-import { ArrowLeft, Edit, Send, Trash2, Copy, RefreshCw, Download, Loader2, DollarSign, Link2, Mail } from "lucide-react";
+import { ArrowLeft, Edit, Send, Trash2, Copy, RefreshCw, Download, Loader2, DollarSign, Link2, Mail, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
@@ -48,6 +48,10 @@ const InvoiceDetail = () => {
   const { data: companySettings } = useCompanySettings();
 
   const handleSend = () => {
+    setEmailOpen(true);
+  };
+
+  const handleSendReceipt = () => {
     setEmailOpen(true);
   };
 
@@ -235,12 +239,17 @@ const InvoiceDetail = () => {
             </div>
           )}
           {isPaid && (
-            <div className="px-5 py-3 sm:px-6">
-              <div className="flex items-center gap-2 text-sm text-status-success font-medium">
-                <DollarSign className="h-4 w-4" />
-                Paid in full
-                {invoice.paid_at && ` on ${format(new Date(invoice.paid_at), "MMM d, yyyy")}`}
+              <div className="px-5 py-3 sm:px-6 space-y-3">
+                <div className="flex items-center gap-2 text-sm text-status-success font-medium">
+                  <DollarSign className="h-4 w-4" />
+                  Paid in full
+                  {invoice.paid_at && ` on ${format(new Date(invoice.paid_at), "MMM d, yyyy")}`}
               </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={handleSendReceipt}>
+                    <Receipt className="h-4 w-4" /> Send Receipt
+                  </Button>
+                </div>
             </div>
           )}
         </Card>
