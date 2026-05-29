@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { useRecordPayment } from "@/hooks/useInvoices";
 import { useSaveCard } from "@/hooks/useSavedCards";
 import { Loader2, CreditCard, Lock } from "lucide-react";
 import { toast } from "sonner";
@@ -23,7 +22,6 @@ function CardForm({ invoiceId, clientId, amount, onSuccess, onCancel }: ManualCa
   const elements = useElements();
   const [loading, setLoading] = useState(false);
   const [saveCard, setSaveCard] = useState(false);
-  const recordPayment = useRecordPayment();
   const saveCardMutation = useSaveCard();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,13 +49,11 @@ function CardForm({ invoiceId, clientId, amount, onSuccess, onCancel }: ManualCa
       }
 
       if (paymentIntent?.status === "succeeded") {
-        // Record payment
-        await recordPayment.mutateAsync({
-          invoice_id: invoiceId,
-          amount,
-          payment_method: "credit_card",
-          stripe_payment_id: paymentIntent.id,
-          notes: "Paid via card",
+        await supabase.functions.invoke("finalize-online-payment", {
+          body: {
+            payment_intent_id: paymentIntent.id,
+            invoice_id: invoiceId,
+          },
         });
 
         // Save card if requested

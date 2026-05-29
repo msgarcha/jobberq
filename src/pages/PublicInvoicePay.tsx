@@ -50,7 +50,7 @@ interface InvoiceData {
   stripe_publishable_key?: string | null;
 }
 
-function PaymentForm({ amount, onSuccess }: { amount: number; onSuccess: () => void }) {
+function PaymentForm({ amount, onSuccess }: { amount: number; onSuccess: (paymentIntentId?: string) => void }) {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
@@ -74,7 +74,7 @@ function PaymentForm({ amount, onSuccess }: { amount: number; onSuccess: () => v
 
       if (stripeError) throw new Error(stripeError.message);
       if (paymentIntent?.status === "succeeded") {
-        onSuccess();
+        onSuccess(paymentIntent.id);
       } else if (paymentIntent?.status === "processing") {
         onSuccess();
       }
@@ -129,6 +129,7 @@ export default function PublicInvoicePay() {
   const [error, setError] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [finalizing, setFinalizing] = useState(false);
 
   const publishableKey = data?.stripe_publishable_key || null;
 
@@ -160,6 +161,34 @@ export default function PublicInvoicePay() {
       setError(err.message || "Invoice not found");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const finalizePayment = async (paymentIntentId?: string) => {
+    if (!paymentIntentId || !data?.invoice.id) {
+      setPaid(true);
+      await loadInvoice();
+      return;
+    }
+
+    setFinalizing(true);
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/finalize-online-payment`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ payment_intent_id: paymentIntentId, invoice_id: data.invoice.id }),
+        }
+      );
+      await res.json();
+    } catch {
+      // Webhook may still complete the reconciliation shortly after.
+    } finally {
+      await loadInvoice();
+      setPaid(true);
+      setFinalizing(false);
     }
   };
 
@@ -237,7 +266,7 @@ export default function PublicInvoicePay() {
           <div className="bg-white rounded-xl shadow-lg p-8 text-center space-y-3">
             <CheckCircle2 className="h-16 w-16 mx-auto text-[hsl(152,52%,42%)]" />
             <h2 className="text-2xl font-bold text-[hsl(200,30%,14%)]">Payment Received!</h2>
-            <p className="text-[hsl(200,10%,46%)]">Thank you for your payment.</p>
+            <p className="text-[hsl(200,10%,46%)]">{finalizing ? "Finalizing your receipt…" : "Thank you for your payment."}</p>
             {company?.company_name && (
               <p className="text-sm text-[hsl(200,10%,60%)]">Paid to {company.company_name}</p>
             )}
@@ -363,7 +392,7 @@ export default function PublicInvoicePay() {
                   appearance: { theme: "stripe", variables: { colorPrimary: "#1a6b7a" } },
                 }}
               >
-                <PaymentForm amount={balanceDue} onSuccess={() => setPaid(true)} />
+                <PaymentForm amount={balanceDue} onSuccess={finalizePayment} />
               </Elements>
             </div>
           ) : balanceDue > 0 && company?.stripe_charges_enabled && stripePromise ? (
