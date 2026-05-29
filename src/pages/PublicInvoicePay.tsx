@@ -50,7 +50,7 @@ interface InvoiceData {
   stripe_publishable_key?: string | null;
 }
 
-function PaymentForm({ amount, onSuccess }: { amount: number; onSuccess: () => void }) {
+function PaymentForm({ amount, onSuccess }: { amount: number; onSuccess: (paymentIntentId?: string) => void }) {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
