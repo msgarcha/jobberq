@@ -484,6 +484,7 @@ const InvoiceDetail = () => {
         open={emailOpen}
         onOpenChange={setEmailOpen}
         type="invoice"
+        mode={isPaid ? "receipt" : "document"}
         documentId={id!}
         documentNumber={invoice.invoice_number}
         documentTitle={invoice.title}

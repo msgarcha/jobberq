@@ -176,7 +176,7 @@ ${companyName || ""}`.trim();
       // Update document status to "sent"
        if (type === "invoice" && mode !== "receipt") {
         await supabase.from("invoices").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", documentId);
-      } else {
+       } else if (type === "quote") {
         await supabase.from("quotes").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", documentId);
       }
 
