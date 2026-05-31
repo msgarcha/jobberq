@@ -177,6 +177,21 @@ export function MobileBottomNav() {
                   <span className="text-xs font-medium">{item.label}</span>
                 </button>
               ))}
+              {isSuperAdmin && (
+                <button
+                  onClick={() => {
+                    setMoreOpen(false);
+                    navigate("/super-admin");
+                  }}
+                  className={cn(
+                    "flex flex-col items-center gap-2 py-4 px-2 rounded-2xl transition-colors",
+                    isActive("/super-admin") ? "bg-amber-500/10 text-amber-600" : "text-amber-600 hover:bg-amber-500/10"
+                  )}
+                >
+                  <Shield className="h-6 w-6" />
+                  <span className="text-xs font-medium">Super Admin</span>
+                </button>
+              )}
               <button
                 onClick={() => {
                   setMoreOpen(false);
