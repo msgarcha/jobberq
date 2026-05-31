@@ -18,6 +18,7 @@ import {
   FolderOpen,
   LogOut,
   Sparkles,
+  Shield,
 } from "lucide-react";
 import { AssistantSheet } from "@/components/ai/AssistantSheet";
 import { cn } from "@/lib/utils";
