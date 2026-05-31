@@ -497,13 +497,26 @@ const Settings = () => {
                       )}
                       {stripeStatus.onboarding_complete && (
                         <Button size="sm" variant="outline" className="gap-1.5" onClick={async () => {
+                          // Open the tab synchronously to preserve the user gesture (mobile popup blockers)
+                          const newTab = window.open("", "_blank");
                           try {
                             const { data, error } = await supabase.functions.invoke("connect-stripe-account", {
                               body: { action: "login-link" },
                             });
                             if (error) throw error;
-                            if (data?.url) window.open(data.url, "_blank");
+                            if (data?.url) {
+                              if (newTab) {
+                                newTab.location.href = data.url;
+                              } else {
+                                // Popup was blocked — navigate in the same tab as a fallback
+                                window.location.href = data.url;
+                              }
+                            } else {
+                              newTab?.close();
+                              throw new Error("No dashboard link returned");
+                            }
                           } catch (err: any) {
+                            newTab?.close();
                             toast({ title: "Error", description: err.message || "Failed to open Stripe dashboard", variant: "destructive" });
                           }
                         }}>
