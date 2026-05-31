@@ -54,7 +54,7 @@ const moreItems = [
 export function MobileBottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, isSuperAdmin } = useAuth();
   const [fabOpen, setFabOpen] = useState(false);
   const [fabClosing, setFabClosing] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
