@@ -44,6 +44,12 @@ const QuoteForm = () => {
   const [depositType, setDepositType] = useState<"percent" | "fixed">("percent");
   const [depositValue, setDepositValue] = useState("");
 
+  // Reminder state
+  const [remindersEnabled, setRemindersEnabled] = useState(false);
+  const [reminderFrequency, setReminderFrequency] = useState("weekly");
+  const [reminderLimit, setReminderLimit] = useState(3);
+  const [remindersInit, setRemindersInit] = useState(false);
+
   useEffect(() => {
     if (existingQuote) {
       setClientId(existingQuote.client_id);
