@@ -20,6 +20,8 @@ import { template as quoteApproved } from './quote-approved.tsx'
 import { template as invoiceViewed } from './invoice-viewed.tsx'
 import { template as paymentReceived } from './payment-received.tsx'
 import { template as paymentReceipt } from './payment-receipt.tsx'
+import { template as invoiceReminder } from './invoice-reminder.tsx'
+import { template as quoteReminder } from './quote-reminder.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'document-email': documentEmail,
