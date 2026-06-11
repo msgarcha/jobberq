@@ -173,11 +173,37 @@ ${companyName || ""}`.trim();
         }
       }
 
-      // Update document status to "sent"
-       if (type === "invoice" && mode !== "receipt") {
-        await supabase.from("invoices").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", documentId);
-       } else if (type === "quote") {
-        await supabase.from("quotes").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", documentId);
+      // Update document status to "sent" and seed the reminder clock if enabled
+      const nowIso = new Date().toISOString();
+      const intervalDays = (freq?: string | null) => (freq === "biweekly" ? 14 : freq === "monthly" ? 30 : 7);
+      if (type === "invoice" && mode !== "receipt") {
+        const { data: row } = await supabase
+          .from("invoices")
+          .select("reminders_enabled, reminder_frequency, reminders_sent, reminder_limit")
+          .eq("id", documentId)
+          .maybeSingle();
+        const updates: any = { status: "sent", sent_at: nowIso };
+        const r = row as any;
+        if (r?.reminders_enabled && (r.reminders_sent ?? 0) === 0 && (r.reminders_sent ?? 0) < (r.reminder_limit ?? 0)) {
+          const next = new Date();
+          next.setDate(next.getDate() + intervalDays(r.reminder_frequency));
+          updates.next_reminder_at = next.toISOString();
+        }
+        await supabase.from("invoices").update(updates).eq("id", documentId);
+      } else if (type === "quote") {
+        const { data: row } = await supabase
+          .from("quotes")
+          .select("reminders_enabled, reminder_frequency, reminders_sent, reminder_limit")
+          .eq("id", documentId)
+          .maybeSingle();
+        const updates: any = { status: "sent", sent_at: nowIso };
+        const r = row as any;
+        if (r?.reminders_enabled && (r.reminders_sent ?? 0) === 0 && (r.reminders_sent ?? 0) < (r.reminder_limit ?? 0)) {
+          const next = new Date();
+          next.setDate(next.getDate() + intervalDays(r.reminder_frequency));
+          updates.next_reminder_at = next.toISOString();
+        }
+        await supabase.from("quotes").update(updates).eq("id", documentId);
       }
 
       toast.success(`${label} sent to ${toEmail}`);
