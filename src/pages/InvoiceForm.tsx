@@ -102,8 +102,25 @@ const InvoiceForm = () => {
       setRecurringFrequency(existingInvoice.recurring_frequency || "monthly");
       setRecurringStart(existingInvoice.recurring_start || "");
       setRecurringEnd(existingInvoice.recurring_end || "");
+      const ei = existingInvoice as any;
+      setRemindersEnabled(ei.reminders_enabled || false);
+      setReminderFrequency(ei.reminder_frequency || "weekly");
+      setReminderLimit(ei.reminder_limit ?? 3);
+      setRemindersInit(true);
     }
   }, [existingInvoice]);
+
+  // Pre-fill reminder settings from company defaults on new invoices
+  useEffect(() => {
+    if (!isEdit && !remindersInit && companySettings) {
+      const cs = companySettings as any;
+      setRemindersEnabled(cs.default_reminders_enabled || false);
+      setReminderFrequency(cs.default_reminder_frequency || "weekly");
+      setReminderLimit(cs.default_reminder_limit ?? 3);
+      setRemindersInit(true);
+    }
+  }, [companySettings, isEdit, remindersInit]);
+
 
   useEffect(() => {
     if (existingLineItems) {
