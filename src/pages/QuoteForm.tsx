@@ -282,6 +282,32 @@ const QuoteForm = () => {
           )}
         </Card>
 
+        <Card className="shadow-warm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Bell className="h-4 w-4" /> Reminders
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ReminderSettings
+              type="quote"
+              enabled={remindersEnabled}
+              frequency={reminderFrequency}
+              limit={reminderLimit}
+              onEnabledChange={setRemindersEnabled}
+              onFrequencyChange={setReminderFrequency}
+              onLimitChange={setReminderLimit}
+              status={isEdit ? {
+                remindersSent: (existingQuote as any)?.reminders_sent ?? 0,
+                nextReminderAt: (existingQuote as any)?.next_reminder_at ?? null,
+                isSent: !!(existingQuote as any)?.sent_at,
+              } : undefined}
+            />
+          </CardContent>
+        </Card>
+
+
+
         <div className="grid gap-5 grid-cols-1 md:grid-cols-2">
           <div>
             <Label className="text-xs">Client Notes</Label>
