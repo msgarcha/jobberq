@@ -35,4 +35,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'invoice-viewed': invoiceViewed,
   'payment-received': paymentReceived,
   'payment-receipt': paymentReceipt,
+  'invoice-reminder': invoiceReminder,
+  'quote-reminder': quoteReminder,
 }
