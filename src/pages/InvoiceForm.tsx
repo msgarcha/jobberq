@@ -284,6 +284,32 @@ const InvoiceForm = () => {
         </Card>
 
         <Card className="shadow-warm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Bell className="h-4 w-4" /> Reminders
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ReminderSettings
+              type="invoice"
+              enabled={remindersEnabled}
+              frequency={reminderFrequency}
+              limit={reminderLimit}
+              onEnabledChange={setRemindersEnabled}
+              onFrequencyChange={setReminderFrequency}
+              onLimitChange={setReminderLimit}
+              status={isEdit ? {
+                remindersSent: (existingInvoice as any)?.reminders_sent ?? 0,
+                nextReminderAt: (existingInvoice as any)?.next_reminder_at ?? null,
+                isSent: !!(existingInvoice as any)?.sent_at,
+              } : undefined}
+            />
+          </CardContent>
+        </Card>
+
+
+
+        <Card className="shadow-warm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Line Items</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <LineItemsEditor items={lineItems} onChange={setLineItems} defaultTaxRate={defaultTaxRate} />
