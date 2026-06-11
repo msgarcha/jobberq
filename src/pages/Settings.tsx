@@ -204,6 +204,9 @@ const Settings = () => {
       setNotifyOnDepositPaid((settings as any).notify_on_deposit_paid ?? true);
       setNotifyOnInvoicePaid((settings as any).notify_on_invoice_paid ?? true);
       setNotificationEmail((settings as any).notification_email || "");
+      setDefaultRemindersEnabled((settings as any).default_reminders_enabled ?? false);
+      setDefaultReminderFrequency((settings as any).default_reminder_frequency || "weekly");
+      setDefaultReminderLimit((settings as any).default_reminder_limit ?? 3);
     }
   }, [settings]);
 
