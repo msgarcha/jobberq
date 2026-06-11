@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const company = (inv as any).company_settings?.company_name || "Our Company";
+      const company = await companyNameForTeam((inv as any).team_id);
       const ok = await sendEmail({
         templateName: "invoice-reminder",
         recipientEmail: email,
