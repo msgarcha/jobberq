@@ -196,7 +196,7 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const company = (q as any).company_settings?.company_name || "Our Company";
+      const company = await companyNameForTeam((q as any).team_id);
       const ok = await sendEmail({
         templateName: "quote-reminder",
         recipientEmail: email,
