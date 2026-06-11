@@ -440,6 +440,16 @@ const QuoteDetail = () => {
           </CardContent>
         </Card>
 
+        {!isApproved && quote.status !== "converted" && quote.status !== "expired" && (
+          <DocumentReminderCard
+            type="quote"
+            document={quote}
+            onSaved={() => qc.invalidateQueries({ queryKey: ["quote", id] })}
+          />
+        )}
+
+
+
         {(quote.client_notes || quote.internal_notes) && (
           <div className="grid gap-5 md:grid-cols-2">
             {quote.client_notes && (
