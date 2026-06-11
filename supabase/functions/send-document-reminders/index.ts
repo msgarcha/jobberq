@@ -98,10 +98,25 @@ Deno.serve(async (req) => {
       quotes: { sent: 0, skipped: 0, errors: 0 },
     };
 
+    // Resolve company names per team (no direct FK, so look up separately + cache)
+    const companyNameCache = new Map<string, string>();
+    async function companyNameForTeam(teamId: string | null): Promise<string> {
+      if (!teamId) return "Our Company";
+      if (companyNameCache.has(teamId)) return companyNameCache.get(teamId)!;
+      const { data } = await admin
+        .from("company_settings")
+        .select("company_name")
+        .eq("team_id", teamId)
+        .maybeSingle();
+      const name = data?.company_name || "Our Company";
+      companyNameCache.set(teamId, name);
+      return name;
+    }
+
     // ---- INVOICES ----
     const { data: invoices } = await admin
       .from("invoices")
-      .select("id, invoice_number, status, total, balance_due, due_date, reminder_frequency, reminder_limit, reminders_sent, clients(first_name, last_name, company_name, email), company_settings:team_id(company_name)")
+      .select("id, invoice_number, status, total, balance_due, due_date, team_id, reminder_frequency, reminder_limit, reminders_sent, clients(first_name, last_name, company_name, email)")
       .eq("reminders_enabled", true)
       .in("status", ["sent", "viewed", "overdue"])
       .lte("next_reminder_at", nowIso)
