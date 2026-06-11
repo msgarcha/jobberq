@@ -691,7 +691,29 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <Card className="shadow-warm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-primary" /> Default reminders
+                </CardTitle>
+                <CardDescription>
+                  Pre-fills automatic client reminders on new invoices and quotes. You can still adjust them per document.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ReminderSettings
+                  enabled={defaultRemindersEnabled}
+                  frequency={defaultReminderFrequency}
+                  limit={defaultReminderLimit}
+                  onEnabledChange={setDefaultRemindersEnabled}
+                  onFrequencyChange={setDefaultReminderFrequency}
+                  onLimitChange={setDefaultReminderLimit}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
+
 
           {/* Team Tab */}
           <TabsContent value="team" className="space-y-5 mt-5">
