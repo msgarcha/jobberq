@@ -174,7 +174,7 @@ Deno.serve(async (req) => {
     const today = nowIso.split("T")[0];
     const { data: quotes } = await admin
       .from("quotes")
-      .select("id, quote_number, status, total, valid_until, reminder_frequency, reminder_limit, reminders_sent, clients(first_name, last_name, company_name, email), company_settings:team_id(company_name)")
+      .select("id, quote_number, status, total, valid_until, team_id, reminder_frequency, reminder_limit, reminders_sent, clients(first_name, last_name, company_name, email)")
       .eq("reminders_enabled", true)
       .in("status", ["sent", "viewed"])
       .lte("next_reminder_at", nowIso)
