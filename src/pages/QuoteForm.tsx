@@ -16,7 +16,6 @@ import { SuggestionChip } from "@/components/ai/SuggestionChip";
 import { ReminderSettings, computeNextReminderAt } from "@/components/ReminderSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Save, Plus, Bell } from "lucide-react";
-import { Card as _Card, CardContent as _CardContent, CardHeader as _CardHeader, CardTitle as _CardTitle } from "@/components/ui/card";
 
 const QuoteForm = () => {
   const { id } = useParams();
