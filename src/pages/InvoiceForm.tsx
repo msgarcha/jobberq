@@ -143,6 +143,15 @@ const InvoiceForm = () => {
     setSaving(true);
     try {
       const totals = computeTotals(lineItems);
+      const sentAt = (existingInvoice as any)?.sent_at || null;
+      const remindersSent = (existingInvoice as any)?.reminders_sent ?? 0;
+      const nextReminderAt = computeNextReminderAt({
+        enabled: remindersEnabled,
+        baseDate: (existingInvoice as any)?.last_reminder_at || sentAt,
+        frequency: reminderFrequency,
+        remindersSent,
+        limit: reminderLimit,
+      });
       const invoiceData = {
         client_id: clientId,
         title: title || null,
@@ -154,9 +163,14 @@ const InvoiceForm = () => {
         recurring_frequency: isRecurring ? recurringFrequency as any : null,
         recurring_start: isRecurring && recurringStart ? recurringStart : null,
         recurring_end: isRecurring && recurringEnd ? recurringEnd : null,
+        reminders_enabled: remindersEnabled,
+        reminder_frequency: reminderFrequency,
+        reminder_limit: reminderLimit,
+        next_reminder_at: nextReminderAt,
         ...totals,
         balance_due: isEdit ? totals.total - Number(existingInvoice?.amount_paid || 0) : totals.total,
-      };
+      } as any;
+
 
       let invoiceId: string;
 
