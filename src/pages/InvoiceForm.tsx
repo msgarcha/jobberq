@@ -64,6 +64,11 @@ const InvoiceForm = () => {
   const [recurringStart, setRecurringStart] = useState("");
   const [recurringEnd, setRecurringEnd] = useState("");
 
+  const [remindersEnabled, setRemindersEnabled] = useState(false);
+  const [reminderFrequency, setReminderFrequency] = useState("weekly");
+  const [reminderLimit, setReminderLimit] = useState(3);
+  const [remindersInit, setRemindersInit] = useState(false);
+
   const computeDueDate = (terms: string): string => {
     const daysMap: Record<string, number> = { due_on_receipt: 0, net_15: 15, net_30: 30, net_45: 45, net_60: 60 };
     const days = daysMap[terms];
