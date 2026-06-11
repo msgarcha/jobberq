@@ -13,8 +13,10 @@ import { LineItemsEditor, LineItem, computeTotals } from "@/components/LineItems
 import { useQuote, useQuoteLineItems, useCreateQuote, useUpdateQuote, useSaveQuoteLineItems, useNextQuoteNumber, useIncrementQuoteNumber } from "@/hooks/useQuotes";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { SuggestionChip } from "@/components/ai/SuggestionChip";
+import { ReminderSettings, computeNextReminderAt } from "@/components/ReminderSettings";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Save, Plus } from "lucide-react";
+import { ArrowLeft, Save, Plus, Bell } from "lucide-react";
+import { Card as _Card, CardContent as _CardContent, CardHeader as _CardHeader, CardTitle as _CardTitle } from "@/components/ui/card";
 
 const QuoteForm = () => {
   const { id } = useParams();
