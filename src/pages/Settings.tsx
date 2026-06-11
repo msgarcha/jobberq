@@ -86,6 +86,9 @@ const Settings = () => {
   const [notifyOnDepositPaid, setNotifyOnDepositPaid] = useState(true);
   const [notifyOnInvoicePaid, setNotifyOnInvoicePaid] = useState(true);
   const [notificationEmail, setNotificationEmail] = useState("");
+  const [defaultRemindersEnabled, setDefaultRemindersEnabled] = useState(false);
+  const [defaultReminderFrequency, setDefaultReminderFrequency] = useState("weekly");
+  const [defaultReminderLimit, setDefaultReminderLimit] = useState(3);
 
   // Stripe Connect state
   const [stripeConnectLoading, setStripeConnectLoading] = useState(false);
