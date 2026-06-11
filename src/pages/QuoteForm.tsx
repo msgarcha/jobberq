@@ -106,13 +106,26 @@ const QuoteForm = () => {
   const handleSave = async (createAnother = false) => {
     setSaving(true);
     try {
+      const eq = existingQuote as any;
+      const nextReminderAt = computeNextReminderAt({
+        enabled: remindersEnabled,
+        baseDate: eq?.last_reminder_at || eq?.sent_at,
+        frequency: reminderFrequency,
+        remindersSent: eq?.reminders_sent ?? 0,
+        limit: reminderLimit,
+      });
       const quoteData: any = {
         client_id: clientId, title: title || null, valid_until: validUntil || null,
         client_notes: clientNotes || null, internal_notes: internalNotes || null, ...totals,
         deposit_type: depositEnabled ? depositType : null,
         deposit_value: depositEnabled ? Number(depositValue) || 0 : 0,
         deposit_amount: calculatedDeposit,
+        reminders_enabled: remindersEnabled,
+        reminder_frequency: reminderFrequency,
+        reminder_limit: reminderLimit,
+        next_reminder_at: nextReminderAt,
       };
+
 
       let quoteId: string;
 
