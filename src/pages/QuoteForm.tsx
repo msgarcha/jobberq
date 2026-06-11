@@ -64,8 +64,24 @@ const QuoteForm = () => {
         setDepositType(eq.deposit_type);
         setDepositValue(String(eq.deposit_value || ""));
       }
+      setRemindersEnabled(eq.reminders_enabled || false);
+      setReminderFrequency(eq.reminder_frequency || "weekly");
+      setReminderLimit(eq.reminder_limit ?? 3);
+      setRemindersInit(true);
     }
   }, [existingQuote]);
+
+  // Pre-fill reminder settings from company defaults on new quotes
+  useEffect(() => {
+    if (!isEdit && !remindersInit && companySettings) {
+      const cs = companySettings as any;
+      setRemindersEnabled(cs.default_reminders_enabled || false);
+      setReminderFrequency(cs.default_reminder_frequency || "weekly");
+      setReminderLimit(cs.default_reminder_limit ?? 3);
+      setRemindersInit(true);
+    }
+  }, [companySettings, isEdit, remindersInit]);
+
 
   useEffect(() => {
     if (existingLineItems) {
