@@ -346,6 +346,16 @@ const InvoiceDetail = () => {
               </div>
             </div>
 
+            {!isPaid && (
+              <DocumentReminderCard
+                type="invoice"
+                document={invoice}
+                onSaved={() => qc.invalidateQueries({ queryKey: ["invoice", id] })}
+              />
+            )}
+
+
+
             {/* Details card */}
             <div className="grid gap-4 sm:grid-cols-2">
               <Card className="shadow-warm">
