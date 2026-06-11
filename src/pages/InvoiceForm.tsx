@@ -16,7 +16,7 @@ import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { SuggestionChip } from "@/components/ai/SuggestionChip";
 import { ReminderSettings, computeNextReminderAt } from "@/components/ReminderSettings";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Save, RefreshCw, Plus } from "lucide-react";
+import { ArrowLeft, Save, RefreshCw, Plus, Bell } from "lucide-react";
 import { addDays, format } from "date-fns";
 
 const paymentTermOptions = [
