@@ -243,6 +243,9 @@ const Settings = () => {
       notify_on_deposit_paid: notifyOnDepositPaid,
       notify_on_invoice_paid: notifyOnInvoicePaid,
       notification_email: notificationEmail || null,
+      default_reminders_enabled: defaultRemindersEnabled,
+      default_reminder_frequency: defaultReminderFrequency,
+      default_reminder_limit: defaultReminderLimit,
     } as any);
   };
 
