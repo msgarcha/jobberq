@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCompanySettings, useUpsertCompanySettings } from "@/hooks/useCompanySettings";
+import { ReminderSettings } from "@/components/ReminderSettings";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTeam, useTeamMembers, useTeamInvitations, useSendInvite, useUpdateMemberRole, useRemoveMember, useCancelInvitation } from "@/hooks/useTeam";
 import { supabase } from "@/integrations/supabase/client";
