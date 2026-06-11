@@ -13,8 +13,9 @@ import { LineItemsEditor, LineItem, computeTotals } from "@/components/LineItems
 import { useQuote, useQuoteLineItems, useCreateQuote, useUpdateQuote, useSaveQuoteLineItems, useNextQuoteNumber, useIncrementQuoteNumber } from "@/hooks/useQuotes";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { SuggestionChip } from "@/components/ai/SuggestionChip";
+import { ReminderSettings, computeNextReminderAt } from "@/components/ReminderSettings";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Save, Plus } from "lucide-react";
+import { ArrowLeft, Save, Plus, Bell } from "lucide-react";
 
 const QuoteForm = () => {
   const { id } = useParams();
@@ -43,6 +44,12 @@ const QuoteForm = () => {
   const [depositType, setDepositType] = useState<"percent" | "fixed">("percent");
   const [depositValue, setDepositValue] = useState("");
 
+  // Reminder state
+  const [remindersEnabled, setRemindersEnabled] = useState(false);
+  const [reminderFrequency, setReminderFrequency] = useState("weekly");
+  const [reminderLimit, setReminderLimit] = useState(3);
+  const [remindersInit, setRemindersInit] = useState(false);
+
   useEffect(() => {
     if (existingQuote) {
       setClientId(existingQuote.client_id);
@@ -57,8 +64,24 @@ const QuoteForm = () => {
         setDepositType(eq.deposit_type);
         setDepositValue(String(eq.deposit_value || ""));
       }
+      setRemindersEnabled(eq.reminders_enabled || false);
+      setReminderFrequency(eq.reminder_frequency || "weekly");
+      setReminderLimit(eq.reminder_limit ?? 3);
+      setRemindersInit(true);
     }
   }, [existingQuote]);
+
+  // Pre-fill reminder settings from company defaults on new quotes
+  useEffect(() => {
+    if (!isEdit && !remindersInit && companySettings) {
+      const cs = companySettings as any;
+      setRemindersEnabled(cs.default_reminders_enabled || false);
+      setReminderFrequency(cs.default_reminder_frequency || "weekly");
+      setReminderLimit(cs.default_reminder_limit ?? 3);
+      setRemindersInit(true);
+    }
+  }, [companySettings, isEdit, remindersInit]);
+
 
   useEffect(() => {
     if (existingLineItems) {
@@ -83,13 +106,26 @@ const QuoteForm = () => {
   const handleSave = async (createAnother = false) => {
     setSaving(true);
     try {
+      const eq = existingQuote as any;
+      const nextReminderAt = computeNextReminderAt({
+        enabled: remindersEnabled,
+        baseDate: eq?.last_reminder_at || eq?.sent_at,
+        frequency: reminderFrequency,
+        remindersSent: eq?.reminders_sent ?? 0,
+        limit: reminderLimit,
+      });
       const quoteData: any = {
         client_id: clientId, title: title || null, valid_until: validUntil || null,
         client_notes: clientNotes || null, internal_notes: internalNotes || null, ...totals,
         deposit_type: depositEnabled ? depositType : null,
         deposit_value: depositEnabled ? Number(depositValue) || 0 : 0,
         deposit_amount: calculatedDeposit,
+        reminders_enabled: remindersEnabled,
+        reminder_frequency: reminderFrequency,
+        reminder_limit: reminderLimit,
+        next_reminder_at: nextReminderAt,
       };
+
 
       let quoteId: string;
 
@@ -245,6 +281,32 @@ const QuoteForm = () => {
             </CardContent>
           )}
         </Card>
+
+        <Card className="shadow-warm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Bell className="h-4 w-4" /> Reminders
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ReminderSettings
+              type="quote"
+              enabled={remindersEnabled}
+              frequency={reminderFrequency}
+              limit={reminderLimit}
+              onEnabledChange={setRemindersEnabled}
+              onFrequencyChange={setReminderFrequency}
+              onLimitChange={setReminderLimit}
+              status={isEdit ? {
+                remindersSent: (existingQuote as any)?.reminders_sent ?? 0,
+                nextReminderAt: (existingQuote as any)?.next_reminder_at ?? null,
+                isSent: !!(existingQuote as any)?.sent_at,
+              } : undefined}
+            />
+          </CardContent>
+        </Card>
+
+
 
         <div className="grid gap-5 grid-cols-1 md:grid-cols-2">
           <div>

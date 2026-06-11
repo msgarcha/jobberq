@@ -14,8 +14,9 @@ import { useInvoice, useInvoiceLineItems, useCreateInvoice, useUpdateInvoice, us
 import { useClient } from "@/hooks/useClients";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
 import { SuggestionChip } from "@/components/ai/SuggestionChip";
+import { ReminderSettings, computeNextReminderAt } from "@/components/ReminderSettings";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Save, RefreshCw, Plus } from "lucide-react";
+import { ArrowLeft, Save, RefreshCw, Plus, Bell } from "lucide-react";
 import { addDays, format } from "date-fns";
 
 const paymentTermOptions = [
@@ -63,6 +64,11 @@ const InvoiceForm = () => {
   const [recurringStart, setRecurringStart] = useState("");
   const [recurringEnd, setRecurringEnd] = useState("");
 
+  const [remindersEnabled, setRemindersEnabled] = useState(false);
+  const [reminderFrequency, setReminderFrequency] = useState("weekly");
+  const [reminderLimit, setReminderLimit] = useState(3);
+  const [remindersInit, setRemindersInit] = useState(false);
+
   const computeDueDate = (terms: string): string => {
     const daysMap: Record<string, number> = { due_on_receipt: 0, net_15: 15, net_30: 30, net_45: 45, net_60: 60 };
     const days = daysMap[terms];
@@ -96,8 +102,25 @@ const InvoiceForm = () => {
       setRecurringFrequency(existingInvoice.recurring_frequency || "monthly");
       setRecurringStart(existingInvoice.recurring_start || "");
       setRecurringEnd(existingInvoice.recurring_end || "");
+      const ei = existingInvoice as any;
+      setRemindersEnabled(ei.reminders_enabled || false);
+      setReminderFrequency(ei.reminder_frequency || "weekly");
+      setReminderLimit(ei.reminder_limit ?? 3);
+      setRemindersInit(true);
     }
   }, [existingInvoice]);
+
+  // Pre-fill reminder settings from company defaults on new invoices
+  useEffect(() => {
+    if (!isEdit && !remindersInit && companySettings) {
+      const cs = companySettings as any;
+      setRemindersEnabled(cs.default_reminders_enabled || false);
+      setReminderFrequency(cs.default_reminder_frequency || "weekly");
+      setReminderLimit(cs.default_reminder_limit ?? 3);
+      setRemindersInit(true);
+    }
+  }, [companySettings, isEdit, remindersInit]);
+
 
   useEffect(() => {
     if (existingLineItems) {
@@ -120,6 +143,15 @@ const InvoiceForm = () => {
     setSaving(true);
     try {
       const totals = computeTotals(lineItems);
+      const sentAt = (existingInvoice as any)?.sent_at || null;
+      const remindersSent = (existingInvoice as any)?.reminders_sent ?? 0;
+      const nextReminderAt = computeNextReminderAt({
+        enabled: remindersEnabled,
+        baseDate: (existingInvoice as any)?.last_reminder_at || sentAt,
+        frequency: reminderFrequency,
+        remindersSent,
+        limit: reminderLimit,
+      });
       const invoiceData = {
         client_id: clientId,
         title: title || null,
@@ -131,9 +163,14 @@ const InvoiceForm = () => {
         recurring_frequency: isRecurring ? recurringFrequency as any : null,
         recurring_start: isRecurring && recurringStart ? recurringStart : null,
         recurring_end: isRecurring && recurringEnd ? recurringEnd : null,
+        reminders_enabled: remindersEnabled,
+        reminder_frequency: reminderFrequency,
+        reminder_limit: reminderLimit,
+        next_reminder_at: nextReminderAt,
         ...totals,
         balance_due: isEdit ? totals.total - Number(existingInvoice?.amount_paid || 0) : totals.total,
-      };
+      } as any;
+
 
       let invoiceId: string;
 
@@ -245,6 +282,32 @@ const InvoiceForm = () => {
             )}
           </CardContent>
         </Card>
+
+        <Card className="shadow-warm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Bell className="h-4 w-4" /> Reminders
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ReminderSettings
+              type="invoice"
+              enabled={remindersEnabled}
+              frequency={reminderFrequency}
+              limit={reminderLimit}
+              onEnabledChange={setRemindersEnabled}
+              onFrequencyChange={setReminderFrequency}
+              onLimitChange={setReminderLimit}
+              status={isEdit ? {
+                remindersSent: (existingInvoice as any)?.reminders_sent ?? 0,
+                nextReminderAt: (existingInvoice as any)?.next_reminder_at ?? null,
+                isSent: !!(existingInvoice as any)?.sent_at,
+              } : undefined}
+            />
+          </CardContent>
+        </Card>
+
+
 
         <Card className="shadow-warm">
           <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Line Items</CardTitle></CardHeader>

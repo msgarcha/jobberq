@@ -257,6 +257,9 @@ export type Database = {
           country: string | null
           created_at: string
           default_payment_terms: string | null
+          default_reminder_frequency: string
+          default_reminder_limit: number
+          default_reminders_enabled: boolean
           default_tax_rate: number | null
           email: string | null
           google_place_id: string | null
@@ -305,6 +308,9 @@ export type Database = {
           country?: string | null
           created_at?: string
           default_payment_terms?: string | null
+          default_reminder_frequency?: string
+          default_reminder_limit?: number
+          default_reminders_enabled?: boolean
           default_tax_rate?: number | null
           email?: string | null
           google_place_id?: string | null
@@ -353,6 +359,9 @@ export type Database = {
           country?: string | null
           created_at?: string
           default_payment_terms?: string | null
+          default_reminder_frequency?: string
+          default_reminder_limit?: number
+          default_reminders_enabled?: boolean
           default_tax_rate?: number | null
           email?: string | null
           google_place_id?: string | null
@@ -691,6 +700,8 @@ export type Database = {
           invoice_number: string
           is_recurring: boolean
           job_id: string | null
+          last_reminder_at: string | null
+          next_reminder_at: string | null
           paid_at: string | null
           payment_terms: string | null
           quote_id: string | null
@@ -700,6 +711,10 @@ export type Database = {
             | Database["public"]["Enums"]["recurring_frequency"]
             | null
           recurring_start: string | null
+          reminder_frequency: string
+          reminder_limit: number
+          reminders_enabled: boolean
+          reminders_sent: number
           sent_at: string | null
           status: Database["public"]["Enums"]["invoice_status"]
           subtotal: number
@@ -724,6 +739,8 @@ export type Database = {
           invoice_number: string
           is_recurring?: boolean
           job_id?: string | null
+          last_reminder_at?: string | null
+          next_reminder_at?: string | null
           paid_at?: string | null
           payment_terms?: string | null
           quote_id?: string | null
@@ -733,6 +750,10 @@ export type Database = {
             | Database["public"]["Enums"]["recurring_frequency"]
             | null
           recurring_start?: string | null
+          reminder_frequency?: string
+          reminder_limit?: number
+          reminders_enabled?: boolean
+          reminders_sent?: number
           sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
@@ -757,6 +778,8 @@ export type Database = {
           invoice_number?: string
           is_recurring?: boolean
           job_id?: string | null
+          last_reminder_at?: string | null
+          next_reminder_at?: string | null
           paid_at?: string | null
           payment_terms?: string | null
           quote_id?: string | null
@@ -766,6 +789,10 @@ export type Database = {
             | Database["public"]["Enums"]["recurring_frequency"]
             | null
           recurring_start?: string | null
+          reminder_frequency?: string
+          reminder_limit?: number
+          reminders_enabled?: boolean
+          reminders_sent?: number
           sent_at?: string | null
           status?: Database["public"]["Enums"]["invoice_status"]
           subtotal?: number
@@ -1474,8 +1501,14 @@ export type Database = {
           discount_amount: number
           id: string
           internal_notes: string | null
+          last_reminder_at: string | null
+          next_reminder_at: string | null
           property_id: string | null
           quote_number: string
+          reminder_frequency: string
+          reminder_limit: number
+          reminders_enabled: boolean
+          reminders_sent: number
           sent_at: string | null
           status: Database["public"]["Enums"]["quote_status"]
           subtotal: number
@@ -1502,8 +1535,14 @@ export type Database = {
           discount_amount?: number
           id?: string
           internal_notes?: string | null
+          last_reminder_at?: string | null
+          next_reminder_at?: string | null
           property_id?: string | null
           quote_number: string
+          reminder_frequency?: string
+          reminder_limit?: number
+          reminders_enabled?: boolean
+          reminders_sent?: number
           sent_at?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number
@@ -1530,8 +1569,14 @@ export type Database = {
           discount_amount?: number
           id?: string
           internal_notes?: string | null
+          last_reminder_at?: string | null
+          next_reminder_at?: string | null
           property_id?: string | null
           quote_number?: string
+          reminder_frequency?: string
+          reminder_limit?: number
+          reminders_enabled?: boolean
+          reminders_sent?: number
           sent_at?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number

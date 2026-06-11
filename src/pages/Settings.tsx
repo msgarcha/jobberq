@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCompanySettings, useUpsertCompanySettings } from "@/hooks/useCompanySettings";
+import { ReminderSettings } from "@/components/ReminderSettings";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTeam, useTeamMembers, useTeamInvitations, useSendInvite, useUpdateMemberRole, useRemoveMember, useCancelInvitation } from "@/hooks/useTeam";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,6 +87,9 @@ const Settings = () => {
   const [notifyOnDepositPaid, setNotifyOnDepositPaid] = useState(true);
   const [notifyOnInvoicePaid, setNotifyOnInvoicePaid] = useState(true);
   const [notificationEmail, setNotificationEmail] = useState("");
+  const [defaultRemindersEnabled, setDefaultRemindersEnabled] = useState(false);
+  const [defaultReminderFrequency, setDefaultReminderFrequency] = useState("weekly");
+  const [defaultReminderLimit, setDefaultReminderLimit] = useState(3);
 
   // Stripe Connect state
   const [stripeConnectLoading, setStripeConnectLoading] = useState(false);
@@ -201,6 +205,9 @@ const Settings = () => {
       setNotifyOnDepositPaid((settings as any).notify_on_deposit_paid ?? true);
       setNotifyOnInvoicePaid((settings as any).notify_on_invoice_paid ?? true);
       setNotificationEmail((settings as any).notification_email || "");
+      setDefaultRemindersEnabled((settings as any).default_reminders_enabled ?? false);
+      setDefaultReminderFrequency((settings as any).default_reminder_frequency || "weekly");
+      setDefaultReminderLimit((settings as any).default_reminder_limit ?? 3);
     }
   }, [settings]);
 
@@ -237,6 +244,9 @@ const Settings = () => {
       notify_on_deposit_paid: notifyOnDepositPaid,
       notify_on_invoice_paid: notifyOnInvoicePaid,
       notification_email: notificationEmail || null,
+      default_reminders_enabled: defaultRemindersEnabled,
+      default_reminder_frequency: defaultReminderFrequency,
+      default_reminder_limit: defaultReminderLimit,
     } as any);
   };
 
@@ -682,7 +692,29 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <Card className="shadow-warm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium flex items-center gap-2">
+                  <Bell className="h-4 w-4 text-primary" /> Default reminders
+                </CardTitle>
+                <CardDescription>
+                  Pre-fills automatic client reminders on new invoices and quotes. You can still adjust them per document.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ReminderSettings
+                  enabled={defaultRemindersEnabled}
+                  frequency={defaultReminderFrequency}
+                  limit={defaultReminderLimit}
+                  onEnabledChange={setDefaultRemindersEnabled}
+                  onFrequencyChange={setDefaultReminderFrequency}
+                  onLimitChange={setDefaultReminderLimit}
+                />
+              </CardContent>
+            </Card>
           </TabsContent>
+
 
           {/* Team Tab */}
           <TabsContent value="team" className="space-y-5 mt-5">

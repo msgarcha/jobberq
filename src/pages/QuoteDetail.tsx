@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EmailDocumentDialog } from "@/components/EmailDocumentDialog";
+import { DocumentReminderCard } from "@/components/DocumentReminderCard";
 import { useQuote, useQuoteLineItems, useUpdateQuote, useDeleteQuote } from "@/hooks/useQuotes";
 import { useCreateInvoice, useSaveInvoiceLineItems, useIncrementInvoiceNumber, useNextInvoiceNumber } from "@/hooks/useInvoices";
 import { useCompanySettings } from "@/hooks/useCompanySettings";
@@ -439,6 +440,16 @@ const QuoteDetail = () => {
             </div>
           </CardContent>
         </Card>
+
+        {!isApproved && quote.status !== "converted" && quote.status !== "expired" && (
+          <DocumentReminderCard
+            type="quote"
+            document={quote}
+            onSaved={() => qc.invalidateQueries({ queryKey: ["quote", id] })}
+          />
+        )}
+
+
 
         {(quote.client_notes || quote.internal_notes) && (
           <div className="grid gap-5 md:grid-cols-2">

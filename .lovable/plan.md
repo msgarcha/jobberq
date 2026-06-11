@@ -1,40 +1,70 @@
-# Auto Payment Receipt to Client (with PDF)
+# Automatic Invoice & Quote Reminders
 
-## Goal
-When an online payment makes an invoice fully paid, automatically email the **client** a branded "Payment received" message — like the Jobber screenshot — containing both a **Download receipt (PDF)** button and a **View invoice online** button. This sends only when the invoice becomes paid in full.
+Send recurring reminder emails to the **client** after an invoice/quote is **sent**, on a configurable cadence (weekly / bi-weekly / monthly), capped by a **per-document reminder limit**. Each document can be configured individually, with sensible global defaults from Settings. Reminders stop automatically when the invoice is paid (or quote approved/converted/expired) or the limit is reached. Existing documents are fully supported via an editable Reminders card on the detail pages.
 
-## Current behavior
-- Online payments go through `create-payment-intent` (destination charge on the platform account) → the `stripe-webhook` function handles `payment_intent.succeeded`, records the payment, marks the invoice paid, and notifies **only the business owner** (`notifyOwner`). The client gets nothing.
-- Invoice PDFs are only generated in the browser today (`PrintableInvoice.tsx`) — there is no server-side PDF.
-- The branded email domain (`notify.quicklinq.ca`) is verified and ready.
+## Behavior summary
+- Clock starts after the document is **sent** (`sent_at`). Drafts never get reminders.
+- Frequency = the **gap** between reminders. First reminder fires one interval after `sent_at`; each subsequent one fires one interval after the previous reminder.
+- Reminders go to the **client only**. The owner keeps the existing in-app notifications (no extra owner email).
+- A reminder is skipped/stopped when: invoice is `paid`/`draft`, quote is `approved`/`converted`/`expired`/`draft`, quote past `valid_until`, the per-document limit is reached, no client email, or the email is suppressed.
 
-## What will change
+## 1. Database (migration)
 
-### 1. Server-side PDF generation (new edge function `generate-invoice-pdf`)
-- Accepts an `invoice_id`, loads the invoice, line items (`invoice_line_items`), client, and company settings (logo, name, address, brand colors) using the service role.
-- Renders a clean, branded **paid invoice / receipt** PDF (company header, bill-to, line items, totals, a "PAID" marker, payment date and amount).
-- Uploads it to a new public storage bucket `invoice-receipts` under an unguessable random path, and returns the public URL. Re-uses the URL if already generated (idempotent).
+Add per-document reminder columns to **`invoices`** and **`quotes`**:
+- `reminders_enabled boolean not null default false`
+- `reminder_frequency text not null default 'weekly'` (allowed: `weekly`, `biweekly`, `monthly`; validated by trigger)
+- `reminder_limit integer not null default 3`
+- `reminders_sent integer not null default 0`
+- `last_reminder_at timestamptz`
+- `next_reminder_at timestamptz` (maintained for display + cheap cron filtering)
 
-### 2. New client-facing email template `payment-receipt`
-- A "Payment received" template styled in QuickLinq branding (mirrors the Jobber layout: headline, the paid amount, invoice number, date, company name).
-- Two buttons: **Download receipt (PDF)** (the generated PDF URL) and **View invoice online** (`/pay/:invoiceId`).
-- Registered in the transactional email `registry.ts`. Sent to the client's email via the existing `send-transactional-email` function.
+Add global default columns to **`company_settings`**:
+- `default_reminders_enabled boolean not null default false`
+- `default_reminder_frequency text not null default 'weekly'`
+- `default_reminder_limit integer not null default 3`
 
-### 3. Hook into the payment webhook
-- In `stripe-webhook` (`payment_intent.succeeded`, and the equivalent `checkout.session.completed` path), after the invoice is marked **paid in full**:
-  1. Call `generate-invoice-pdf` to produce the receipt PDF.
-  2. Send the `payment-receipt` email to the client (only if the client has an email).
-  3. Keep the existing owner notification unchanged.
-- Uses an idempotency key derived from the payment intent id so retries never double-send.
-- Skips silently for partial/deposit payments (per your choice: full payment only).
+No new RLS needed — existing invoice/quote/company_settings policies already scope by team; new columns inherit them. (Defaults keep existing rows inert until a user opts in.)
 
-## Notes / trade-offs
-- The email system cannot physically attach files, so the PDF is delivered as a secure download link/button — this is the same pattern Jobber uses and the file is a real, downloadable PDF.
-- Only fires for **online** payments (Stripe). Manually recorded payments won't trigger it unless you later ask for that.
+## 2. Email templates
 
-## Technical details
-- New bucket `invoice-receipts` (public read) created via migration with appropriate policies; PDFs stored at random UUID paths.
-- `generate-invoice-pdf` built with `pdf-lib` (Deno-compatible), `verify_jwt = false`, called internally by the webhook with the service role.
-- Receipt email reuses `send-transactional-email`; new template added to `_shared/transactional-email-templates/` and `registry.ts`.
-- Webhook changes are additive to `stripe-webhook/index.ts`; `notifyOwner` flow stays intact.
-- After edits: deploy `generate-invoice-pdf`, `send-transactional-email`, and `stripe-webhook`.
+Create two React Email templates in `supabase/functions/_shared/transactional-email-templates/`, styled like the existing `document-email.tsx` (QuickLinq logo, Poppins, teal CTA):
+- `invoice-reminder.tsx` — friendly "balance due" nudge with amount, due date, and a "View & Pay Invoice" button → `/pay/{id}`.
+- `quote-reminder.tsx` — "still interested?" nudge with total and a "View & Approve Estimate" button → `/quote/view/{id}`.
+
+Register both in `registry.ts`. Props: `companyName`, `clientName`, `documentNumber`, `amount`, `dueDate`, `ctaUrl`, plus reminder count context.
+
+## 3. Cron sweep edge function
+
+New function `supabase/functions/send-document-reminders/index.ts` (cron-only; same constant-time service-role-key auth as `onboarding-drip-sweep`). Runs **daily**:
+
+1. Query invoices: `reminders_enabled = true`, `status in ('sent','viewed','overdue')`, `reminders_sent < reminder_limit`, `next_reminder_at <= now()`, with a client email.
+2. For each: send `invoice-reminder` via `send-transactional-email` (service-role fetch, idempotency key `invoice-reminder-{id}-{reminders_sent+1}`). On success, set `reminders_sent += 1`, `last_reminder_at = now()`, and `next_reminder_at = now() + interval` (or `null` once the limit is hit).
+3. Same loop for quotes: `status in ('sent','viewed')`, not past `valid_until`, using `quote-reminder`.
+4. Skip + advance gracefully on suppression/missing email; log per-run stats.
+
+Schedule via the **insert tool** (not migration — contains the service-role key), enabling `pg_cron`/`pg_net` and registering a daily `cron.schedule('document-reminder-sweep', '0 13 * * *', net.http_post(...))` calling the function with the service-role key in the Authorization header, mirroring existing sweeps.
+
+`next_reminder_at` is seeded when reminders are enabled/sent (see below), and the sweep is the source of truth thereafter.
+
+## 4. Frontend
+
+**Shared component** `src/components/ReminderSettings.tsx`: enable toggle, frequency select (Weekly / Bi-weekly / Monthly), and a reminder-limit number input. Reused in all four places below.
+
+- **InvoiceForm.tsx / QuoteForm.tsx** (creation + edit): add a "Automatic reminders" section, pre-filled from `company_settings` defaults. On save, persist the reminder columns. When the document already has `sent_at` and reminders are enabled with `reminders_sent = 0`, set `next_reminder_at = sent_at + interval`.
+- **InvoiceDetail.tsx / QuoteDetail.tsx**: add a **Reminders card** (editable) so existing documents can opt in/adjust. Shows live status: "X of Y reminders sent · next on {date}" or "starts after this is sent". Saving updates the columns and recomputes `next_reminder_at`.
+- **EmailDocumentDialog.tsx**: when it stamps `sent_at` on first send, also seed `next_reminder_at = now + interval` if reminders are enabled and none sent yet (so the clock starts at send time).
+- **Settings.tsx**: add a "Reminder defaults" section writing the three `company_settings.default_*` fields.
+
+**Hooks**: extend `useInvoices`/`useQuotes` update mutations and `useCompanySettings` to carry the new fields (types regenerate after the migration).
+
+## 5. Verification
+- Migration applies; types regenerate.
+- Deploy `send-document-reminders`, `send-transactional-email`, and the template registry.
+- Manually invoke the sweep (curl with service-role auth) against a test invoice whose `next_reminder_at` is in the past; confirm one reminder enqueues, `reminders_sent` increments, `next_reminder_at` advances, and a paid invoice / limit-reached document is skipped.
+- Confirm UI: defaults in Settings pre-fill the form, detail card edits persist, and status text reflects counts.
+
+## Technical notes
+- Frequency→interval map: weekly = 7d, biweekly = 14d, monthly = 1 month.
+- Idempotency key includes the reminder index so retries never double-send but each scheduled reminder is distinct.
+- Reminders reuse the existing queue/suppression/unsubscribe pipeline in `send-transactional-email` — no bypass.
+- All emails are strictly transactional (one specific recipient per triggering document), not bulk/marketing.
