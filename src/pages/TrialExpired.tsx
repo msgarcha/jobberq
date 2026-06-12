@@ -19,13 +19,17 @@ export default function TrialExpired() {
           <div className="space-y-2">
             <h1 className="text-2xl font-semibold tracking-tight">Your free trial has ended</h1>
             <p className="text-sm text-muted-foreground">
-              Upgrade to keep sending quotes, invoices, and collecting payments. Your data is safe and waiting.
+              {isNative()
+                ? "Your data is safe and waiting. To continue, sign in to QuickLinq at quicklinq.app from your web browser to choose a plan."
+                : "Upgrade to keep sending quotes, invoices, and collecting payments. Your data is safe and waiting."}
             </p>
           </div>
           <div className="flex flex-col gap-2">
-            <Button className="w-full" onClick={() => navigate("/settings?tab=billing")}>
-              Choose a plan
-            </Button>
+            {!isNative() && (
+              <Button className="w-full" onClick={() => navigate("/settings?tab=billing")}>
+                Choose a plan
+              </Button>
+            )}
             <Button variant="ghost" className="w-full" onClick={signOut}>
               <LogOut className="mr-2 h-4 w-4" /> Sign out
             </Button>
