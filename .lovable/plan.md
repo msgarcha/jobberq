@@ -1,55 +1,41 @@
-# Plan: Align bundle ID to `app.quicklinq` & archive to the App Store
+# Fix npm audit vulnerabilities & the broken Vite upgrade
 
-## The root problem
-Three different bundle IDs are in play, which is why Xcode can't find a provisioning profile:
+## What's actually wrong
 
-| Location | Current value | Correct value |
-|---|---|---|
-| App Store Connect (registered, authoritative) | `app.quicklinq` | ✅ keep |
-| `capacitor.config.ts` | `app.quicklinq.ios` | → `app.quicklinq` |
-| Xcode project (from the error) | `ios.quicklinq.app` | → `app.quicklinq` |
+1. **All 6 high-severity vulnerabilities come from one dev dependency: `@capacitor/assets`.**
+   Its dependency chain (`@trapezedev/project` → `replace` → `minimatch`, plus `tar`, plus a nested old `@capacitor/cli`, plus `xcode` → `uuid`) carries the advisories. npm reports **"No fix available"** because upstream hasn't patched them. This package is **build-time-only** (icon/splash generation) and is **never bundled into the shipped app**, so the runtime risk is effectively zero — but the noise is annoying and it's easy to remove.
 
-The error `Your team has no devices` is separate: automatic signing tried to make a *Development* profile. Archiving for the App Store uses *Distribution* signing and does not require a registered device — though we'll register your iPhone anyway for testing.
+2. **`vite@8.0.16` is a side effect of `npm audit fix --force`.**
+   That command force-upgraded Vite from the supported **v5** to **v8**, which breaks the peer requirements of `lovable-tagger` (needs vite `<8`) and `@vitejs/plugin-react-swc` (needs vite `^4–^7`). The repo's `package.json` still correctly pins `vite ^5.4.19`; only your local clone was mutated. A clean reinstall from the repo restores it.
 
----
+## The plan
 
-## Part A — Code & doc edits I'll make
-Make `app.quicklinq` consistent across the repo so future `npx cap sync`/regeneration stays correct:
+### Code changes (in this repo)
+1. **Remove `@capacitor/assets` from `devDependencies`** in `package.json`. This eliminates the entire vulnerable chain — all 6 highs and the moderate `uuid` finding go away, since `uuid`/`xcode`/`tar`/`replace` were only pulled in by this package.
+2. **Remove the icon-generation step from `ci_scripts/ci_post_clone.sh`** (the `npx @capacitor/assets generate ...` line), since the package will no longer exist. The script keeps `npm ci` → `npm run build` → `npx cap sync ios`.
+3. **Keep the already-generated `assets/icon.png`** (1024×1024, opaque cream + teal logo). Modern Xcode uses a single 1024pt icon for the whole AppIcon set, so no generator is needed.
 
-| File | Change |
-|---|---|
-| `capacitor.config.ts` | `appId: 'app.quicklinq.ios'` → `appId: 'app.quicklinq'` |
-| `APP_STORE_SUBMISSION.md` | Replace every `app.quicklinq.ios` with `app.quicklinq` |
-| `README.md` | Same bundle-ID replacement |
-| `mem://infrastructure/capacitor-ios` + memory index | Update noted bundle ID to `app.quicklinq` |
+### One-time Xcode step (you do this locally, documented in the plan output)
+- Set the app icon by replacing the single 1024 file in the native project:
+  `ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png` with `assets/icon.png`
+  (or drag `assets/icon.png` onto the AppIcon "1024pt" slot in Xcode's asset catalog). `cap sync` does not overwrite this afterward.
+- (Optional) For a branded launch screen, drop `assets/splash.png` into the `Splash.imageset` in the same asset catalog. Otherwise the splash shows the dark-teal background already set in `capacitor.config.ts`.
 
-> Editing `capacitor.config.ts` does **not** rewrite the already-generated native Xcode project. The live bundle ID must also be changed in Xcode (Part B). Keeping the config correct matters if `ios/` is ever regenerated.
+### Local cleanup to undo the forced Vite 8 upgrade (you run these)
+```bash
+git pull                       # restores package.json with vite ^5.4.19
+git checkout -- package-lock.json   # discard the forced lockfile (if modified)
+rm -rf node_modules package-lock.json
+npm install                    # clean reinstall on vite 5
+npm audit                      # should now report 0 vulnerabilities
+```
+Do **not** run `npm audit fix --force` again — it re-introduces the Vite 8 break.
 
----
-
-## Part B — Xcode steps you'll run (cannot be done from here)
-
-**1. Fix the bundle ID in Xcode**
-- Open `ios/App/App.xcworkspace` → target **App** → *Signing & Capabilities* (and *General*).
-- Set **Bundle Identifier** = `app.quicklinq` (must match App Store Connect exactly).
-
-**2. Distribution signing (for archive)**
-- Check **Automatically manage signing** → select your Team.
-- Ensure capabilities match what the App ID has enabled: **Push Notifications**, **Background Modes → Remote notifications**, **Sign in with Apple**.
-
-**3. (Optional) Register your iPhone for on-device testing**
-- Plug in iPhone → *Window → Devices and Simulators* → it auto-registers, or add it at developer.apple.com → Devices.
-
-**4. Archive & upload**
-- Destination → **Any iOS Device (arm64)** (not a simulator).
-- *Product → Archive* → Organizer → *Distribute App → App Store Connect → Upload*.
-
----
+## Expected result
+- `npm audit` reports **0 vulnerabilities** (the only findings were from the removed `@capacitor/assets`).
+- Vite is back on the supported v5, so `npm install`, `npm run build`, and `npx cap sync ios` all succeed.
+- The app icon is your uploaded logo, set via the single 1024px image — no generator dependency required.
 
 ## Technical notes
-- The App ID `app.quicklinq` must exist in developer.apple.com → Identifiers (it does, since App Store Connect created the app record) with Push Notifications + Sign in with Apple enabled — verify those capability toggles match Xcode.
-- No device is required to upload an Archive; the "no devices" error only blocks Development builds.
-- `server` block in `capacitor.config.ts` stays commented out (correct for App Store).
-- After pulling these changes locally: `npm install && npm run build && npx cap sync ios`, then archive.
-
-Approve and I'll apply the Part A edits and hand you the exact Xcode checklist.
+- Removing `@capacitor/assets` does not affect the runtime app or `@capacitor/cli@8.4.0` (the top-level CLI is current and unaffected; only the nested old CLI inside `@capacitor/assets` was flagged).
+- If you later want automated multi-size generation back, it can be re-added behind an opt-in step, but it's unnecessary given Xcode's single-icon support.
