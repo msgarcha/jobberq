@@ -19,6 +19,16 @@ import { useToast } from "@/hooks/use-toast";
 import { SUBSCRIPTION_TIERS, type TierKey } from "@/lib/subscriptionTiers";
 import { Save, Building2, Upload, CreditCard, CheckCircle2, Crown, Zap, Users, Mail, Trash2, Copy, UserPlus, Star, FileSpreadsheet, ArrowRight, Link2, Unlink, Loader2, ExternalLink, X, Palette, Bell } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { isNative } from "@/lib/native/platform";
