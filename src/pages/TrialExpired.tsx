@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sparkles, LogOut } from "lucide-react";
+import { isNative } from "@/lib/native/platform";
 
 export default function TrialExpired() {
   const { signOut } = useAuth();
