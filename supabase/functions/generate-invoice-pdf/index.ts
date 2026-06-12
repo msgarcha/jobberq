@@ -40,6 +40,29 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  // Internal/service-only endpoint. The receipt PDF contains full client PII
+  // (email, phone, address). Only callers presenting the raw service-role key
+  // (e.g. finalize-online-payment) are allowed. Constant-time comparison
+  // prevents timing-based key recovery and rejects forged tokens.
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  let authorized = token.length > 0 && token.length === serviceRoleKey.length;
+  if (authorized) {
+    let diff = 0;
+    for (let i = 0; i < serviceRoleKey.length; i++) {
+      diff |= token.charCodeAt(i) ^ serviceRoleKey.charCodeAt(i);
+    }
+    authorized = diff === 0;
+  }
+  if (!authorized) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const { invoice_id, force } = await req.json();
     if (!invoice_id) {
