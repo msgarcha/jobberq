@@ -19,8 +19,19 @@ import { useToast } from "@/hooks/use-toast";
 import { SUBSCRIPTION_TIERS, type TierKey } from "@/lib/subscriptionTiers";
 import { Save, Building2, Upload, CreditCard, CheckCircle2, Crown, Zap, Users, Mail, Trash2, Copy, UserPlus, Star, FileSpreadsheet, ArrowRight, Link2, Unlink, Loader2, ExternalLink, X, Palette, Bell } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { isNative } from "@/lib/native/platform";
 
 const paymentTermOptions = [
   { value: "due_on_receipt", label: "Due on Receipt" },
@@ -33,7 +44,7 @@ const paymentTermOptions = [
 const Settings = () => {
   const { data: settings, isLoading } = useCompanySettings();
   const upsert = useUpsertCompanySettings();
-  const { subscription, checkSubscription, user, team: authTeam } = useAuth();
+  const { subscription, checkSubscription, user, team: authTeam, signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -90,6 +101,11 @@ const Settings = () => {
   const [defaultRemindersEnabled, setDefaultRemindersEnabled] = useState(false);
   const [defaultReminderFrequency, setDefaultReminderFrequency] = useState("weekly");
   const [defaultReminderLimit, setDefaultReminderLimit] = useState(3);
+
+  // Account deletion state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Stripe Connect state
   const [stripeConnectLoading, setStripeConnectLoading] = useState(false);
@@ -282,6 +298,23 @@ const Settings = () => {
       setPortalLoading(false);
     }
   };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "DELETE") return;
+    setDeletingAccount(true);
+    try {
+      const { error } = await supabase.functions.invoke("delete-account");
+      if (error) throw error;
+      toast({ title: "Account deleted", description: "Your account and data have been permanently removed." });
+      await signOut();
+      navigate("/login");
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to delete account", variant: "destructive" });
+      setDeletingAccount(false);
+    }
+  };
+
+
 
   if (isLoading) {
     return (
@@ -637,6 +670,58 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Danger Zone — permanent account deletion */}
+            <Card className="shadow-warm border-destructive/40">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium flex items-center gap-2 text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                  Delete Account
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Permanently delete your account and all associated data. This cannot be undone.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  variant="destructive"
+                  onClick={() => { setDeleteConfirmText(""); setDeleteDialogOpen(true); }}
+                  className="gap-1.5"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete My Account
+                </Button>
+              </CardContent>
+            </Card>
+
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete your account, company data, clients, quotes,
+                    invoices, and payment records. This action is irreversible. Type{" "}
+                    <span className="font-semibold text-foreground">DELETE</span> to confirm.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <Input
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Type DELETE"
+                  autoFocus
+                />
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={deletingAccount}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={(e) => { e.preventDefault(); handleDeleteAccount(); }}
+                    disabled={deleteConfirmText !== "DELETE" || deletingAccount}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {deletingAccount ? "Deleting…" : "Delete Account"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </TabsContent>
 
           {/* Invoicing Tab */}
@@ -1013,7 +1098,7 @@ const Settings = () => {
                     <Button variant="outline" size="sm" onClick={checkSubscription} disabled={subscription.loading}>
                       Refresh
                     </Button>
-                    {subscription.subscribed && (
+                    {subscription.subscribed && !isNative() && (
                       <Button variant="outline" size="sm" onClick={handleManageSubscription} disabled={portalLoading}>
                         {portalLoading ? "Loading…" : "Manage Subscription"}
                       </Button>
@@ -1023,7 +1108,17 @@ const Settings = () => {
               </CardContent>
             </Card>
 
-            {/* Pricing Cards */}
+            {/* Pricing Cards — hidden on native iOS (App Store guideline 3.1.1) */}
+            {isNative() ? (
+              <Card className="shadow-warm border-border/50">
+                <CardContent className="p-6 text-center space-y-1">
+                  <p className="text-sm font-medium">Manage your plan on the web</p>
+                  <p className="text-sm text-muted-foreground">
+                    To change or start a subscription, sign in to QuickLinq at quicklinq.app from your web browser.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
             <div className="grid gap-5 grid-cols-1 sm:grid-cols-3">
               {(Object.entries(SUBSCRIPTION_TIERS) as [TierKey, typeof SUBSCRIPTION_TIERS[TierKey]][]).map(([key, tier]) => {
                 const isCurrentPlan = currentTier === key;
@@ -1087,6 +1182,7 @@ const Settings = () => {
                 );
               })}
             </div>
+            )}
           </TabsContent>
 
           {/* Notifications Tab */}

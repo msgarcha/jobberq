@@ -1,70 +1,62 @@
-# Automatic Invoice & Quote Reminders
+# iOS App Store Compliance — 3 Changes
 
-Send recurring reminder emails to the **client** after an invoice/quote is **sent**, on a configurable cadence (weekly / bi-weekly / monthly), capped by a **per-document reminder limit**. Each document can be configured individually, with sensible global defaults from Settings. Reminders stop automatically when the invoice is paid (or quote approved/converted/expired) or the limit is reached. Existing documents are fully supported via an editable Reminders card on the detail pages.
+Three code changes so QuickLinq passes Apple review on first submission.
 
-## Behavior summary
-- Clock starts after the document is **sent** (`sent_at`). Drafts never get reminders.
-- Frequency = the **gap** between reminders. First reminder fires one interval after `sent_at`; each subsequent one fires one interval after the previous reminder.
-- Reminders go to the **client only**. The owner keeps the existing in-app notifications (no extra owner email).
-- A reminder is skipped/stopped when: invoice is `paid`/`draft`, quote is `approved`/`converted`/`expired`/`draft`, quote past `valid_until`, the per-document limit is reached, no client email, or the email is suppressed.
+---
 
-## 1. Database (migration)
+## Change 1 — Hide QuickLinq subscription purchasing on iOS (Guideline 3.1.1)
 
-Add per-document reminder columns to **`invoices`** and **`quotes`**:
-- `reminders_enabled boolean not null default false`
-- `reminder_frequency text not null default 'weekly'` (allowed: `weekly`, `biweekly`, `monthly`; validated by trigger)
-- `reminder_limit integer not null default 3`
-- `reminders_sent integer not null default 0`
-- `last_reminder_at timestamptz`
-- `next_reminder_at timestamptz` (maintained for display + cheap cron filtering)
+Apple requires its own In‑App Purchase for selling a digital subscription inside an iOS app. The cleanest way to pass is to **remove the purchase entry points on native iOS** while keeping everything on the web/Android. Client invoice/quote payments (Stripe Connect) are untouched — those are real‑world services and are allowed.
 
-Add global default columns to **`company_settings`**:
-- `default_reminders_enabled boolean not null default false`
-- `default_reminder_frequency text not null default 'weekly'`
-- `default_reminder_limit integer not null default 3`
+Detection: use existing `isNative()` from `src/lib/native/platform.ts`.
 
-No new RLS needed — existing invoice/quote/company_settings policies already scope by team; new columns inherit them. (Defaults keep existing rows inert until a user opts in.)
+**`src/pages/Settings.tsx` (Billing tab)**
+- Keep the **current plan status card** (read‑only: plan name, trial/renewal date, Refresh button) so users still see what they have.
+- On native: hide the pricing cards grid (the Subscribe / Start Free Trial / Switch Plan buttons) and the "Manage Subscription" button.
+- Replace with a short, non‑actionable note: "To change your plan, sign in at quicklinq.app on the web." No tappable link to an external purchase page (Apple rejects those too).
 
-## 2. Email templates
+**`src/pages/TrialExpired.tsx`**
+- On native: hide the "Choose a plan" button. Show the same informational note + keep "Sign out".
+- On web/Android: unchanged.
 
-Create two React Email templates in `supabase/functions/_shared/transactional-email-templates/`, styled like the existing `document-email.tsx` (QuickLinq logo, Poppins, teal CTA):
-- `invoice-reminder.tsx` — friendly "balance due" nudge with amount, due date, and a "View & Pay Invoice" button → `/pay/{id}`.
-- `quote-reminder.tsx` — "still interested?" nudge with total and a "View & Approve Estimate" button → `/quote/view/{id}`.
+No backend changes; purely conditional rendering.
 
-Register both in `registry.ts`. Props: `companyName`, `clientName`, `documentNumber`, `amount`, `dueDate`, `ctaUrl`, plus reminder count context.
+---
 
-## 3. Cron sweep edge function
+## Change 2 — Add Sign in with Apple (Guideline 4.8)
 
-New function `supabase/functions/send-document-reminders/index.ts` (cron-only; same constant-time service-role-key auth as `onboarding-drip-sweep`). Runs **daily**:
+Enable managed Apple auth and add a button to the auth screen.
 
-1. Query invoices: `reminders_enabled = true`, `status in ('sent','viewed','overdue')`, `reminders_sent < reminder_limit`, `next_reminder_at <= now()`, with a client email.
-2. For each: send `invoice-reminder` via `send-transactional-email` (service-role fetch, idempotency key `invoice-reminder-{id}-{reminders_sent+1}`). On success, set `reminders_sent += 1`, `last_reminder_at = now()`, and `next_reminder_at = now() + interval` (or `null` once the limit is hit).
-3. Same loop for quotes: `status in ('sent','viewed')`, not past `valid_until`, using `quote-reminder`.
-4. Skip + advance gracefully on suppression/missing email; log per-run stats.
+- Enable the provider via the Configure Social Login tool (managed Apple — no Apple Developer keys needed). This generates `src/integrations/lovable/` and installs the auth package (do not hand‑edit that folder).
+- **`src/pages/Login.tsx`**: add a "Continue with Apple" button (with a divider "or") on both the Log In and Sign Up tabs, calling `lovable.auth.signInWithOAuth("apple", { redirect_uri: window.location.origin })`, handling `result.error` / `result.redirected`, then navigating to `redirectTo` on success.
+- Email/password stays as the default. (Google is not currently present, so nothing to hide.)
 
-Schedule via the **insert tool** (not migration — contains the service-role key), enabling `pg_cron`/`pg_net` and registering a daily `cron.schedule('document-reminder-sweep', '0 13 * * *', net.http_post(...))` calling the function with the service-role key in the Authorization header, mirroring existing sweeps.
+---
 
-`next_reminder_at` is seeded when reminders are enabled/sent (see below), and the sweep is the source of truth thereafter.
+## Change 3 — In‑app account deletion (Guideline 5.1.1(v))
 
-## 4. Frontend
+Mandatory: users must be able to permanently delete their account from inside the app.
 
-**Shared component** `src/components/ReminderSettings.tsx`: enable toggle, frequency select (Weekly / Bi-weekly / Monthly), and a reminder-limit number input. Reused in all four places below.
+**New edge function `supabase/functions/delete-account/index.ts`**
+- `verify_jwt = false` in `config.toml`; validates the caller's JWT manually (same pattern as other functions).
+- Uses the service role to: delete the user's app data scoped to them/their team, then call `auth.admin.deleteUser(user.id)`.
+- Returns success/error JSON with CORS headers.
 
-- **InvoiceForm.tsx / QuoteForm.tsx** (creation + edit): add a "Automatic reminders" section, pre-filled from `company_settings` defaults. On save, persist the reminder columns. When the document already has `sent_at` and reminders are enabled with `reminders_sent = 0`, set `next_reminder_at = sent_at + interval`.
-- **InvoiceDetail.tsx / QuoteDetail.tsx**: add a **Reminders card** (editable) so existing documents can opt in/adjust. Shows live status: "X of Y reminders sent · next on {date}" or "starts after this is sent". Saving updates the columns and recomputes `next_reminder_at`.
-- **EmailDocumentDialog.tsx**: when it stamps `sent_at` on first send, also seed `next_reminder_at = now + interval` if reminders are enabled and none sent yet (so the clock starts at send time).
-- **Settings.tsx**: add a "Reminder defaults" section writing the three `company_settings.default_*` fields.
+**`src/pages/Settings.tsx` — new "Danger Zone" section** (bottom of Company tab)
+- Red‑bordered card with "Delete Account" button.
+- Opens an `AlertDialog` requiring the user to type `DELETE` to confirm.
+- On confirm: invoke `delete-account`, then `signOut()` and redirect to `/login` with a toast.
+- Visible on all platforms (also satisfies Android/Play and is required on iOS).
 
-**Hooks**: extend `useInvoices`/`useQuotes` update mutations and `useCompanySettings` to carry the new fields (types regenerate after the migration).
+---
 
-## 5. Verification
-- Migration applies; types regenerate.
-- Deploy `send-document-reminders`, `send-transactional-email`, and the template registry.
-- Manually invoke the sweep (curl with service-role auth) against a test invoice whose `next_reminder_at` is in the past; confirm one reminder enqueues, `reminders_sent` increments, `next_reminder_at` advances, and a paid invoice / limit-reached document is skipped.
-- Confirm UI: defaults in Settings pre-fill the form, detail card edits persist, and status text reflects counts.
+## Technical details
 
-## Technical notes
-- Frequency→interval map: weekly = 7d, biweekly = 14d, monthly = 1 month.
-- Idempotency key includes the reminder index so retries never double-send but each scheduled reminder is distinct.
-- Reminders reuse the existing queue/suppression/unsubscribe pipeline in `send-transactional-email` — no bypass.
-- All emails are strictly transactional (one specific recipient per triggering document), not bulk/marketing.
+- **Platform gating:** `import { isNative } from "@/lib/native/platform"` — already used elsewhere; wrap purchase UI in `!isNative()`.
+- **Apple auth:** managed mode means no `.p8`/Services ID setup required now; for custom branding on the Apple sheet later, BYOC can be configured in the backend dashboard.
+- **delete-account function:** validates `Authorization` bearer token via `supabase.auth.getUser(token)`; deletes rows the user owns and team data only if they are the sole owner, then removes the auth user. Cascading FKs handle the rest. Will confirm exact tables to purge against the schema during build.
+- **No changes** to Stripe Connect client‑payment flows, invoices, quotes, or reminders.
+
+## Out of scope
+- Native StoreKit IAP integration (not needed with the hide‑on‑iOS approach).
+- Xcode capabilities, Info.plist strings, screenshots, store listing — covered in `APP_STORE_SUBMISSION.md`.
