@@ -1098,6 +1098,7 @@ const Settings = () => {
                 );
               })}
             </div>
+            )}
           </TabsContent>
 
           {/* Notifications Tab */}
