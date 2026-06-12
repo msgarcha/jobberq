@@ -374,6 +374,13 @@ export default function Login() {
                     {loading ? 'Creating account…' : 'Create Account'}
                   </Button>
                 </form>
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/60" /></div>
+                  <div className="relative flex justify-center text-xs"><span className="bg-card px-2 text-muted-foreground">or</span></div>
+                </div>
+                <Button type="button" variant="outline" className="w-full min-w-0 rounded-lg gap-2" disabled={loading} onClick={handleAppleSignIn}>
+                  <AppleIcon /> Continue with Apple
+                </Button>
               </TabsContent>
             </Tabs>
           </CardContent>
