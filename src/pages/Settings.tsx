@@ -1014,7 +1014,7 @@ const Settings = () => {
                     <Button variant="outline" size="sm" onClick={checkSubscription} disabled={subscription.loading}>
                       Refresh
                     </Button>
-                    {subscription.subscribed && (
+                    {subscription.subscribed && !isNative() && (
                       <Button variant="outline" size="sm" onClick={handleManageSubscription} disabled={portalLoading}>
                         {portalLoading ? "Loading…" : "Manage Subscription"}
                       </Button>
