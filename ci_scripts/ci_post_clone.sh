@@ -28,9 +28,6 @@ npm ci
 echo "▸ Building the web app (dist/)"
 npm run build
 
-echo "▸ Generating app icons & splash screens from assets/ (logo)"
-npx @capacitor/assets generate --ios --assetPath assets
-
 echo "▸ Syncing Capacitor iOS (copies dist/ + runs pod install)"
 npx cap sync ios
 
