@@ -21,6 +21,7 @@ import { Save, Building2, Upload, CreditCard, CheckCircle2, Crown, Zap, Users, M
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { isNative } from "@/lib/native/platform";
 
 const paymentTermOptions = [
   { value: "due_on_receipt", label: "Due on Receipt" },
