@@ -25,6 +25,8 @@ project_id = "bfnlvdbswhjlpzdfwznz"
     verify_jwt = false
   [functions.customer-portal]
     verify_jwt = false
+  [functions.generate-invoice-pdf]
+    verify_jwt = false
   [functions.generate-recurring-invoices]
     verify_jwt = false
   [functions.get-review-request]
