@@ -670,6 +670,58 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Danger Zone — permanent account deletion */}
+            <Card className="shadow-warm border-destructive/40">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium flex items-center gap-2 text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                  Delete Account
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Permanently delete your account and all associated data. This cannot be undone.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  variant="destructive"
+                  onClick={() => { setDeleteConfirmText(""); setDeleteDialogOpen(true); }}
+                  className="gap-1.5"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete My Account
+                </Button>
+              </CardContent>
+            </Card>
+
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete your account, company data, clients, quotes,
+                    invoices, and payment records. This action is irreversible. Type{" "}
+                    <span className="font-semibold text-foreground">DELETE</span> to confirm.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <Input
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="Type DELETE"
+                  autoFocus
+                />
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={deletingAccount}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={(e) => { e.preventDefault(); handleDeleteAccount(); }}
+                    disabled={deleteConfirmText !== "DELETE" || deletingAccount}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {deletingAccount ? "Deleting…" : "Delete Account"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </TabsContent>
 
           {/* Invoicing Tab */}
