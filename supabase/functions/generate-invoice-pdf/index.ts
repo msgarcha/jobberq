@@ -368,8 +368,20 @@ serve(async (req) => {
       });
     }
 
-    const { data: pub } = admin.storage.from("invoice-receipts").getPublicUrl(path);
-    const url = pub.publicUrl;
+    // Private bucket — issue a long-lived signed URL so the emailed receipt link
+    // works for the client without exposing the bucket publicly.
+    const SIGNED_URL_TTL = 60 * 60 * 24 * 365 * 5; // 5 years
+    const { data: signed, error: signErr } = await admin.storage
+      .from("invoice-receipts")
+      .createSignedUrl(path, SIGNED_URL_TTL);
+    if (signErr || !signed?.signedUrl) {
+      console.error("Failed to sign receipt PDF URL:", signErr);
+      return new Response(JSON.stringify({ error: "Failed to store PDF" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const url = signed.signedUrl;
 
     // Persist URL for reuse
     await admin.from("invoices").update({ receipt_pdf_url: url }).eq("id", invoice.id);
