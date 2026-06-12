@@ -102,6 +102,11 @@ const Settings = () => {
   const [defaultReminderFrequency, setDefaultReminderFrequency] = useState("weekly");
   const [defaultReminderLimit, setDefaultReminderLimit] = useState(3);
 
+  // Account deletion state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
+
   // Stripe Connect state
   const [stripeConnectLoading, setStripeConnectLoading] = useState(false);
   const [stripeStatus, setStripeStatus] = useState<{
