@@ -299,6 +299,23 @@ const Settings = () => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "DELETE") return;
+    setDeletingAccount(true);
+    try {
+      const { error } = await supabase.functions.invoke("delete-account");
+      if (error) throw error;
+      toast({ title: "Account deleted", description: "Your account and data have been permanently removed." });
+      await signOut();
+      navigate("/login");
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message || "Failed to delete account", variant: "destructive" });
+      setDeletingAccount(false);
+    }
+  };
+
+
+
   if (isLoading) {
     return (
       <DashboardLayout>
