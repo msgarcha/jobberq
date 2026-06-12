@@ -44,7 +44,7 @@ const paymentTermOptions = [
 const Settings = () => {
   const { data: settings, isLoading } = useCompanySettings();
   const upsert = useUpsertCompanySettings();
-  const { subscription, checkSubscription, user, team: authTeam } = useAuth();
+  const { subscription, checkSubscription, user, team: authTeam, signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
