@@ -25,7 +25,7 @@ npx cap open ios
 This opens the project in Xcode. In Xcode:
 
 1. **Signing & Capabilities** → select your Apple Developer Team
-2. Bundle identifier is preset to `app.quicklinq.ios`
+2. Bundle identifier is preset to `app.quicklinq`
 3. Click **+ Capability** and add:
    - **Push Notifications**
    - **Background Modes** → check *Remote notifications*
@@ -46,7 +46,7 @@ npx cap sync ios
 Then re-archive in Xcode and upload to App Store Connect.
 
 ### Submitting to the App Store
-1. Create the app record at [appstoreconnect.apple.com](https://appstoreconnect.apple.com) with bundle ID `app.quicklinq.ios`
+1. Create the app record at [appstoreconnect.apple.com](https://appstoreconnect.apple.com) with bundle ID `app.quicklinq`
 2. Fill in description, keywords, support URL, **Privacy Policy URL** (mandatory), category Business
 3. Add screenshots (6.7" iPhone, 1290×2796, required)
 4. Complete the **App Privacy** questionnaire — declare:
