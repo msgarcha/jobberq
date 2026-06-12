@@ -10,7 +10,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * Remember to remove it again before archiving for the App Store.
  */
 const config: CapacitorConfig = {
-  appId: 'app.quicklinq.ios',
+  appId: 'app.quicklinq',
   appName: 'QuickLinq',
   webDir: 'dist',
 

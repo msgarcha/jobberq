@@ -8,7 +8,7 @@ Everything you need to take QuickLinq from this codebase to a **live, review‑p
 
 - ✅ Capacitor updated to the latest **8.4.0** core (iOS/Android/CLI) + latest plugins.
 - ✅ `capacitor.config.ts` is in **production mode** (no live‑reload `server` block).
-- ✅ Bundle ID preset: `app.quicklinq.ios`, App name: `QuickLinq`.
+- ✅ Bundle ID preset: `app.quicklinq`, App name: `QuickLinq`.
 - ✅ Splash screen + status bar branded (dark teal `#1a3d44`, cream `#FAF7F2`).
 - ✅ Push notifications, camera, haptics plugins wired.
 
@@ -77,7 +77,7 @@ Apple's reviewer must reach **all** functionality. In App Store Connect → App 
 
 ## 4. Xcode configuration checklist
 
-1. **Signing & Capabilities** → select your Team; bundle ID `app.quicklinq.ios`.
+1. **Signing & Capabilities** → select your Team; bundle ID `app.quicklinq`.
 2. Add capabilities: **Push Notifications**, **Background Modes** (Remote notifications), **Sign in with Apple** (if used).
 3. **App Icon**: drop a full icon set including **1024×1024** marketing icon (no transparency, no rounded corners — Apple rounds it).
 4. **Launch Screen**: use the branded teal splash.
@@ -94,7 +94,7 @@ Apple's reviewer must reach **all** functionality. In App Store Connect → App 
 - **Platform:** iOS
 - **Name:** `QuickLinq` (must be unique on the store — have a backup like `QuickLinq — Quotes & Invoices`)
 - **Primary language:** English (U.S.)
-- **Bundle ID:** `app.quicklinq.ios`
+- **Bundle ID:** `app.quicklinq`
 - **SKU:** `quicklinq-ios-001`
 - **Primary category:** Business · **Secondary:** Productivity
 
