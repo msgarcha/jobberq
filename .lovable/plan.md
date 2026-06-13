@@ -1,53 +1,58 @@
-# Make QuickLinq Feel Like a Native App
+# Native App Polish: Icon, Splash, Login & Jobber-style Navigation
 
-## What's wrong (diagnosis)
+Four focused changes so QuickLinq looks and feels like a real native app — and beats Jobber on polish.
 
-Your screenshots are from the real iOS app (the Uber Eats Dynamic Island confirms native). The "feels like a website" problems all trace back to **missing native configuration** — the `@capacitor/status-bar` and `@capacitor/splash-screen` plugins are installed but **never initialized in code**, and the web layer is configured like a normal scrolling webpage:
+## 1. App icon + splash actually generate on iOS (fixes the Capacitor default icon)
 
-1. **Pinch-zoom is enabled** — `index.html` viewport tag has no `maximum-scale`/`user-scalable=no`, so the whole UI zooms like a webpage (the "fake zoom" feel).
-2. **Rubber-band / bounce scroll** — nothing sets `overscroll-behavior`, and the layout is `min-h-screen` (the whole document scrolls) instead of a fixed shell where only the content area scrolls. This is the "website scroll feel."
-3. **Big white gap under the status bar** — `capacitor.config.ts` uses `ios.contentInset: 'always'` AND the header adds `safe-area-top` padding, so the safe-area gets counted twice. The status bar is also never told to overlay the web view, and its text style is wrong for the cream background.
-4. **Bars not behaving like native chrome** — top/bottom bars are `sticky`/`fixed` inside a scrolling document, so they drift instead of being a locked app frame.
+**Root cause:** `@capacitor/assets` is not installed and nothing ever turns `assets/icon.png` / `assets/splash.png` into the native iOS icon set and launch screen. So iOS ships the placeholder Capacitor icon and a plain splash.
 
-## The fix
+**Fix:**
+- Add `@capacitor/assets` as a dev dependency.
+- Update `ci_scripts/ci_post_clone.sh` to regenerate icons + splash on every Xcode Cloud build, right after `npx cap sync ios`:
+  ```sh
+  echo "▸ Generating app icons + splash from assets/"
+  npx capacitor-assets generate --ios
+  ```
+  This reads `assets/icon.png` (cream bg, teal logo) and `assets/splash.png` / `assets/splash-dark.png` (teal bg, cream logo) and writes the full iOS icon set + launch storyboard.
+- Keep the existing `assets/` source files as-is (already the correct layout the tool expects).
 
-### 1. `index.html` — lock the viewport
-Update the viewport meta to prevent pinch-zoom and double-tap zoom:
-```
-width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover
-```
+**Manual command for the local Mac** (documented in the closing message): after `git pull` → `npm install` → `npx cap sync ios` → `npx capacitor-assets generate --ios`, then rebuild in Xcode with a bumped build number.
 
-### 2. `src/index.css` — native scroll behavior
-- Add `overscroll-behavior: none` and `height: 100%` / fixed positioning rules to `html, body` so the document itself never bounces or scrolls.
-- Keep momentum scrolling only inside the content area via `-webkit-overflow-scrolling: touch` and `overscroll-behavior: contain` on the scroll container.
-- Disable text-size auto-adjust and callout/selection where it makes the app feel webby.
+## 2. Splash screen shown on launch before login
 
-### 3. New `src/lib/native/bootstrap.ts` — initialize native chrome
-A guarded `initNative()` (no-ops on web) that on native:
-- `StatusBar.setOverlaysWebView({ overlay: true })` so content draws edge-to-edge and safe-area insets work correctly.
-- `StatusBar.setStyle(...)` set to dark text (visible on the cream/white top bar).
-- `SplashScreen.hide()` after the app mounts.
+The splash config in `capacitor.config.ts` is already correct (`backgroundColor: #1a3d44`, no spinner) and `initNative()` hides it after mount. Once step 1 generates the real launch screen from `assets/splash.png`, the teal screen with the cream QuickLinq mark appears on tap, then transitions into the app/login. Minor tweak: raise `launchShowDuration` slightly (1200 → 1500ms) so the splash doesn't flash away before the web view paints.
 
-Call `initNative()` from `src/main.tsx`.
+## 3. Login dialog centered, not scrollable
 
-### 4. `capacitor.config.ts` — stop double-counting the safe area
-- Change `ios.contentInset` from `'always'` to `'never'` (we now rely on CSS safe-area insets + the overlay status bar).
-- Align the `StatusBar` plugin style so the status bar matches the light top bar instead of a dark fill.
+In `src/pages/Login.tsx`, the auth shell is currently top-aligned with page padding, so the card sits high and the page scrolls.
 
-### 5. `src/components/layout/DashboardLayout.tsx` — fixed app shell
-- Make the shell a fixed-height frame (`h-[100dvh]`, `overflow-hidden`) so the top bar and bottom nav are a locked frame and **only** the `main` element scrolls. This removes the whole-page scroll/bounce and keeps the header and bottom nav rock-solid like a real app.
+- Change `authShellClassName` to a centered flex frame:
+  `min-h-[100svh] bg-background flex items-center justify-center px-4 py-6 overflow-hidden`
+- The card stays vertically and horizontally centered. On very short screens (keyboard open) it falls back to `overflow-y-auto` so fields remain reachable, but by default there is no scroll.
+- Applies to all three states (login, reset, OTP) since they share the shell class.
 
-The `TopBar` (`safe-area-top`) and `MobileBottomNav` (`safe-area-bottom`) already read safe-area insets; once the status bar overlays correctly and `contentInset` is `never`, the oversized top gap and the bottom spacing will size correctly to the device.
+## 4. Clean top bar + Jobber-style bottom bar
 
-## After the change (you'll need to do this on your Mac)
-Because the native iOS project lives on your Mac, after pulling these changes run:
-```
-npm install
-npx cap sync ios
-```
-then rebuild/archive in Xcode (bump Build number) and run on device to confirm: no pinch-zoom, no rubber-band bounce, status bar flush with the top bar, bottom bar pinned.
+### Top bar (`src/components/layout/TopBar.tsx`, mobile)
+- Center the page title (Jobber-style): three-zone layout — back button (or logo on Home) on the left, centered title, actions on the right.
+- Add an **AI sparkle button** (the `Sparkles` "Ask Linq" assistant) on the right, matching Jobber's top-right sparkle. Keep notifications bell + avatar.
+- Desktop top bar unchanged in function; search stays there (mobile relies on the assistant/search flow, per your choice).
+
+### Bottom bar (`src/components/layout/MobileBottomNav.tsx`)
+Keep the current tab set (**Home, Clients, [+], Jobs, More**) and the **center-docked + FAB** — only refine the styling to look cleaner and more native than Jobber:
+- Add an **active-tab indicator**: a short rounded accent bar at the top edge of the active tab (the dark tick Jobber shows above the active item), in brand teal.
+- Tighten the bar: consistent icon size, slightly smaller labels, even spacing, crisp top border + subtle blur, correct `safe-area-bottom` padding so it sits flush on notched devices.
+- Keep the FAB's open/close rotate-to-X animation and the staggered create menu; ensure the FAB notch reads cleanly against the refined bar.
 
 ## Technical notes
-- All native calls are wrapped in `isNative()` guards so the browser preview and PWA are unaffected.
-- No business logic, data, or backend changes — this is purely shell/presentation + native config.
-- `user-scalable=no` is intentional for an app shell; it does not affect your public web pages' usability since they're the same build but the app-store binary is the target here.
+- No business-logic, data, or auth-flow changes — presentation, native config, and a CI step only.
+- All native calls remain guarded by `isNative()`; web preview behavior is unchanged.
+- After merge, the user must pull and run the cap sync + `capacitor-assets generate --ios` commands, then archive with a bumped build number for the icon/splash to take effect (these are native build artifacts, not visible in the Lovable web preview).
+
+## Files changed
+- `package.json` — add `@capacitor/assets` dev dependency
+- `ci_scripts/ci_post_clone.sh` — add icon/splash generation step
+- `capacitor.config.ts` — bump `launchShowDuration`
+- `src/pages/Login.tsx` — center the auth shell, prevent page scroll
+- `src/components/layout/TopBar.tsx` — centered title + AI sparkle (mobile)
+- `src/components/layout/MobileBottomNav.tsx` — active-tab indicator + cleaner bar styling
