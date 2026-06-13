@@ -70,7 +70,7 @@ export function TopBar() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto">
+      <DropdownMenuContent align="end" sideOffset={8} className="w-[calc(100vw-1.5rem)] max-w-80 max-h-[70vh] overflow-y-auto">
         <div className="px-3 py-2 border-b flex items-center justify-between">
           <p className="text-sm font-semibold">Notifications</p>
           {unreadCount > 0 && (
