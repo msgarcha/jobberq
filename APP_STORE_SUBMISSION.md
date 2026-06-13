@@ -26,20 +26,26 @@ Everything you need to take QuickLinq from this codebase to a **live, review‑p
 
 ---
 
-## 2. Build the native project (one time)
+## 2. Build the native project
+
+The `ios/` native project is **committed to this repo** (Capacitor 8 + Swift Package Manager).
+You do **not** run `npx cap add ios` — open **`ios/App/App.xcodeproj`** (there is no
+`App.xcworkspace` with SPM).
 
 After **Export to GitHub** from Lovable and `git clone` locally:
 
 ```sh
-npm install
+npm install          # SPM packages resolve from node_modules — this must run first
 npm run build
-npx cap add ios
-npx cap update ios
-npx cap sync ios
-npx cap open ios     # opens Xcode
+npx cap sync ios     # copies dist/ + regenerates Package.swift
+npx cap open ios     # opens ios/App/App.xcodeproj
 ```
 
 > Re-run `npm run build && npx cap sync ios` every time you pull new web changes.
+>
+> **"Missing package product 'Capacitor…'"** = Xcode hasn't resolved the Swift packages.
+> Run `npm install` → `npx cap sync ios` → in Xcode **File → Packages → Reset Package
+> Caches**, then build. Do not delete the committed `ios/` folder.
 
 ---
 
