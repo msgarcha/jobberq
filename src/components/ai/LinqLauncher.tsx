@@ -7,15 +7,11 @@ import { cn } from "@/lib/utils";
 /**
  * Global floating "Ask Linq" launcher.
  * Mounted once in DashboardLayout — visible on every authenticated page.
- * Sits above the mobile bottom nav (96px) and bottom-right on desktop.
+ * Sits above the mobile bottom nav and bottom-right on desktop.
  */
 export function LinqLauncher() {
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
-
-  // On mobile the "Ask Linq" sparkle lives in the top bar (Jobber-style),
-  // so the floating launcher is desktop-only to avoid duplicate entry points.
-  if (isMobile) return null;
 
   return (
     <>
@@ -25,9 +21,7 @@ export function LinqLauncher() {
         onClick={() => setOpen(true)}
         className={cn(
           "fixed z-40 right-4 flex items-center gap-2 rounded-full bg-primary text-primary-foreground shadow-warm-lg active:scale-95 transition-all hover:shadow-xl",
-          isMobile
-            ? "h-14 w-14 justify-center"
-            : "bottom-6 px-4 h-12"
+          isMobile ? "h-14 w-14 justify-center" : "bottom-6 px-4 h-12"
         )}
         style={
           isMobile

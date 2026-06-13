@@ -338,27 +338,33 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue={defaultTab}>
-          <div className="overflow-x-auto -mx-1 px-1 scrollbar-hide">
-            <TabsList className="inline-flex w-auto min-w-full md:w-auto">
-              <TabsTrigger value="company">Company</TabsTrigger>
-              <TabsTrigger value="invoicing">Invoicing</TabsTrigger>
-              <TabsTrigger value="team" className="gap-1.5">
-                <Users className="h-3.5 w-3.5" /> Team
-              </TabsTrigger>
-              <TabsTrigger value="reviews" className="gap-1.5">
-                <Star className="h-3.5 w-3.5" /> Reviews
-              </TabsTrigger>
-              <TabsTrigger value="billing" className="gap-1.5">
-                <CreditCard className="h-3.5 w-3.5" /> Billing
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="gap-1.5">
-                <Bell className="h-3.5 w-3.5" /> Alerts
-              </TabsTrigger>
-              <TabsTrigger value="import" className="gap-1.5">
-                <FileSpreadsheet className="h-3.5 w-3.5" /> Import
-              </TabsTrigger>
-            </TabsList>
+          <div className="rounded-xl border bg-muted/40 p-1">
+            <div
+              className="overflow-x-auto overflow-y-hidden scrollbar-hide"
+              style={{ WebkitOverflowScrolling: "touch", scrollSnapType: "x proximity" }}
+            >
+              <TabsList className="inline-flex h-auto w-max gap-1 bg-transparent p-0">
+                <TabsTrigger value="company" className="shrink-0 whitespace-nowrap" style={{ scrollSnapAlign: "start" }}>Company</TabsTrigger>
+                <TabsTrigger value="invoicing" className="shrink-0 whitespace-nowrap" style={{ scrollSnapAlign: "start" }}>Invoicing</TabsTrigger>
+                <TabsTrigger value="team" className="shrink-0 whitespace-nowrap gap-1.5" style={{ scrollSnapAlign: "start" }}>
+                  <Users className="h-3.5 w-3.5" /> Team
+                </TabsTrigger>
+                <TabsTrigger value="reviews" className="shrink-0 whitespace-nowrap gap-1.5" style={{ scrollSnapAlign: "start" }}>
+                  <Star className="h-3.5 w-3.5" /> Reviews
+                </TabsTrigger>
+                <TabsTrigger value="billing" className="shrink-0 whitespace-nowrap gap-1.5" style={{ scrollSnapAlign: "start" }}>
+                  <CreditCard className="h-3.5 w-3.5" /> Billing
+                </TabsTrigger>
+                <TabsTrigger value="notifications" className="shrink-0 whitespace-nowrap gap-1.5" style={{ scrollSnapAlign: "start" }}>
+                  <Bell className="h-3.5 w-3.5" /> Alerts
+                </TabsTrigger>
+                <TabsTrigger value="import" className="shrink-0 whitespace-nowrap gap-1.5" style={{ scrollSnapAlign: "start" }}>
+                  <FileSpreadsheet className="h-3.5 w-3.5" /> Import
+                </TabsTrigger>
+              </TabsList>
+            </div>
           </div>
+
 
           {/* Company Tab */}
           <TabsContent value="company" className="space-y-5 mt-5">

@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Bell, Plus, Search, Users, FileText, Receipt, Briefcase, Settings, KeyRound, LogOut, ChevronRight, CheckCheck, Eye, CheckCircle2, DollarSign, Sparkles } from "lucide-react";
+import { ArrowLeft, Bell, Plus, Search, Users, FileText, Receipt, Briefcase, Settings, KeyRound, LogOut, ChevronRight, CheckCheck, Eye, CheckCircle2, DollarSign } from "lucide-react";
 import QuickLinqLogo from "@/components/QuickLinqLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
-import { AssistantSheet } from "@/components/ai/AssistantSheet";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,7 +33,6 @@ export function TopBar() {
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [linqOpen, setLinqOpen] = useState(false);
   const { data: notifications } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
@@ -193,22 +192,12 @@ export function TopBar() {
             )}
           </div>
 
-          {/* Right zone */}
+          {/* Right zone — Linq lives in the floating launcher (bottom-right) */}
           <div className="flex items-center justify-end gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-full text-primary"
-              onClick={() => setLinqOpen(true)}
-              aria-label="Ask Linq"
-            >
-              <Sparkles className="h-5 w-5" />
-            </Button>
             <NotificationDropdown />
             <AvatarDropdown />
           </div>
         </div>
-        <AssistantSheet open={linqOpen} onOpenChange={setLinqOpen} />
       </header>
     );
   }

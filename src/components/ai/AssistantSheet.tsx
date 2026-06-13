@@ -239,8 +239,8 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     <div
       className={cn(
         "fixed z-50 bg-background border shadow-2xl flex flex-col overflow-hidden",
-        "inset-x-0 bottom-0 h-[85dvh] max-h-[85dvh] rounded-t-3xl",
-        "md:inset-x-auto md:bottom-4 md:right-4 md:w-[400px] md:h-[min(620px,80vh)] md:rounded-2xl md:border-border",
+        "inset-x-0 bottom-0 h-[85dvh] max-h-[calc(100dvh-env(safe-area-inset-top)-1rem)] rounded-t-3xl",
+        "md:inset-x-auto md:bottom-4 md:right-4 md:w-[400px] md:h-[min(620px,80vh)] md:max-h-[80vh] md:rounded-2xl md:border-border",
         "animate-in slide-in-from-bottom-4 fade-in duration-200"
       )}
       role="dialog"
