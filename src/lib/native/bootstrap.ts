@@ -11,7 +11,9 @@ import { isNative } from './platform';
  *   `env(safe-area-inset-*)` values resolve correctly (no double safe-area gap).
  * - Status bar uses dark icons/text, which are legible on the light cream top bar.
  * - The keyboard shrinks the web view (resize: native) so fixed headers/footers
- *   stay anchored instead of the page scrolling up under the status bar.
+ *   stay anchored, and we disable the buggy native scroll-assist (which used to
+ *   shove the focused field above the sticky header / under the status bar) and
+ *   instead scroll the focused field to the centre of the scroll area ourselves.
  * - The splash screen is hidden once the web layer is ready.
  */
 export async function initNative() {
@@ -32,10 +34,22 @@ export async function initNative() {
     await Keyboard.setResizeMode({ mode: KeyboardResize.Native });
     await Keyboard.setAccessoryBarVisible({ isVisible: true });
 
+    // Disable WebKit's automatic "scroll-assist". That native behaviour is what
+    // pushes the focused input above the sticky header (and under the status
+    // bar). We handle bringing the field into view ourselves below.
+    try {
+      await Keyboard.setScroll({ isDisabled: true });
+    } catch {
+      /* setScroll is iOS-only; ignore where unavailable */
+    }
+
     // Expose the live keyboard height as a CSS variable so layouts can react.
     Keyboard.addListener('keyboardWillShow', (info) => {
       document.documentElement.style.setProperty('--keyboard-height', `${info.keyboardHeight}px`);
       document.documentElement.classList.add('keyboard-open');
+    });
+    Keyboard.addListener('keyboardDidShow', () => {
+      scrollActiveFieldIntoView();
     });
     Keyboard.addListener('keyboardWillHide', () => {
       document.documentElement.style.setProperty('--keyboard-height', '0px');
@@ -45,9 +59,35 @@ export async function initNative() {
     console.warn('Keyboard init failed', err);
   }
 
+  // Belt-and-braces: also react to focus directly (covers cases where the
+  // keyboard is already open and the user moves between fields).
+  document.addEventListener('focusin', (e) => {
+    const t = e.target as HTMLElement | null;
+    if (!t) return;
+    if (t.matches('input, textarea, select, [contenteditable="true"]')) {
+      // Wait for the keyboard animation / webview resize to settle.
+      window.setTimeout(() => scrollFieldIntoView(t), 350);
+    }
+  });
+
   try {
     await SplashScreen.hide();
   } catch (err) {
     console.warn('SplashScreen hide failed', err);
+  }
+}
+
+function scrollActiveFieldIntoView() {
+  const el = document.activeElement as HTMLElement | null;
+  if (el && el.matches('input, textarea, select, [contenteditable="true"]')) {
+    scrollFieldIntoView(el);
+  }
+}
+
+function scrollFieldIntoView(el: HTMLElement) {
+  try {
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  } catch {
+    el.scrollIntoView();
   }
 }
