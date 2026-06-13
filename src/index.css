@@ -148,6 +148,10 @@
   .app-scroll {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    /* Keep a focused field clear of the sticky header when it is scrolled into
+       view (used by the native keyboard focus handler). */
+    scroll-padding-top: calc(4rem + env(safe-area-inset-top, 0px));
+    scroll-padding-bottom: 1.5rem;
   }
 }
 
