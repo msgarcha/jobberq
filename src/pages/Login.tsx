@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 const TERMS_VERSION = '2026-05-23';
 
-const authShellClassName = 'min-h-[100svh] bg-background px-4 py-8 sm:py-10';
+const authShellClassName = 'min-h-[100svh] bg-background flex items-center justify-center overflow-y-auto px-4 py-6';
 const authContainerClassName = 'mx-auto flex w-full max-w-md min-w-0 flex-col';
 const authCardClassName = 'w-full min-w-0 overflow-hidden border-border/50 shadow-warm-md';
 const authHeaderClassName = 'px-4 pb-2 text-center sm:px-5';
