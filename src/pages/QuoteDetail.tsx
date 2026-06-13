@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getPublicAppUrl } from "@/lib/native/platform";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -139,7 +140,7 @@ const QuoteDetail = () => {
   };
 
   const handleCopyLink = () => {
-    const quoteLink = `${window.location.origin}/quote/view/${id}`;
+    const quoteLink = `${getPublicAppUrl()}/quote/view/${id}`;
     navigator.clipboard.writeText(quoteLink);
     import("sonner").then(({ toast }) => toast.success("Quote link copied!"));
   };

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getPublicAppUrl } from "@/lib/native/platform";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -200,7 +201,7 @@ const InvoiceDetail = () => {
                 size="sm"
                 className="gap-1.5"
                 onClick={() => {
-                  const payLink = `${window.location.origin}/pay/${id}`;
+                  const payLink = `${getPublicAppUrl()}/pay/${id}`;
                   navigator.clipboard.writeText(payLink);
                   toast.success("Payment link copied!");
                 }}
