@@ -18,10 +18,13 @@ After exporting this project to your own GitHub repo and `git pull`-ing it local
 
 ```sh
 npm install            # restores node_modules (the SPM packages point here)
-npm run build          # produces dist/
-npx cap sync ios       # copies dist/ + regenerates ios/App/CapApp-SPM/Package.swift
+npm run ios:rebuild    # build + cap sync ios + regenerate app icon & splash from assets/
 npx cap open ios       # opens ios/App/App.xcodeproj in Xcode
 ```
+
+`npm run ios:rebuild` runs `npm run build && npx cap sync ios && npx capacitor-assets generate --ios`.
+The app icon and splash are **generated** from `assets/icon.png` and `assets/splash.png`
+(brand teal mark) — so they are always correct as long as you run this command.
 
 This opens the project in Xcode. In Xcode:
 
@@ -30,9 +33,13 @@ This opens the project in Xcode. In Xcode:
 3. Click **+ Capability** and add:
    - **Push Notifications**
    - **Background Modes** → check *Remote notifications*
-4. Drop in your App Icon set (1024×1024 marketing icon required) and Launch Screen
-5. Set Version `1.0.0`, Build `1`
-6. Run on a Simulator first, then on a real iPhone (push notifications only work on a real device)
+4. Set Version `1.0.0`, Build `1`
+5. Run on a Simulator first, then on a real iPhone (push notifications only work on a real device)
+
+> **App icon shows a blue placeholder / splash is plain gray?** That is Capacitor's default —
+> it means the generate step didn't run. Run `npm run ios:rebuild` (or `npm run ios:assets`),
+> then in Xcode Product → Clean Build Folder (⇧⌘K) and rebuild. This happens when you
+> `rm -rf ios && npx cap add ios`, which wipes the generated assets — **prefer not to delete `ios/`.**
 
 > **"Missing package product 'CapacitorCamera'…"?** That means Xcode couldn't resolve the
 > Swift packages. Fix order: (1) run `npm install` so `node_modules` exists, (2) run
@@ -45,8 +52,7 @@ Whenever you pull new web changes from Lovable:
 ```sh
 git pull
 npm install
-npm run build
-npx cap sync ios
+npm run ios:rebuild
 ```
 
 Then re-archive in Xcode and upload to App Store Connect.
