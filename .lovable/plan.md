@@ -1,59 +1,66 @@
 ## Goal
 
-Deliver a complete, submit-ready App Store package for QuickLinq into `/mnt/documents/app-store-package/`:
-- **6 marketing screenshots** (1290×2796, iPhone 6.7") — branded background, bold caption headline, and a designed mock app screen inside an iPhone frame. All data is realistic but fake.
-- **One consolidated listing document** with every field you select/paste in App Store Connect, plus a copy-paste checklist.
+Produce **6 submit-ready App Store marketing screenshots** for QuickLinq at **1290×2796 (iPhone 6.7")**, built from your *genuine* simulator screenshots, with a **hybrid branded treatment** (teal background + bold Poppins caption + a hand-drawn marker accent on one keyword) — cleaner and more premium than Jobber's listing. Output to `/mnt/documents/app-store-package/screenshots-v2/`.
 
-No app code changes — this is a standalone deliverable generated to `/mnt/documents`.
+Per your choices: **real data kept as-is**, **original status bar kept**, **6 screenshots**.
 
-## The 6 screenshots
+No app code changes — this is a standalone deliverable in `/mnt/documents`.
 
-Each uses brand colors (dark teal `#1a3d44`, cream `#FAF7F2`, Poppins), a caption bar at top, and a mock screen in an iPhone frame. Fake names throughout (e.g. *Jordan Reyes*, *Maple Lane Landscaping*, *Coastline Cleaning Co.*, *Devon Carter*).
+## Why the previous set was wrong
 
-1. **"Send pro quotes in seconds"** — quote builder with line items + branded total.
-2. **"Win more jobs"** — pipeline / quote-approved view with status chips.
-3. **"Get paid faster"** — invoice with a "Pay now" card-payment screen.
-4. **"Run your whole business"** — dashboard with revenue stats + recent activity.
-5. **"Never miss a follow-up"** — schedule / reminders view.
-6. **"Collect 5-star reviews"** — reviews screen with star ratings.
+The earlier PNGs were oversized/iPad-proportioned mock screens. This version uses your **real iPhone screens** (883×1920) dropped into a correctly-proportioned 1290×2796 (≈9:19.5) canvas, so they read as true iPhone screenshots.
 
-## How the screenshots are built
+## The 6 screenshots (feature → caption)
 
-1. Build each screen as a self-contained HTML/CSS file using the real QuickLinq brand tokens (teal/cream, Poppins via Google Fonts), faithfully mimicking the app's actual UI components (cards, badges, top bar, bottom nav) with fake sample data.
-2. Compose each into a 1290×2796 canvas: caption headline at top, mock screen inside a clean iPhone device frame, brand-colored background.
-3. Render to PNG at exact resolution with a headless browser.
-4. **QA pass:** open every rendered PNG and check for clipped text, overflow, misalignment, wrong colors, and that no real names slipped in. Fix and re-render until clean.
+Each caption gets a marker circle/underline on the **bold** keyword.
 
-## The listing document
+1. **Dashboard** (`7.20.16` — Quicklinq header, KPIs, quick actions) → "Run your **whole business** from your pocket"
+2. **Linq AI assistant** (`7.20.03` — Ask Linq / drafting) → "Your **AI assistant** does the busywork"
+3. **Invoices + recurring billing** (`8.40.32`) → "Get **paid faster**, automatically"
+4. **Jobs / scheduling** (`8.40.45` — job details) → "Schedule & **track every job**"
+5. **Notifications** (`8.40.57` — paid / opened invoice) → "Know the **second you're paid**"
+6. **Search** (`7.30.19` — recently active) → "Find any client or quote **instantly**"
 
-A single `APP_STORE_LISTING.md` (consolidated and cleaned from the existing `APP_STORE_SUBMISSION.md`) containing ready-to-paste fields:
+I will only use **clean** frames (no green annotations, no open keyboard, no error banners, no TestFlight/app-icon screens). If a chosen feature's only clean variant is weak, I'll substitute the next-best clean screen for that same feature during the QA pass and note the swap.
 
-- App Name (+ backup), Subtitle, Promotional Text
-- Full Description (4000-char), Keywords
-- Support / Marketing / Privacy Policy URLs
-- Category (Business / Productivity), Age rating guidance
-- "What's New" notes
-- App Privacy ("nutrition label") table
-- App Review notes + demo-account guidance (with fake reviewer name)
-- Screenshot upload order (maps to the 6 PNGs)
-- Pre-submit compliance checklist (IAP/3.1.1, Sign in with Apple/4.8, account deletion/5.1.1, permission strings)
-
-## Deliverables in `/mnt/documents/app-store-package/`
+## Visual treatment (hybrid)
 
 ```text
-APP_STORE_LISTING.md          ← all selectable/paste-able copy
-screenshots/
-  01-send-quotes.png
-  02-win-jobs.png
-  03-get-paid.png
-  04-dashboard.png
-  05-reminders.png
-  06-reviews.png
+┌───────────────────────────┐
+│   [ caption headline ]     │  ← Poppins 700, cream text on teal,
+│   keyword w/ marker accent │     one word circled/underlined in warm gold
+│                            │
+│      ┌──────────────┐      │
+│      │              │      │
+│      │  real iPhone │      │  ← your screenshot inside a clean
+│      │   screenshot │      │     iPhone frame, soft drop shadow
+│      │              │      │
+│      └──────────────┘      │
+│                            │
+└───────────────────────────┘
 ```
 
-Each artifact will be surfaced for preview/download when complete.
+- **Background:** subtle dark-teal vertical gradient (brand `hsl(192 60% 22%)` → deeper teal), faint brand-mark watermark.
+- **Caption:** Poppins Bold, cream `#F7F4EF`, ~2 lines, generous top padding; the keyword gets a freehand marker stroke (warm gold) for the Jobber-energy accent.
+- **Device:** realistic iPhone 15-style frame, rounded corners, soft shadow; screenshot fills the screen area at native aspect with no stretching.
+- **Consistency:** identical caption position, frame size, margins, and color across all 6 for a cohesive shelf.
 
-## Technical notes
+## How they're built
 
-- Rendering uses a headless Chromium (via Playwright/puppeteer-core, falling back to `nix run nixpkgs#chromium` if needed) to rasterize HTML at 1290×2796 with `deviceScaleFactor` set for crisp output.
-- No changes to `src/`, `ios/`, or any app config — output is confined to `/mnt/documents`.
+1. One self-contained HTML/CSS template (Poppins via local/Google fonts, brand tokens), screenshot embedded as base64, rendered at exact 1290×2796 with headless Chromium (`deviceScaleFactor` for crispness). Falls back to `nix run nixpkgs#chromium` if needed.
+2. Generate all 6.
+3. **QA pass (mandatory):** open every PNG, check exact dimensions, clipped/overflowing caption text, marker accent alignment, device-frame proportions, screenshot stretching, and color fidelity. Fix template and re-render until clean. QA crops are temporary.
+
+## Deliverables
+
+```text
+/mnt/documents/app-store-package/screenshots-v2/
+  01-dashboard.png
+  02-linq-ai.png
+  03-get-paid.png
+  04-jobs.png
+  05-notifications.png
+  06-search.png
+```
+
+Each surfaced for preview/download when complete. The existing `APP_STORE_LISTING.md` already covers copy/metadata; I'll update its screenshot-order section to map to these 6.
