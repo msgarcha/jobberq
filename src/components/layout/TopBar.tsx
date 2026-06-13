@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Bell, Plus, Search, Users, FileText, Receipt, Briefcase, Settings, KeyRound, LogOut, ChevronRight, CheckCheck, Eye, CheckCircle2, DollarSign } from "lucide-react";
+import { ArrowLeft, Bell, Plus, Search, Users, FileText, Receipt, Briefcase, Settings, KeyRound, LogOut, ChevronRight, CheckCheck, Eye, CheckCircle2, DollarSign, Sparkles } from "lucide-react";
 import QuickLinqLogo from "@/components/QuickLinqLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
+import { AssistantSheet } from "@/components/ai/AssistantSheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
