@@ -28,7 +28,14 @@ npm ci
 echo "▸ Building the web app (dist/)"
 npm run build
 
-echo "▸ Syncing Capacitor iOS (copies dist/ + runs pod install)"
+# The ios/ native project is committed to the repo, so we only need to sync.
+# Guard anyway: if a checkout ever lacks it, scaffold it before syncing.
+if [ ! -d "ios/App" ]; then
+  echo "▸ ios/ missing — scaffolding native project"
+  npx cap add ios
+fi
+
+echo "▸ Syncing Capacitor iOS (copies dist/ + regenerates Package.swift)"
 npx cap sync ios
 
 echo "▸ Generating app icons + splash from assets/"
