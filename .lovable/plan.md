@@ -1,33 +1,28 @@
-# App Store Screenshots v5 — Layout & Color Fixes
+# Remove the "Continue with Apple" button
 
-Apply 4 precise corrections to all 6 marketing screenshots, keeping every existing design element (moody photographic backgrounds, realistic iPhone frame, Dynamic Island, side buttons, floating accent card, hand-drawn marker, grain/vignette). Artifact-only — no app or source-code changes.
+The "Continue with Apple" button on the login screen is non-functional and the app is already in review. We'll cleanly remove it. This is App Store–compliant: Guideline 4.8 only requires Sign in with Apple when the app offers *other* third-party logins (Google, Facebook, etc.). The login screen only offers email/password, so no Apple button is required.
 
-Output to a new folder `/mnt/documents/app-store-package/screenshots-v5/` (keeps v4 as fallback), then update `APP_STORE_LISTING.md` to point at v5.
+## Changes (single file: `src/pages/Login.tsx`)
 
-## The 4 changes
+1. **Remove the Apple block in the Log In tab** (lines 337–343): the `or` divider and the `Continue with Apple` button.
+2. **Remove the Apple block in the Sign Up tab** (lines 377–383): the `or` divider and the `Continue with Apple` button.
+3. **Remove now-unused code:**
+   - The `handleAppleSignIn` function (lines 174–193).
+   - The `AppleIcon` component (lines 32–36).
+   - The `import { lovable } from '@/integrations/lovable/index';` import (line 4), since it's only used by the Apple handler.
 
-### 1. Tighten gap between title and phone
-The large empty band between the caption and the device is the main problem. Move the headline down a bit and the device up so they sit close with only a small breathing gap.
-- Caption `top: 140px` and device positioning are recalculated so the device top edge sits just below the last caption line.
+No other login behavior changes — email/password, OTP verification, password reset, terms acceptance, and sign-up all stay exactly as they are.
 
-### 2. Remove white space at the bottom of the screenshot
-Each source screenshot (883×1920) has ~108px of blank white safe-area at the very bottom (below the app's bottom nav). Crop that off before embedding so the screen content fills the device cleanly with no white strip.
+## Memory update
 
-### 3. Remove the tilt + make the phone bigger
-- Drop the 3D transform entirely (`rotateX(4deg) rotateY(-9deg) rotateZ(-1.2deg)` → straight-on, `translateX(-50%)` only). Remove `perspective`.
-- Increase device width from `792px` to ~`880px` so it reads larger and fills more of the frame.
-- Adjust the contact shadow to a centered, straight drop shadow (no skew) to match the flat device.
-- Re-check the floating accent card position so it still overlaps the (now larger, untilted) device edge without covering key UI.
+Update `mem://features/ios-app-store-compliance` (the "Sign in with Apple" bullet) to record that the Apple button was removed from Login because email/password is the only auth method, so Guideline 4.8 does not require it. This prevents a future session from re-adding it.
 
-### 4. Teal/aqua-green highlight instead of yellow
-Replace the gold accent everywhere it appears:
-- Marker underline stroke, marker circle stroke (`UNDER`, `CIRC` SVGs): `hsl(40 82% 64%)` → aqua green `hsl(162 78% 46%)`.
-- Highlighted caption word color `.acc`: gold → same aqua green.
-- Floating-card accent icon tints stay as-is (they're contextual greens/blues), unless they read as yellow — the branding card's `#caa24a` gold tint will be swapped to the aqua green for consistency.
+## Verification
 
-## Technical details
-- Edit `/tmp/asp4/build.py`: change `OUT` to the v5 folder; crop bottom 108px in `b64`/image load step for screenshots (load via PIL, crop, re-encode); update `.caption top`, `.stage`/`.device`/`.shadow` CSS (remove rotations + perspective, widen device, recenter shadow); swap accent HSL in `UNDER`, `CIRC`, `.acc`, and the branding card tint.
-- Re-render all 6 at exactly 1290×2796 with headless Chromium.
+- Confirm the build compiles with no unused-import/reference errors (no lingering references to `lovable`, `AppleIcon`, or `handleAppleSignIn`).
+- Visually confirm the Log In and Sign Up tabs render with no Apple button and no leftover "or" divider.
 
-## QA (mandatory before delivery)
-Convert all 6 PNGs to inspection images and verify each: no tilt (phone perfectly straight), no white strip at screen bottom, small/tight gap under the headline, device noticeably larger and not clipped, highlight is aqua green (zero yellow remaining), marker aligns to its word, floating card overlaps device without hiding key UI, dimensions exactly 1290×2796, consistent across all 6. Fix and re-render until clean.
+## Notes / out of scope
+
+- `src/integrations/lovable/index.ts` is auto-generated and will be left untouched (the package can stay installed; it's just no longer imported by Login).
+- No backend/auth provider configuration changes are needed.
