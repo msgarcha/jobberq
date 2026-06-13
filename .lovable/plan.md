@@ -1,39 +1,33 @@
-# App Store Screenshots v4 — Jobber-beating redesign
+# App Store Screenshots v5 — Layout & Color Fixes
 
-The v3 device read as a flat rectangle. v4 rebuilds the whole art direction to look like a premium, professionally-shot App Store set: a **realistic, slightly-tilted iPhone**, **moody photographic backgrounds**, a **hand-drawn marker accent**, and a **floating UI card** in front of the phone for depth.
+Apply 4 precise corrections to all 6 marketing screenshots, keeping every existing design element (moody photographic backgrounds, realistic iPhone frame, Dynamic Island, side buttons, floating accent card, hand-drawn marker, grain/vignette). Artifact-only — no app or source-code changes.
 
-## What was wrong (and the fix)
-- **Rectangle, not an iPhone** → rebuild the device: deep iPhone-15 corner radius, true Dynamic Island, brushed-titanium edge with highlight, visible side buttons (volume + action + power), thin inner bezel, screenshot inset with matching corner clip. Then apply a subtle 3D tilt (perspective + ~7° rotateY, small rotateX) with a contact shadow so it sits in space.
-- **Flat empty gradient** → full-bleed moody photographic background per screen, color-graded to brand teal, darkened with a gradient + fine film grain so text and device pop.
-- **Plain caption** → keep Poppins ExtraBold cream headline, but the accent keyword gets a **rough hand-drawn marker** (gold), like Jobber's scribble — circle or underline, slightly imperfect.
-- **No depth** → a small real-looking **floating card/toast** overlaps the device edge (e.g. "Payment received +$1,157.10"), with its own soft shadow.
+Output to a new folder `/mnt/documents/app-store-package/screenshots-v5/` (keeps v4 as fallback), then update `APP_STORE_LISTING.md` to point at v5.
 
-## Art direction
-- Canvas 1290×2796 (iPhone 6.7"). Identical headline position, device scale/tilt, margins across all 6 → cohesive shelf.
-- Background: dark, textured, *environmental* (worksite materials, tools, concrete, desk at dusk) kept abstract/blurred and heavily graded teal so it never looks like cheap stock or uncanny AI faces. Generated with the image tool, then teal-graded + grain + vignette in the compositor.
-- Palette: brand teal `hsl(192 60% 22%)`, cream text `hsl(40 30% 94%)`, gold marker `hsl(40 80% 66%)`.
-- Type: Poppins ExtraBold headline (~96px), Poppins SemiBold on floating cards.
+## The 4 changes
 
-## The 6 screens (screen → caption → floating card → background mood)
-| # | Screen | Caption (marker word in **bold**) | Floating card | Background |
-|---|---|---|---|---|
-| 1 | Dashboard | Run your **whole business** from your phone | "Revenue ▲ $23,990 outstanding" KPI chip | Tradesperson's truck/worksite at dusk |
-| 2 | Quick-create | Quotes & invoices **in one tap** | "✓ New quote created" toast | Workshop bench / tools, dark |
-| 3 | Reports | Track **every dollar** in real time | "+$1,157.10 payment received" toast | Dim office desk, paperwork |
-| 4 | Linq AI | Let **AI** do the busywork | "✨ Draft ready to review" toast | Moody abstract teal light |
-| 5 | Clients | Every client & lead **in one place** | "+ New lead added" toast | Handshake/jobsite, distant & dark |
-| 6 | Branding | Your **brand** on every quote | Mini branded quote chip | Clean dark studio surface |
+### 1. Tighten gap between title and phone
+The large empty band between the caption and the device is the main problem. Move the headline down a bit and the device up so they sit close with only a small breathing gap.
+- Caption `top: 140px` and device positioning are recalculated so the device top edge sits just below the last caption line.
 
-## Build pipeline
-1. Generate 6 moody backgrounds (image tool), save to `/tmp/asp4/bg/`.
-2. One HTML/CSS template: layered as background image → grain/vignette overlay → headline w/ marker SVG → tilted iPhone (CSS) with embedded screenshot → floating card. Poppins embedded as base64 (already downloaded).
-3. Render each at exact 1290×2796 with headless Chromium (`--force-device-scale-factor=1`).
-4. Output to `/mnt/documents/app-store-package/screenshots-v4/` as `01`–`06` (keeps v3 as fallback).
+### 2. Remove white space at the bottom of the screenshot
+Each source screenshot (883×1920) has ~108px of blank white safe-area at the very bottom (below the app's bottom nav). Crop that off before embedding so the screen content fills the device cleanly with no white strip.
 
-## QA (mandatory)
-Open every PNG and check: device looks like a real iPhone (corners, island, edge, buttons, no stretch), tilt shadow reads correctly, screenshot aspect intact, marker aligns to its word, floating card doesn't cover key UI or clip off-canvas, text legible over photo, dimensions exactly 1290×2796, consistent across all 6. Iterate until clean.
+### 3. Remove the tilt + make the phone bigger
+- Drop the 3D transform entirely (`rotateX(4deg) rotateY(-9deg) rotateZ(-1.2deg)` → straight-on, `translateX(-50%)` only). Remove `perspective`.
+- Increase device width from `792px` to ~`880px` so it reads larger and fills more of the frame.
+- Adjust the contact shadow to a centered, straight drop shadow (no skew) to match the flat device.
+- Re-check the floating accent card position so it still overlaps the (now larger, untilted) device edge without covering key UI.
 
-## Deliverables
-- `screenshots-v4/01..06.png` — submit-ready.
-- `APP_STORE_LISTING.md` Section 8 updated to point at v4.
-- Artifact-only; no app/code changes.
+### 4. Teal/aqua-green highlight instead of yellow
+Replace the gold accent everywhere it appears:
+- Marker underline stroke, marker circle stroke (`UNDER`, `CIRC` SVGs): `hsl(40 82% 64%)` → aqua green `hsl(162 78% 46%)`.
+- Highlighted caption word color `.acc`: gold → same aqua green.
+- Floating-card accent icon tints stay as-is (they're contextual greens/blues), unless they read as yellow — the branding card's `#caa24a` gold tint will be swapped to the aqua green for consistency.
+
+## Technical details
+- Edit `/tmp/asp4/build.py`: change `OUT` to the v5 folder; crop bottom 108px in `b64`/image load step for screenshots (load via PIL, crop, re-encode); update `.caption top`, `.stage`/`.device`/`.shadow` CSS (remove rotations + perspective, widen device, recenter shadow); swap accent HSL in `UNDER`, `CIRC`, `.acc`, and the branding card tint.
+- Re-render all 6 at exactly 1290×2796 with headless Chromium.
+
+## QA (mandatory before delivery)
+Convert all 6 PNGs to inspection images and verify each: no tilt (phone perfectly straight), no white strip at screen bottom, small/tight gap under the headline, device noticeably larger and not clipped, highlight is aqua green (zero yellow remaining), marker aligns to its word, floating card overlaps device without hiding key UI, dimensions exactly 1290×2796, consistent across all 6. Fix and re-render until clean.
