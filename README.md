@@ -51,6 +51,40 @@ npx cap sync ios
 
 Then re-archive in Xcode and upload to App Store Connect.
 
+### ⚠️ Dependency & `npm audit` policy — READ THIS
+
+**Do NOT run `npm audit fix --force` on this project. It will break your build.**
+
+This project is intentionally pinned to **Vite 5** and **Vitest 3** (see `package.json`).
+`npm audit fix --force` upgrades them to **Vite 8 / Vitest 4**, which are incompatible
+with the toolchain and cause `npm run build` to fail.
+
+The audit warnings that remain are all in **dev-only build tooling**
+(`esbuild`, `vite`, `vitest`, `lovable-tagger`). Read the advisories: they only affect a
+**local development server**. They are:
+
+- never installed or run in production,
+- **not** part of the shipped iOS app (it bundles the static `dist/` output only),
+- **irrelevant** to Apple — App Store review does not run `npm audit`.
+
+There is no Vite-5-compatible patched `esbuild`, so a "0 vulnerabilities" result is not
+achievable without breaking the build. These warnings are expected and safe to ignore.
+
+**To inspect (read-only):**
+```sh
+npm audit          # informational only — never use --fix --force
+```
+
+**If you already ran `npm audit fix --force` and the build broke**, restore the pinned
+versions:
+```sh
+git checkout -- package.json package-lock.json
+rm -rf node_modules
+npm install
+npm run build
+```
+
+
 ### Submitting to the App Store
 1. Create the app record at [appstoreconnect.apple.com](https://appstoreconnect.apple.com) with bundle ID `app.quicklinq`
 2. Fill in description, keywords, support URL, **Privacy Policy URL** (mandatory), category Business
