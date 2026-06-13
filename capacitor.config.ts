@@ -20,7 +20,7 @@ const config: CapacitorConfig = {
   // },
 
   ios: {
-    contentInset: 'always',
+    contentInset: 'never',
     backgroundColor: '#FAF7F2', // brand cream
   },
   android: {
@@ -34,8 +34,9 @@ const config: CapacitorConfig = {
       androidSplashResourceName: 'splash',
     },
     StatusBar: {
-      style: 'DARK',
-      backgroundColor: '#1a3d44',
+      // Dark status bar content (icons/text) so it stays legible on the light top bar.
+      style: 'LIGHT',
+      overlaysWebView: true,
     },
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],
