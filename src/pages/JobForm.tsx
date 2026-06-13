@@ -160,8 +160,9 @@ const JobForm = () => {
           </CardContent>
         </Card>
 
-        {/* Sticky save on mobile */}
-        <div className="flex flex-col md:flex-row justify-end gap-2 sticky bottom-20 md:static md:bottom-auto bg-background/95 backdrop-blur-sm py-3 md:py-0 -mx-4 px-4 md:mx-0 md:px-0 border-t md:border-0">
+        {/* Form actions */}
+        <div className="flex flex-col md:flex-row md:justify-end gap-3 pt-4 pb-2">
+
           <Button variant="outline" onClick={() => navigate(isEdit ? `/jobs/${id}` : "/jobs")} className="md:w-auto">Cancel</Button>
           <Button onClick={handleSave} disabled={!title.trim() || createJob.isPending || updateJob.isPending} className="gap-1.5 md:w-auto">
             <Save className="h-4 w-4" />

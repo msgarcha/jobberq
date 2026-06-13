@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { getPublicAppUrl } from "@/lib/native/platform";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -49,7 +50,7 @@ const PricingFormBuilder = () => {
     }
   }, [data?.form]);
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const baseUrl = getPublicAppUrl();
   const publicUrl = `${baseUrl}/book/${local.slug}`;
   const embedSnippet = useMemo(
     () =>

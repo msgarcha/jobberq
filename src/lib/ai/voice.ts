@@ -1,6 +1,7 @@
 // Unified speech I/O. Uses Web Speech APIs in browsers and Capacitor plugins on native iOS/Android.
 // Auto-restarts on iOS where the engine times out after ~1s of silence.
 
+import { Capacitor } from "@capacitor/core";
 import { isNative } from "@/lib/native/platform";
 import { SpeechRecognition as NativeSR } from "@capacitor-community/speech-recognition";
 import { TextToSpeech as NativeTTS } from "@capacitor-community/text-to-speech";
@@ -27,13 +28,18 @@ const RESTART_BACKOFF_MS = 250;
 
 export function isVoiceSupported(): boolean {
   if (typeof window === "undefined") return false;
-  if (isNative()) return true;
+  if (isNative()) {
+    // Speech-to-text relies on the native SpeechRecognition plugin. It is only
+    // usable when it is actually compiled into the native build; if not, report
+    // unsupported so the UI hides voice instead of throwing "not implemented".
+    return Capacitor.isPluginAvailable("SpeechRecognition");
+  }
   const w = window as any;
   return Boolean(w.SpeechRecognition || w.webkitSpeechRecognition);
 }
 
 export function isSpeechSynthesisSupported(): boolean {
-  if (isNative()) return true;
+  if (isNative()) return Capacitor.isPluginAvailable("TextToSpeech");
   return typeof window !== "undefined" && "speechSynthesis" in window;
 }
 

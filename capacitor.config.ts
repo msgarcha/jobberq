@@ -41,6 +41,12 @@ const config: CapacitorConfig = {
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],
     },
+    Keyboard: {
+      // Shrink the WebView when the keyboard opens so fixed headers/footers stay
+      // anchored instead of the whole page scrolling up under the status bar.
+      resize: 'native' as any,
+      resizeOnFullScreen: true,
+    },
   },
 };
 

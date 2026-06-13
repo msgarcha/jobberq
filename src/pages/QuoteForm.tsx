@@ -319,7 +319,7 @@ const QuoteForm = () => {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row justify-end gap-3 pt-2 sticky bottom-20 md:static md:bottom-auto bg-background/95 backdrop-blur-sm py-3 md:py-0 -mx-4 px-4 md:mx-0 md:px-0 border-t md:border-0">
+        <div className="flex flex-col md:flex-row md:justify-end gap-3 pt-4 pb-2">
           <Button variant="outline" onClick={() => navigate(-1)} className="md:w-auto">Cancel</Button>
           {!isEdit && (
             <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-1.5 md:w-auto">

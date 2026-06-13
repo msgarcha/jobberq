@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getPublicAppUrl } from "@/lib/native/platform";
 import { Link } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ const PricingForms = () => {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const baseUrl = getPublicAppUrl();
 
   return (
     <DashboardLayout>
