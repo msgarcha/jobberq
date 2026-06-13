@@ -33,6 +33,7 @@ export function TopBar() {
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [linqOpen, setLinqOpen] = useState(false);
   const { data: notifications } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
