@@ -219,16 +219,17 @@ export function MobileBottomNav() {
       <AssistantSheet open={linqOpen} onOpenChange={setLinqOpen} />
 
       {/* Bottom Tab Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t safe-area-bottom">
-        <div className="flex items-center justify-around h-20 max-w-lg mx-auto px-1">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/70 bg-card/95 backdrop-blur-md safe-area-bottom">
+        <div className="mx-auto flex h-[68px] max-w-lg items-stretch justify-around px-1">
           {tabs.map((tab) => {
             if (tab.label === "fab") {
               return (
                 <button
                   key="fab"
                   onClick={() => handleTab(tab)}
+                  aria-label="Create"
                   className={cn(
-                    "relative -mt-7 flex h-[60px] w-[60px] items-center justify-center rounded-full shadow-warm-lg transition-all duration-200 active:scale-95",
+                    "relative -mt-7 flex h-[60px] w-[60px] items-center justify-center self-center rounded-full shadow-warm-lg transition-all duration-200 active:scale-95",
                     fabOpen || fabClosing
                       ? "bg-destructive text-destructive-foreground rotate-45"
                       : "bg-primary text-primary-foreground"
@@ -249,12 +250,19 @@ export function MobileBottomNav() {
                 key={tab.label}
                 onClick={() => handleTab(tab)}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-2 px-3 min-w-[60px] transition-colors",
+                  "relative flex min-w-[60px] flex-1 flex-col items-center justify-center gap-1 pt-2 pb-1 transition-colors",
                   active ? "text-primary" : "text-muted-foreground"
                 )}
               >
-                <tab.icon className="h-6 w-6" />
-                <span className="text-[11px] font-medium">{tab.label}</span>
+                {/* Active indicator */}
+                <span
+                  className={cn(
+                    "absolute top-0 h-[3px] w-7 rounded-full bg-primary transition-opacity duration-200",
+                    active ? "opacity-100" : "opacity-0"
+                  )}
+                />
+                <tab.icon className={cn("h-[22px] w-[22px]", active && "stroke-[2.4]")} />
+                <span className="text-[11px] font-medium leading-none">{tab.label}</span>
               </button>
             );
           })}
