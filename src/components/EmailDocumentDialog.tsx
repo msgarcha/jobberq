@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getPublicAppUrl } from "@/lib/native/platform";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -127,7 +128,7 @@ ${companyName || ""}`.trim();
     setSending(true);
     try {
       // Build CTA URL
-      const origin = window.location.origin;
+      const origin = getPublicAppUrl();
       const ctaUrl = type === "invoice"
         ? `${origin}/pay/${documentId}`
         : `${origin}/quote/view/${documentId}`;
