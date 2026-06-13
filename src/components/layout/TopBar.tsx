@@ -199,7 +199,6 @@ export function TopBar() {
             <AvatarDropdown />
           </div>
         </div>
-        <AssistantSheet open={linqOpen} onOpenChange={setLinqOpen} />
       </header>
     );
   }
