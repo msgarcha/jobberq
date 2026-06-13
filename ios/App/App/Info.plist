@@ -47,5 +47,19 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>QuickLinq uses your camera to attach photos to jobs, quotes, and invoices.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>QuickLinq lets you attach photos from your library to jobs, quotes, and invoices.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>QuickLinq saves invoice and quote PDFs to your photo library.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>QuickLinq uses your microphone so you can dictate notes and use voice features.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>QuickLinq converts your speech to text so you can create quotes and notes hands-free.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>
