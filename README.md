@@ -7,19 +7,20 @@ This project is wrapped with [Capacitor](https://capacitorjs.com) so the same we
 ### Requirements (Mac only)
 - macOS with the latest **Xcode** installed
 - **Apple Developer Program** membership ($99/year)
-- **CocoaPods**: `sudo gem install cocoapods`
 - Node.js 18+
+
+> The native iOS project lives in `ios/` and is **committed to this repo**. You do NOT
+> run `npx cap add ios` — it already exists. Capacitor 8 uses **Swift Package Manager**
+> (no CocoaPods/`App.xcworkspace`); always open **`ios/App/App.xcodeproj`**.
 
 ### One-time setup
 After exporting this project to your own GitHub repo and `git pull`-ing it locally:
 
 ```sh
-npm install
-npx cap add ios
-npx cap update ios
-npm run build
-npx cap sync ios
-npx cap open ios
+npm install            # restores node_modules (the SPM packages point here)
+npm run build          # produces dist/
+npx cap sync ios       # copies dist/ + regenerates ios/App/CapApp-SPM/Package.swift
+npx cap open ios       # opens ios/App/App.xcodeproj in Xcode
 ```
 
 This opens the project in Xcode. In Xcode:
@@ -32,6 +33,11 @@ This opens the project in Xcode. In Xcode:
 4. Drop in your App Icon set (1024×1024 marketing icon required) and Launch Screen
 5. Set Version `1.0.0`, Build `1`
 6. Run on a Simulator first, then on a real iPhone (push notifications only work on a real device)
+
+> **"Missing package product 'CapacitorCamera'…"?** That means Xcode couldn't resolve the
+> Swift packages. Fix order: (1) run `npm install` so `node_modules` exists, (2) run
+> `npx cap sync ios`, (3) in Xcode **File → Packages → Reset Package Caches**, then build.
+> Never delete the committed `ios/` folder to "fix" it — that's what caused the drift.
 
 ### Updating after code changes
 Whenever you pull new web changes from Lovable:
