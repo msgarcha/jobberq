@@ -32,6 +32,6 @@ echo "▸ Syncing Capacitor iOS (copies dist/ + runs pod install)"
 npx cap sync ios
 
 echo "▸ Generating app icons + splash from assets/"
-npx capacitor-assets generate --ios
+npx --yes @capacitor/assets generate --ios
 
 echo "✓ ci_post_clone complete"
