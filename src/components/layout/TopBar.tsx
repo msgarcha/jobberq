@@ -168,30 +168,47 @@ export function TopBar() {
 
     return (
       <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-sm border-b safe-area-top">
-        <div className="flex h-14 items-center justify-between px-4 gap-2">
-          {isHome ? (
-            <QuickLinqLogo size={28} type="full" variant="dark" />
-          ) : (
-            <div className="flex items-center gap-1 min-w-0 flex-1">
+        <div className="grid h-14 grid-cols-[1fr_auto_1fr] items-center px-3">
+          {/* Left zone */}
+          <div className="flex items-center justify-start min-w-0">
+            {isHome ? (
+              <QuickLinqLogo size={26} type="full" variant="dark" />
+            ) : (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 shrink-0 -ml-2"
+                className="h-9 w-9 -ml-1"
                 onClick={() => navigate(-1)}
                 aria-label="Go back"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              {title && (
-                <h1 className="text-base font-display font-semibold truncate">{title}</h1>
-              )}
-            </div>
-          )}
-          <div className="flex items-center gap-2 shrink-0">
+            )}
+          </div>
+
+          {/* Center title */}
+          <div className="flex items-center justify-center min-w-0 px-2">
+            {!isHome && title && (
+              <h1 className="text-base font-display font-semibold truncate">{title}</h1>
+            )}
+          </div>
+
+          {/* Right zone */}
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full text-primary"
+              onClick={() => setLinqOpen(true)}
+              aria-label="Ask Linq"
+            >
+              <Sparkles className="h-5 w-5" />
+            </Button>
             <NotificationDropdown />
             <AvatarDropdown />
           </div>
         </div>
+        <AssistantSheet open={linqOpen} onOpenChange={setLinqOpen} />
       </header>
     );
   }
