@@ -1,58 +1,62 @@
-# Native App Polish: Icon, Splash, Login & Jobber-style Navigation
+# Fix the broken local install + silence the harmless audit noise
 
-Four focused changes so QuickLinq looks and feels like a real native app — and beats Jobber on polish.
+## What actually happened
 
-## 1. App icon + splash actually generate on iOS (fixes the Capacitor default icon)
+Two different things — only one needs fixing in code.
 
-**Root cause:** `@capacitor/assets` is not installed and nothing ever turns `assets/icon.png` / `assets/splash.png` into the native iOS icon set and launch screen. So iOS ships the placeholder Capacitor icon and a plain splash.
+### 1. The "14 vulnerabilities" are harmless dev-only tooling (no action needed for security)
+Every one of the high/moderate advisories (`minimatch`, `tar`, `replace`, `xcode`, `uuid`) comes from a single chain:
 
-**Fix:**
-- Add `@capacitor/assets` as a dev dependency.
-- Update `ci_scripts/ci_post_clone.sh` to regenerate icons + splash on every Xcode Cloud build, right after `npx cap sync ios`:
+```text
+@capacitor/assets  →  @trapezedev/project  →  replace/minimatch, tar, xcode/uuid
+```
+
+`@capacitor/assets` is a **devDependency** used only on your machine / in CI to turn `assets/icon.png` + `assets/splash.png` into the native icon set. It is **never bundled into the iOS app**, never runs at runtime, and Apple does not scan npm devDependencies. These advisories have "No fix available" because the maintainers haven't updated them yet — they are not a risk to your app or your App Store review.
+
+**Do not run `npm audit fix --force` again** — that is what broke your install.
+
+### 2. `npm audit fix --force` broke your local dependencies (this is the real problem)
+It upgraded, against this project's requirements:
+- `vite` 5 → **8** (Lovable requires vite 5)
+- `vitest` 3 → **4**
+- `lovable-tagger` 1.1.13 → **1.0.20**
+
+These majors are incompatible and will break the web build (and therefore the Capacitor iOS build). The Lovable project itself is still correct (vite `^5.4.19`, vitest `^3.2.4`, lovable-tagger `^1.1.13`) — only your local copy is mutated.
+
+## The fix (in the Lovable project)
+
+To keep your `npm audit` permanently clean and remove the temptation to "fix" it, stop tracking `@capacitor/assets` as a dependency and instead run it on demand via `npx` (it still works exactly the same, just isn't part of your lockfile/audit):
+
+- **`package.json`** — remove the `"@capacitor/assets": "^3.0.5"` devDependency line.
+- **`ci_scripts/ci_post_clone.sh`** — change the generation step to fetch the tool on demand:
   ```sh
   echo "▸ Generating app icons + splash from assets/"
-  npx capacitor-assets generate --ios
+  npx --yes @capacitor/assets generate --ios
   ```
-  This reads `assets/icon.png` (cream bg, teal logo) and `assets/splash.png` / `assets/splash-dark.png` (teal bg, cream logo) and writes the full iOS icon set + launch storyboard.
-- Keep the existing `assets/` source files as-is (already the correct layout the tool expects).
 
-**Manual command for the local Mac** (documented in the closing message): after `git pull` → `npm install` → `npx cap sync ios` → `npx capacitor-assets generate --ios`, then rebuild in Xcode with a bumped build number.
+After this, a fresh `npm install` + `npm audit` on the project will no longer list those 8 vulnerabilities, because the vulnerable tree is no longer a project dependency — yet icons/splash still generate during the build.
 
-## 2. Splash screen shown on launch before login
+## What you do on your Mac (recovery steps)
 
-The splash config in `capacitor.config.ts` is already correct (`backgroundColor: #1a3d44`, no spinner) and `initNative()` hides it after mount. Once step 1 generates the real launch screen from `assets/splash.png`, the teal screen with the cream QuickLinq mark appears on tap, then transitions into the app/login. Minor tweak: raise `launchShowDuration` slightly (1200 → 1500ms) so the splash doesn't flash away before the web view paints.
+Your local repo currently has the broken vite 8 install. Reset it back to the project's correct versions:
 
-## 3. Login dialog centered, not scrollable
+```bash
+cd jobberq
+git pull                       # pulls the package.json fix above
+git checkout -- package.json package-lock.json   # discard any local audit-fix edits if pull complains
+rm -rf node_modules package-lock.json
+npm install                    # clean install at vite 5 / vitest 3
+```
 
-In `src/pages/Login.tsx`, the auth shell is currently top-aligned with page padding, so the card sits high and the page scrolls.
+Then build the app as usual — **do not run `npm audit fix`**:
 
-- Change `authShellClassName` to a centered flex frame:
-  `min-h-[100svh] bg-background flex items-center justify-center px-4 py-6 overflow-hidden`
-- The card stays vertically and horizontally centered. On very short screens (keyboard open) it falls back to `overflow-y-auto` so fields remain reachable, but by default there is no scroll.
-- Applies to all three states (login, reset, OTP) since they share the shell class.
+```bash
+npx cap sync ios
+npx --yes @capacitor/assets generate --ios
+```
 
-## 4. Clean top bar + Jobber-style bottom bar
-
-### Top bar (`src/components/layout/TopBar.tsx`, mobile)
-- Center the page title (Jobber-style): three-zone layout — back button (or logo on Home) on the left, centered title, actions on the right.
-- Add an **AI sparkle button** (the `Sparkles` "Ask Linq" assistant) on the right, matching Jobber's top-right sparkle. Keep notifications bell + avatar.
-- Desktop top bar unchanged in function; search stays there (mobile relies on the assistant/search flow, per your choice).
-
-### Bottom bar (`src/components/layout/MobileBottomNav.tsx`)
-Keep the current tab set (**Home, Clients, [+], Jobs, More**) and the **center-docked + FAB** — only refine the styling to look cleaner and more native than Jobber:
-- Add an **active-tab indicator**: a short rounded accent bar at the top edge of the active tab (the dark tick Jobber shows above the active item), in brand teal.
-- Tighten the bar: consistent icon size, slightly smaller labels, even spacing, crisp top border + subtle blur, correct `safe-area-bottom` padding so it sits flush on notched devices.
-- Keep the FAB's open/close rotate-to-X animation and the staggered create menu; ensure the FAB notch reads cleanly against the refined bar.
-
-## Technical notes
-- No business-logic, data, or auth-flow changes — presentation, native config, and a CI step only.
-- All native calls remain guarded by `isNative()`; web preview behavior is unchanged.
-- After merge, the user must pull and run the cap sync + `capacitor-assets generate --ios` commands, then archive with a bumped build number for the icon/splash to take effect (these are native build artifacts, not visible in the Lovable web preview).
+Open Xcode, bump the build number, and archive.
 
 ## Files changed
-- `package.json` — add `@capacitor/assets` dev dependency
-- `ci_scripts/ci_post_clone.sh` — add icon/splash generation step
-- `capacitor.config.ts` — bump `launchShowDuration`
-- `src/pages/Login.tsx` — center the auth shell, prevent page scroll
-- `src/components/layout/TopBar.tsx` — centered title + AI sparkle (mobile)
-- `src/components/layout/MobileBottomNav.tsx` — active-tab indicator + cleaner bar styling
+- `package.json` — remove `@capacitor/assets` devDependency
+- `ci_scripts/ci_post_clone.sh` — generate icons/splash via `npx --yes @capacitor/assets`
