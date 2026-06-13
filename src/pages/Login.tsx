@@ -166,26 +166,7 @@ export default function Login() {
     }
   };
 
-  const handleAppleSignIn = async () => {
-    setLoading(true);
-    try {
-      const result = await lovable.auth.signInWithOAuth('apple', {
-        redirect_uri: window.location.origin,
-      });
-      if (result.error) {
-        toast({ title: 'Apple sign-in failed', description: result.error.message, variant: 'destructive' });
-        return;
-      }
-      if (result.redirected) {
-        return; // browser is redirecting to Apple
-      }
-      navigate(redirectTo);
-    } catch (err) {
-      toast({ title: 'Apple sign-in failed', description: err instanceof Error ? err.message : 'Please try again.', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   if (otpMode) {
     return (
