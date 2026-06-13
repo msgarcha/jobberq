@@ -1,41 +1,53 @@
-# Fix npm audit vulnerabilities & the broken Vite upgrade
+# Make QuickLinq Feel Like a Native App
 
-## What's actually wrong
+## What's wrong (diagnosis)
 
-1. **All 6 high-severity vulnerabilities come from one dev dependency: `@capacitor/assets`.**
-   Its dependency chain (`@trapezedev/project` → `replace` → `minimatch`, plus `tar`, plus a nested old `@capacitor/cli`, plus `xcode` → `uuid`) carries the advisories. npm reports **"No fix available"** because upstream hasn't patched them. This package is **build-time-only** (icon/splash generation) and is **never bundled into the shipped app**, so the runtime risk is effectively zero — but the noise is annoying and it's easy to remove.
+Your screenshots are from the real iOS app (the Uber Eats Dynamic Island confirms native). The "feels like a website" problems all trace back to **missing native configuration** — the `@capacitor/status-bar` and `@capacitor/splash-screen` plugins are installed but **never initialized in code**, and the web layer is configured like a normal scrolling webpage:
 
-2. **`vite@8.0.16` is a side effect of `npm audit fix --force`.**
-   That command force-upgraded Vite from the supported **v5** to **v8**, which breaks the peer requirements of `lovable-tagger` (needs vite `<8`) and `@vitejs/plugin-react-swc` (needs vite `^4–^7`). The repo's `package.json` still correctly pins `vite ^5.4.19`; only your local clone was mutated. A clean reinstall from the repo restores it.
+1. **Pinch-zoom is enabled** — `index.html` viewport tag has no `maximum-scale`/`user-scalable=no`, so the whole UI zooms like a webpage (the "fake zoom" feel).
+2. **Rubber-band / bounce scroll** — nothing sets `overscroll-behavior`, and the layout is `min-h-screen` (the whole document scrolls) instead of a fixed shell where only the content area scrolls. This is the "website scroll feel."
+3. **Big white gap under the status bar** — `capacitor.config.ts` uses `ios.contentInset: 'always'` AND the header adds `safe-area-top` padding, so the safe-area gets counted twice. The status bar is also never told to overlay the web view, and its text style is wrong for the cream background.
+4. **Bars not behaving like native chrome** — top/bottom bars are `sticky`/`fixed` inside a scrolling document, so they drift instead of being a locked app frame.
 
-## The plan
+## The fix
 
-### Code changes (in this repo)
-1. **Remove `@capacitor/assets` from `devDependencies`** in `package.json`. This eliminates the entire vulnerable chain — all 6 highs and the moderate `uuid` finding go away, since `uuid`/`xcode`/`tar`/`replace` were only pulled in by this package.
-2. **Remove the icon-generation step from `ci_scripts/ci_post_clone.sh`** (the `npx @capacitor/assets generate ...` line), since the package will no longer exist. The script keeps `npm ci` → `npm run build` → `npx cap sync ios`.
-3. **Keep the already-generated `assets/icon.png`** (1024×1024, opaque cream + teal logo). Modern Xcode uses a single 1024pt icon for the whole AppIcon set, so no generator is needed.
-
-### One-time Xcode step (you do this locally, documented in the plan output)
-- Set the app icon by replacing the single 1024 file in the native project:
-  `ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png` with `assets/icon.png`
-  (or drag `assets/icon.png` onto the AppIcon "1024pt" slot in Xcode's asset catalog). `cap sync` does not overwrite this afterward.
-- (Optional) For a branded launch screen, drop `assets/splash.png` into the `Splash.imageset` in the same asset catalog. Otherwise the splash shows the dark-teal background already set in `capacitor.config.ts`.
-
-### Local cleanup to undo the forced Vite 8 upgrade (you run these)
-```bash
-git pull                       # restores package.json with vite ^5.4.19
-git checkout -- package-lock.json   # discard the forced lockfile (if modified)
-rm -rf node_modules package-lock.json
-npm install                    # clean reinstall on vite 5
-npm audit                      # should now report 0 vulnerabilities
+### 1. `index.html` — lock the viewport
+Update the viewport meta to prevent pinch-zoom and double-tap zoom:
 ```
-Do **not** run `npm audit fix --force` again — it re-introduces the Vite 8 break.
+width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover
+```
 
-## Expected result
-- `npm audit` reports **0 vulnerabilities** (the only findings were from the removed `@capacitor/assets`).
-- Vite is back on the supported v5, so `npm install`, `npm run build`, and `npx cap sync ios` all succeed.
-- The app icon is your uploaded logo, set via the single 1024px image — no generator dependency required.
+### 2. `src/index.css` — native scroll behavior
+- Add `overscroll-behavior: none` and `height: 100%` / fixed positioning rules to `html, body` so the document itself never bounces or scrolls.
+- Keep momentum scrolling only inside the content area via `-webkit-overflow-scrolling: touch` and `overscroll-behavior: contain` on the scroll container.
+- Disable text-size auto-adjust and callout/selection where it makes the app feel webby.
+
+### 3. New `src/lib/native/bootstrap.ts` — initialize native chrome
+A guarded `initNative()` (no-ops on web) that on native:
+- `StatusBar.setOverlaysWebView({ overlay: true })` so content draws edge-to-edge and safe-area insets work correctly.
+- `StatusBar.setStyle(...)` set to dark text (visible on the cream/white top bar).
+- `SplashScreen.hide()` after the app mounts.
+
+Call `initNative()` from `src/main.tsx`.
+
+### 4. `capacitor.config.ts` — stop double-counting the safe area
+- Change `ios.contentInset` from `'always'` to `'never'` (we now rely on CSS safe-area insets + the overlay status bar).
+- Align the `StatusBar` plugin style so the status bar matches the light top bar instead of a dark fill.
+
+### 5. `src/components/layout/DashboardLayout.tsx` — fixed app shell
+- Make the shell a fixed-height frame (`h-[100dvh]`, `overflow-hidden`) so the top bar and bottom nav are a locked frame and **only** the `main` element scrolls. This removes the whole-page scroll/bounce and keeps the header and bottom nav rock-solid like a real app.
+
+The `TopBar` (`safe-area-top`) and `MobileBottomNav` (`safe-area-bottom`) already read safe-area insets; once the status bar overlays correctly and `contentInset` is `never`, the oversized top gap and the bottom spacing will size correctly to the device.
+
+## After the change (you'll need to do this on your Mac)
+Because the native iOS project lives on your Mac, after pulling these changes run:
+```
+npm install
+npx cap sync ios
+```
+then rebuild/archive in Xcode (bump Build number) and run on device to confirm: no pinch-zoom, no rubber-band bounce, status bar flush with the top bar, bottom bar pinned.
 
 ## Technical notes
-- Removing `@capacitor/assets` does not affect the runtime app or `@capacitor/cli@8.4.0` (the top-level CLI is current and unaffected; only the nested old CLI inside `@capacitor/assets` was flagged).
-- If you later want automated multi-size generation back, it can be re-added behind an opt-in step, but it's unnecessary given Xcode's single-icon support.
+- All native calls are wrapped in `isNative()` guards so the browser preview and PWA are unaffected.
+- No business logic, data, or backend changes — this is purely shell/presentation + native config.
+- `user-scalable=no` is intentional for an app shell; it does not affect your public web pages' usability since they're the same build but the app-store binary is the target here.
