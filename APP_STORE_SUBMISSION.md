@@ -36,12 +36,18 @@ After **Export to GitHub** from Lovable and `git clone` locally:
 
 ```sh
 npm install          # SPM packages resolve from node_modules — this must run first
-npm run build
-npx cap sync ios     # copies dist/ + regenerates Package.swift
+npm run ios:rebuild  # build + cap sync ios + regenerate app icon & splash from assets/
 npx cap open ios     # opens ios/App/App.xcodeproj
 ```
 
-> Re-run `npm run build && npx cap sync ios` every time you pull new web changes.
+> `npm run ios:rebuild` = `npm run build && npx cap sync ios && npx capacitor-assets generate --ios`.
+> Re-run it every time you pull new web changes. Use it instead of a bare `cap sync` so the
+> branded **app icon and splash are always regenerated** from `assets/icon.png` + `assets/splash.png`.
+>
+> ⚠️ **The app icon / splash are generated, not hand-placed.** If you ever delete and
+> recreate the native project (`rm -rf ios && npx cap add ios`), the icon/splash reset to
+> Capacitor's default blue placeholder. Fix: run `npm run ios:rebuild` (it runs
+> `capacitor-assets generate`). Best practice: **don't delete the committed `ios/` folder.**
 >
 > **"Missing package product 'Capacitor…'"** = Xcode hasn't resolved the Swift packages.
 > Run `npm install` → `npx cap sync ios` → in Xcode **File → Packages → Reset Package
