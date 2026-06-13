@@ -47,7 +47,15 @@ npx cap open ios     # opens ios/App/App.xcodeproj
 > Run `npm install` → `npx cap sync ios` → in Xcode **File → Packages → Reset Package
 > Caches**, then build. Do not delete the committed `ios/` folder.
 
+> ⚠️ **Never run `npm audit fix --force`.** It upgrades Vite 5 → 8 and Vitest 3 → 4
+> (incompatible) and breaks `npm run build`. The remaining audit warnings are dev-only
+> tooling (`esbuild`/`vite`/`vitest`/`lovable-tagger`), affect only a local dev server,
+> are **not** in the shipped app, and are **irrelevant** to App Store review. If you
+> already forced an upgrade and the build broke:
+> `git checkout -- package.json package-lock.json && rm -rf node_modules && npm install`.
+
 ---
+
 
 ## 3. Critical review blockers — fix these BEFORE submitting
 
