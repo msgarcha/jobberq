@@ -239,7 +239,7 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
     <div
       className={cn(
         "fixed z-50 bg-background border shadow-2xl flex flex-col overflow-hidden",
-        "inset-x-0 bottom-0 h-[85vh] rounded-t-3xl",
+        "inset-x-0 bottom-0 h-[85dvh] max-h-[85dvh] rounded-t-3xl",
         "md:inset-x-auto md:bottom-4 md:right-4 md:w-[400px] md:h-[min(620px,80vh)] md:rounded-2xl md:border-border",
         "animate-in slide-in-from-bottom-4 fade-in duration-200"
       )}
@@ -394,13 +394,13 @@ export function AssistantSheet({ open, onOpenChange }: Props) {
               rows={1}
               disabled={isLoading}
             />
-            {input.trim() ? (
+            {input.trim() || !voiceSupported ? (
               <Button
                 type="button"
                 size="icon"
                 onClick={handleSend}
                 className="h-11 w-11 rounded-full shrink-0"
-                disabled={isLoading}
+                disabled={isLoading || !input.trim()}
               >
                 <Send className="h-4 w-4" />
               </Button>
