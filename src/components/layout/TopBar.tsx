@@ -193,17 +193,8 @@ export function TopBar() {
             )}
           </div>
 
-          {/* Right zone */}
+          {/* Right zone — Linq lives in the floating launcher (bottom-right) */}
           <div className="flex items-center justify-end gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-full text-primary"
-              onClick={() => setLinqOpen(true)}
-              aria-label="Ask Linq"
-            >
-              <Sparkles className="h-5 w-5" />
-            </Button>
             <NotificationDropdown />
             <AvatarDropdown />
           </div>
