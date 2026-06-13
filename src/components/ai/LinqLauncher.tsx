@@ -13,6 +13,10 @@ export function LinqLauncher() {
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
 
+  // On mobile the "Ask Linq" sparkle lives in the top bar (Jobber-style),
+  // so the floating launcher is desktop-only to avoid duplicate entry points.
+  if (isMobile) return null;
+
   return (
     <>
       <button
