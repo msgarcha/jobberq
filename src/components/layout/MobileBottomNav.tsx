@@ -219,7 +219,10 @@ export function MobileBottomNav() {
       <AssistantSheet open={linqOpen} onOpenChange={setLinqOpen} />
 
       {/* Bottom Tab Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/70 bg-card/95 backdrop-blur-md safe-area-bottom">
+      <nav className={cn(
+        "fixed bottom-0 left-0 right-0 border-t border-border/70 bg-card/95 backdrop-blur-md safe-area-bottom",
+        showFabOverlay ? "z-[60]" : "z-40"
+      )}>
         <div className="mx-auto flex h-[68px] max-w-lg items-stretch justify-around px-1">
           {tabs.map((tab) => {
             if (tab.label === "fab") {

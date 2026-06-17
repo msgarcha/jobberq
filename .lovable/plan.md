@@ -1,44 +1,26 @@
-# Make QuickLinq pass Apple review — remaining code-level fixes
+# UI Polish: Toggles, Radio Buttons & FAB Close Button
 
-## What's already compliant (verified, no changes needed)
-- **Account deletion (5.1.1(v))** — working in-app: Settings → Delete Account → `delete-account` edge function deletes the auth user (cascades data) + cleans solo-team tables. Reachable on native.
-- **Sign in with Apple / third-party login (4.8)** — Login is **email/password only** (Apple + Google buttons already removed), so 4.8 does not apply.
-- **In-app purchase / anti-steering (3.1.1)** — native subscription UI is read-only, no pricing, no buy/switch buttons, no external purchase URL. Web Stripe checkout untouched.
-- **Permission usage strings** — camera, photo library, photo add, microphone, speech all present in `Info.plist`.
+Two surgical fixes, both addressing the issues in the screenshots without touching any business logic.
 
-## Gaps to fix in code
+## 1. Toggles & radio buttons get squished into circles/tall ovals
 
-### 1. iOS Privacy Manifest — `ios/App/App/PrivacyInfo.xcprivacy` (NEW)
-Apple requires a privacy manifest. Add one declaring:
-- `NSPrivacyTracking` = `false` (no cross-app ad tracking).
-- `NSPrivacyTrackingDomains` = empty.
-- `NSPrivacyCollectedDataTypes` matching the App Privacy label: email address, name, phone number, photos/videos, payment info (Stripe), device ID / push token — all linked to user, used for app functionality, not for tracking.
-- `NSPrivacyAccessedAPITypes` with required-reason codes used by the Capacitor runtime: `UserDefaults` (CA92.1), file timestamp (C617.1), system boot time (35F9.1), disk space (E174.1).
+**Cause:** The `Switch` track (`h-6 w-11`) and `RadioGroupItem` (`h-4 w-4`) have no `shrink-0`. Inside flex rows (e.g. "Deposit Required" header, "Percentage / Fixed Amount" row, PDF Style cards), flexbox compresses their width on narrow phone screens. The switch collapses toward a circle/sphere and the radio collapses into a tall vertical oval — exactly what the screenshots show.
 
-Wire the file into the Xcode target by editing `ios/App/App.xcodeproj/project.pbxproj`:
-- Add a `PBXFileReference` for `PrivacyInfo.xcprivacy`.
-- Add a `PBXBuildFile` entry.
-- Add it to the App group `children`.
-- Add it to the `PBXResourcesBuildPhase` files list.
+**Fix (global, covers the whole app):**
+- `src/components/ui/switch.tsx` — add `shrink-0` to the `Switch` root so the 44×24 pill keeps its shape everywhere.
+- `src/components/ui/radio-group.tsx` — add `shrink-0` to `RadioGroupItem` so every radio stays a perfect 16×16 circle (Deposit type, PDF Style, and any other radios).
 
-### 2. Export-compliance flag — `ios/App/App/Info.plist`
-Add `ITSAppUsesNonExemptEncryption` = `false`. QuickLinq uses only standard HTTPS, so this is exempt; the flag removes the encryption question on every upload and prevents a processing stall.
+This automatically fixes every switch (Deposit Required, Automatic Reminders, recurring invoices, review settings) and every radio across the app — no per-page edits needed.
 
-### 3. In-app legal links — `src/pages/Settings.tsx`
-Add a small "Legal" card (and/or footer links) with **Privacy Policy** and **Terms** opening the public pages (`/privacy`, `/terms` via `getPublicAppUrl()` on native so they open the live site). This satisfies the 5.1.1 expectation that the privacy policy is accessible inside the app, not just in store metadata.
+## 2. FAB "X" close button looks like it disappears
+
+**Cause:** When the create menu opens, the FAB turns into a red ✕, but it lives in the bottom nav at `z-40`, while the menu overlay/backdrop sits at `z-50`. The backdrop is painted on top of the FAB, dimming it so it appears gone, and it reads as un-tappable.
+
+**Fix:** In `src/components/layout/MobileBottomNav.tsx`, raise the bottom nav above the backdrop while the create menu is open (e.g. switch the nav's `z-40` to a higher z, such as `z-[60]`, when `fabOpen || fabClosing`). The red ✕ then renders bright and fully tappable alongside the New Client / Quote / Invoice / Job options, and tapping it closes the menu (existing `handleTab` already toggles it closed). Clicking outside still closes it too.
 
 ## Verification
-- Run the web build to confirm the React change in `Settings.tsx` compiles (the iOS-native files don't affect the web build).
-- Re-grep to confirm no purchase-steering strings leaked into native branches.
+- Confirm the web build compiles.
+- Visually check (preview): switch is a clear horizontal pill, radios are clean circles, and the create menu shows a bright, tappable red ✕.
 
-## Still required from you (App Store Connect metadata — cannot be done in code)
-These are the remaining non-code reasons apps like this get rejected; I'll list them so nothing surprises you:
-- **Demo reviewer account** with pre-loaded sample quotes/invoices + review notes (Stripe test card `4242…`).
-- **App Privacy "nutrition label"** questionnaire — fill it to match the manifest above (tracking = No).
-- **Screenshots** — 6.7" iPhone + the 13" iPad set you generated.
-- **Privacy Policy URL** live at `https://quicklinq.app/privacy`.
-
-## Technical notes
-- The privacy manifest data types/reasons are conservative and accurate for this app; adjust only if you later add analytics/ad SDKs.
-- `ITSAppUsesNonExemptEncryption=false` is valid because the app only uses OS-provided HTTPS/TLS.
-- No backend, auth, subscription, or Stripe logic changes — purely additive compliance metadata + a UI links card.
+## Notes
+These are presentation-only CSS/z-index changes. No data, auth, or backend changes.
