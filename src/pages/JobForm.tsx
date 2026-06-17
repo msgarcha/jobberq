@@ -112,25 +112,25 @@ const JobForm = () => {
             <CardTitle className="text-base">Job Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
+            <div className="space-y-1.5">
               <Label>Title *</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Weekly Lawn Maintenance" className="md:h-10" />
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Weekly Lawn Maintenance" className="h-11 rounded-lg md:h-10" />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label>Client</Label>
               <ClientSelector value={clientId} onChange={setClientId} />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label>Assigned To</Label>
               <AssigneeSelect value={assignedTo} onChange={setAssignedTo} />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label>Description</Label>
-              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Job description…" rows={3} />
+              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Job description…" rows={3} className="rounded-lg resize-none" />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label>Address</Label>
-              <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Job site address" className="md:h-10" />
+              <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Job site address" className="h-11 rounded-lg md:h-10" />
             </div>
           </CardContent>
         </Card>
