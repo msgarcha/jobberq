@@ -37,6 +37,8 @@ import {
   Plus,
   StickyNote,
   Star,
+  Briefcase,
+  MoreHorizontal,
 } from "lucide-react";
 import {
   useClient,
