@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { isNative } from "@/lib/native/platform";
+import { isNative, getPublicAppUrl } from "@/lib/native/platform";
 
 const paymentTermOptions = [
   { value: "due_on_receipt", label: "Due on Receipt" },
@@ -696,6 +696,36 @@ const Settings = () => {
                 >
                   <Trash2 className="h-4 w-4" />
                   Delete My Account
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Legal — privacy policy & terms (required to be accessible in-app) */}
+            <Card className="shadow-warm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-medium">Legal</CardTitle>
+                <CardDescription className="text-xs">
+                  Review how QuickLinq handles your data and the terms of use.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => window.open(`${getPublicAppUrl()}/privacy`, "_blank", "noopener,noreferrer")}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Privacy Policy
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => window.open(`${getPublicAppUrl()}/terms`, "_blank", "noopener,noreferrer")}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Terms of Service
                 </Button>
               </CardContent>
             </Card>
