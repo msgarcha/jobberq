@@ -528,23 +528,26 @@ const Settings = () => {
                     </div>
                     {!stripeStatus.onboarding_complete && (
                       <p className="text-xs text-muted-foreground">
-                        Your Stripe account needs more information before you can accept payments. Click below to complete setup.
+                        {isNative()
+                          ? "Your payment setup isn't finished yet. Log into your account from a web browser to complete Stripe setup."
+                          : "Your Stripe account needs more information before you can accept payments. Click below to complete setup."}
                       </p>
                     )}
                     {stripeStatus.onboarding_complete && (
                       <div className="text-xs text-muted-foreground space-y-1">
                         <p>✓ Charges enabled — you can accept payments</p>
                         <p>{stripeStatus.payouts_enabled ? "✓" : "✗"} Payouts enabled — funds transfer to your bank</p>
+                        {isNative() && <p>Manage your Stripe account from a web browser.</p>}
                       </div>
                     )}
                     <div className="flex flex-wrap gap-2">
-                      {!stripeStatus.onboarding_complete && (
+                      {!stripeStatus.onboarding_complete && !isNative() && (
                         <Button size="sm" onClick={handleConnectStripe} disabled={stripeConnectLoading} className="gap-1.5">
                           {stripeConnectLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
                           Complete Setup
                         </Button>
                       )}
-                      {stripeStatus.onboarding_complete && (
+                      {stripeStatus.onboarding_complete && !isNative() && (
                         <Button size="sm" variant="outline" className="gap-1.5" onClick={async () => {
                           // Open the tab synchronously to preserve the user gesture (mobile popup blockers)
                           const newTab = window.open("", "_blank");
@@ -585,6 +588,12 @@ const Settings = () => {
                         <Unlink className="h-3.5 w-3.5 mr-1" /> Disconnect
                       </Button>
                     </div>
+                  </div>
+                ) : isNative() ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      To set up payments, log into your account from a web browser and connect Stripe under Settings → Payment Setup.
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
