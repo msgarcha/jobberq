@@ -32,8 +32,6 @@ import {
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { isNative } from "@/lib/native/platform";
-import { manageIapSubscription } from "@/lib/native/iap";
-import { IapPurchasePanel } from "@/components/IapPurchasePanel";
 
 const paymentTermOptions = [
   { value: "due_on_receipt", label: "Due on Receipt" },
@@ -1111,19 +1109,21 @@ const Settings = () => {
                         {portalLoading ? "Loading…" : "Manage Subscription"}
                       </Button>
                     )}
-                    {subscription.subscribed && isNative() && (
-                      <Button variant="outline" size="sm" onClick={() => manageIapSubscription()}>
-                        Manage Subscription
-                      </Button>
-                    )}
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Pricing — native iOS uses Apple In-App Purchase (App Store guideline 3.1.1) */}
+            {/* Pricing Cards — hidden on native iOS (App Store guideline 3.1.1) */}
             {isNative() ? (
-              <IapPurchasePanel />
+              <Card className="shadow-warm border-border/50">
+                <CardContent className="p-6 text-center space-y-1">
+                  <p className="text-sm font-medium">Manage your plan on the web</p>
+                  <p className="text-sm text-muted-foreground">
+                    To change or start a subscription, sign in to QuickLinq at quicklinq.app from your web browser.
+                  </p>
+                </CardContent>
+              </Card>
             ) : (
             <div className="grid gap-5 grid-cols-1 sm:grid-cols-3">
               {(Object.entries(SUBSCRIPTION_TIERS) as [TierKey, typeof SUBSCRIPTION_TIERS[TierKey]][]).map(([key, tier]) => {
