@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
           },
           {
             role: "user",
-            content: `Generate exactly 5 of the most common services offered by a "${trade}" business. Include realistic default prices.`,
+            content: `Generate exactly 6 of the most common services offered by a "${trade}" business. Include realistic default prices.`,
           },
         ],
         tools: [
@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
             type: "function",
             function: {
               name: "create_services",
-              description: "Return 5 starter services for this trade.",
+              description: "Return 6 starter services for this trade.",
               parameters: {
                 type: "object",
                 properties: {
