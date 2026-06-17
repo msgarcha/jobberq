@@ -46,15 +46,15 @@ const Reviews = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-display font-bold tracking-tight">Reputation Shield</h1>
-            <p className="text-muted-foreground text-sm mt-1">Manage review requests and protect your online reputation.</p>
-          </div>
-          <Button className="gap-1.5 shadow-warm" onClick={() => setDialogOpen(true)}>
-            <Send className="h-4 w-4" /> Request Review
-          </Button>
-        </div>
+        <PageHeader
+          title="Reputation Shield"
+          description="Manage review requests and protect your online reputation."
+          actions={
+            <Button className="gap-1.5 shadow-warm" onClick={() => setDialogOpen(true)}>
+              <Send className="h-4 w-4" /> Request Review
+            </Button>
+          }
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
