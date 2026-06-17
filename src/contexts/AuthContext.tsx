@@ -3,6 +3,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { getTierByProductId, type TierKey } from '@/lib/subscriptionTiers';
 import { registerPushNotifications } from '@/lib/native/pushNotifications';
+import { logInIap, logOutIap } from '@/lib/native/iap';
 
 interface SubscriptionState {
   subscribed: boolean;
@@ -173,10 +174,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loadSuperAdmin(session.user.id);
       // Register for native push notifications (no-op on web)
       registerPushNotifications(session.user.id, team.teamId).catch(() => {});
+      // Associate native In-App Purchases with this user (no-op on web)
+      logInIap(session.user.id).catch(() => {});
     } else {
       setSubscription({ ...defaultSubscription, loading: false });
       setTeam({ ...defaultTeam, loading: false });
       setIsSuperAdmin(false);
+      logOutIap().catch(() => {});
     }
   }, [session, checkSubscription, loadTeam, loadSuperAdmin]);
 
