@@ -1096,7 +1096,9 @@ const Settings = () => {
                         : isTrialing && trialEnd
                         ? `Trial ends ${format(new Date(trialEnd), "MMM d, yyyy")}`
                         : trialExpired
-                        ? "Choose a plan below to continue using QuickLinq."
+                        ? isNative()
+                          ? "Your trial has ended."
+                          : "Choose a plan below to continue using QuickLinq."
                         : "No active subscription"}
                     </p>
                   </div>
@@ -1114,14 +1116,40 @@ const Settings = () => {
               </CardContent>
             </Card>
 
-            {/* Pricing Cards — hidden on native iOS (App Store guideline 3.1.1) */}
+            {/* Read-only subscription info on native iOS (App Store guideline 3.1.1) */}
             {isNative() ? (
               <Card className="shadow-warm border-border/50">
-                <CardContent className="p-6 text-center space-y-1">
-                  <p className="text-sm font-medium">Manage your plan on the web</p>
-                  <p className="text-sm text-muted-foreground">
-                    To change or start a subscription, sign in to QuickLinq at quicklinq.app from your web browser.
-                  </p>
+                <CardContent className="p-6 space-y-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">
+                      {subscription.subscribed
+                        ? "You subscribed through QuickLinq's online platform"
+                        : "Manage your subscription on the web"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      To manage your subscription, log into your account from a web browser.
+                    </p>
+                  </div>
+                  {subscription.subscribed && (
+                    <div className="space-y-3 pt-1">
+                      {currentTier && (
+                        <div>
+                          <p className="text-sm font-semibold">Plan</p>
+                          <p className="text-sm text-muted-foreground">
+                            {SUBSCRIPTION_TIERS[currentTier].name}
+                          </p>
+                        </div>
+                      )}
+                      {subscription.subscriptionEnd && (
+                        <div>
+                          <p className="text-sm font-semibold">Next payment</p>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(subscription.subscriptionEnd), "MMM d, yyyy")}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ) : (
