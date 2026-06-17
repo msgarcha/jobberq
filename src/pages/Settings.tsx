@@ -589,6 +589,12 @@ const Settings = () => {
                       </Button>
                     </div>
                   </div>
+                ) : isNative() ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      To set up payments, log into your account from a web browser and connect Stripe under Settings → Payment Setup.
+                    </p>
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     <p className="text-sm text-muted-foreground">
