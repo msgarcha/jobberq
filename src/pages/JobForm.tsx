@@ -100,19 +100,11 @@ const JobForm = () => {
   return (
     <DashboardLayout>
       <div className="space-y-5 animate-fade-in max-w-2xl mx-auto md:mx-0">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(isEdit ? `/jobs/${id}` : "/jobs")}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-display font-bold tracking-tight">
-              {isEdit ? "Edit Job" : "New Job"}
-            </h1>
-            {!isEdit && nextNum && (
-              <p className="text-muted-foreground text-sm mt-0.5">{nextNum.formatted}</p>
-            )}
-          </div>
-        </div>
+        <PageHeader
+          onBack={() => navigate(isEdit ? `/jobs/${id}` : "/jobs")}
+          title={isEdit ? "Edit Job" : "New Job"}
+          description={!isEdit && nextNum ? nextNum.formatted : undefined}
+        />
 
         <Card className="shadow-warm">
           <CardHeader>
