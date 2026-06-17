@@ -137,11 +137,11 @@ export async function manageIapSubscription(): Promise<void> {
   if (!(await configureIap())) return;
   try {
     const { Purchases } = await loadPurchases();
-    // Available on the Capacitor plugin; falls back silently if unsupported.
-    // @ts-expect-error - showManageSubscriptions exists on iOS
-    if (typeof Purchases.showManageSubscriptions === 'function') {
-      // @ts-expect-error - iOS-only API
-      await Purchases.showManageSubscriptions();
+    const api = Purchases as unknown as {
+      showManageSubscriptions?: () => Promise<void>;
+    };
+    if (typeof api.showManageSubscriptions === "function") {
+      await api.showManageSubscriptions();
     }
   } catch (err) {
     console.warn('[IAP] manage subscription failed', err);
