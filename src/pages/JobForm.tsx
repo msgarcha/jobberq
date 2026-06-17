@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClientSelector } from "@/components/ClientSelector";
 import { AssigneeSelect } from "@/components/AssigneeSelect";
-import { ArrowLeft, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { useJob, useCreateJob, useUpdateJob, useNextJobNumber, useIncrementJobNumber } from "@/hooks/useJobs";
 import { useAuth } from "@/contexts/AuthContext";
 
