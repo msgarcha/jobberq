@@ -34,16 +34,16 @@ const Jobs = () => {
   return (
     <DashboardLayout>
       <div className="space-y-5 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-display font-bold tracking-tight">Jobs</h1>
-            <p className="text-muted-foreground text-sm mt-1">{jobs?.length ?? 0} jobs</p>
-          </div>
-          <Button className="gap-1.5 rounded-lg shadow-warm hidden md:inline-flex" onClick={() => navigate("/jobs/new")}>
-            <Plus className="h-4 w-4" />
-            New Job
-          </Button>
-        </div>
+        <PageHeader
+          title="Jobs"
+          description={`${jobs?.length ?? 0} jobs`}
+          actions={
+            <Button className="gap-1.5 rounded-lg shadow-warm hidden md:inline-flex" onClick={() => navigate("/jobs/new")}>
+              <Plus className="h-4 w-4" />
+              New Job
+            </Button>
+          }
+        />
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 sm:max-w-xs">
