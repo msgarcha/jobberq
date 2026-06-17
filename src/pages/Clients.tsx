@@ -37,18 +37,16 @@ const Clients = () => {
   return (
     <DashboardLayout>
       <div className="space-y-5 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-display font-bold tracking-tight">Clients</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {clients?.length ?? 0} {statusFilter === "all" ? "total" : statusFilter} clients
-            </p>
-          </div>
-          <Button className="gap-1.5 rounded-lg shadow-warm hidden md:inline-flex" onClick={() => navigate("/clients/new")}>
-            <Plus className="h-4 w-4" />
-            New Client
-          </Button>
-        </div>
+        <PageHeader
+          title="Clients"
+          description={`${clients?.length ?? 0} ${statusFilter === "all" ? "total" : statusFilter} clients`}
+          actions={
+            <Button className="gap-1.5 rounded-lg shadow-warm hidden md:inline-flex" onClick={() => navigate("/clients/new")}>
+              <Plus className="h-4 w-4" />
+              New Client
+            </Button>
+          }
+        />
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 sm:max-w-sm">
