@@ -21,6 +21,10 @@ const QuoteForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = !!id;
+  const [searchParams] = useSearchParams();
+  const prefillClient = searchParams.get("client");
+
+
 
   const { data: existingQuote, isLoading: loadingQuote } = useQuote(id);
   const { data: existingLineItems } = useQuoteLineItems(id);
