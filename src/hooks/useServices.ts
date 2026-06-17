@@ -35,6 +35,26 @@ export function useServices(filters?: { search?: string; status?: string }) {
   });
 }
 
+export function useService(id: string | undefined) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["service", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("services_catalog")
+        .select("*")
+        .eq("id", id!)
+        .maybeSingle();
+      if (error) throw error;
+      return data as Service | null;
+    },
+    enabled: !!user && !!id,
+  });
+}
+
+
+
 export function useCreateService() {
   const qc = useQueryClient();
   const { toast } = useToast();
