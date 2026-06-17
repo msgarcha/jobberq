@@ -48,6 +48,13 @@ const JobForm = () => {
     }
   }, [existingJob]);
 
+  // Prefill client when creating from a client page (?client=<id>)
+  useEffect(() => {
+    if (!isEdit && prefillClient) setClientId(prefillClient);
+  }, [isEdit, prefillClient]);
+
+
+
   const handleSave = async () => {
     if (!title.trim()) return;
 
