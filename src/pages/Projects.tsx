@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,16 +51,16 @@ const Projects = () => {
   return (
     <DashboardLayout>
       <div className="space-y-5 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-display font-bold tracking-tight">Projects</h1>
-            <p className="text-muted-foreground text-sm mt-1">{filtered.length} projects</p>
-          </div>
-          <Button className="gap-1.5 rounded-lg shadow-warm" onClick={() => navigate("/jobs/new")}>
-            <Plus className="h-4 w-4" />
-            New Job
-          </Button>
-        </div>
+        <PageHeader
+          title="Projects"
+          description={`${filtered.length} projects`}
+          actions={
+            <Button className="gap-1.5 rounded-lg shadow-warm" onClick={() => navigate("/jobs/new")}>
+              <Plus className="h-4 w-4" />
+              New Job
+            </Button>
+          }
+        />
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <div className="flex gap-1.5">

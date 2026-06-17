@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -97,30 +98,28 @@ const JobDetail = () => {
   return (
     <DashboardLayout>
       <div className="space-y-5 animate-fade-in max-w-2xl">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/jobs")}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-display font-bold tracking-tight">{job.title}</h1>
-                <Badge className={`${statusStyles[job.status]} text-xs`} variant="secondary">
-                  {job.status.replace("_", " ")}
-                </Badge>
-              </div>
-              <p className="text-muted-foreground text-sm">{job.job_number}</p>
+        <PageHeader
+          onBack={() => navigate("/jobs")}
+          title={
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight leading-tight break-words">{job.title}</h1>
+              <Badge className={`${statusStyles[job.status]} text-xs`} variant="secondary">
+                {job.status.replace("_", " ")}
+              </Badge>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/jobs/${id}/edit`)}>
-              <Edit className="h-3.5 w-3.5" /> Edit
-            </Button>
-            <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive" onClick={handleDelete}>
-              <Trash2 className="h-3.5 w-3.5" /> Delete
-            </Button>
-          </div>
-        </div>
+          }
+          description={job.job_number}
+          actions={
+            <>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/jobs/${id}/edit`)}>
+                <Edit className="h-3.5 w-3.5" /> Edit
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive" onClick={handleDelete}>
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </Button>
+            </>
+          }
+        />
 
         {/* Status Actions */}
         <Card className="shadow-warm">

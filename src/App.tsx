@@ -27,6 +27,7 @@ import Projects from "./pages/Projects";
 import Schedule from "./pages/Schedule";
 import Reports from "./pages/Reports";
 import Services from "./pages/Services";
+import ServiceForm from "./pages/ServiceForm";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
@@ -111,6 +112,8 @@ const App = () => (
             <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/services" element={<ProtectedRoute><Services /></ProtectedRoute>} />
+            <Route path="/services/new" element={<ProtectedRoute><ServiceForm /></ProtectedRoute>} />
+            <Route path="/services/:id/edit" element={<ProtectedRoute><ServiceForm /></ProtectedRoute>} />
             <Route path="/reviews" element={<ProtectedRoute><Reviews /></ProtectedRoute>} />
             <Route path="/import" element={<ProtectedRoute><ImportData /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute allowExpired><Settings /></ProtectedRoute>} />

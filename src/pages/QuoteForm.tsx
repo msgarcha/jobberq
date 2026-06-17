@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,10 @@ const QuoteForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = !!id;
+  const [searchParams] = useSearchParams();
+  const prefillClient = searchParams.get("client");
+
+
 
   const { data: existingQuote, isLoading: loadingQuote } = useQuote(id);
   const { data: existingLineItems } = useQuoteLineItems(id);
@@ -49,6 +53,13 @@ const QuoteForm = () => {
   const [reminderFrequency, setReminderFrequency] = useState("weekly");
   const [reminderLimit, setReminderLimit] = useState(3);
   const [remindersInit, setRemindersInit] = useState(false);
+
+  // Prefill client when creating from a client page (?client=<id>)
+  useEffect(() => {
+    if (!isEdit && prefillClient) setClientId(prefillClient);
+  }, [isEdit, prefillClient]);
+
+
 
   useEffect(() => {
     if (existingQuote) {

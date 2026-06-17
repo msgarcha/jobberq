@@ -2,6 +2,10 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { SendReviewDialog } from "@/components/review/SendReviewDialog";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +22,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  ArrowLeft,
   Edit,
   Archive,
   RotateCcw,
@@ -33,6 +36,8 @@ import {
   Plus,
   StickyNote,
   Star,
+  Briefcase,
+  MoreHorizontal,
 } from "lucide-react";
 import {
   useClient,
@@ -126,41 +131,66 @@ const ClientDetail = () => {
     <DashboardLayout>
       <div className="space-y-5 animate-fade-in">
         {/* Header */}
-        <div className="flex items-start gap-3">
-          <Button variant="ghost" size="icon" className="rounded-lg mt-1" onClick={() => navigate("/clients")}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex-1">
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-display font-bold tracking-tight">{fullName}</h1>
+        <PageHeader
+          onBack={() => navigate("/clients")}
+          stretchActions
+          title={
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-display font-bold tracking-tight leading-tight break-words">{fullName}</h1>
               <Badge className={statusStyles[client.status]} variant="secondary">{client.status}</Badge>
             </div>
-            {client.company_name && (
-              <p className="text-sm text-muted-foreground mt-0.5">{client.company_name}</p>
-            )}
-          </div>
-          <div className="flex gap-2 shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 rounded-lg"
-              onClick={handleArchiveToggle}
-              disabled={updateClient.isPending}
-            >
-              {client.status === "archived" ? (
-                <><RotateCcw className="h-3.5 w-3.5" /> Restore</>
-              ) : (
-                <><Archive className="h-3.5 w-3.5" /> Archive</>
-              )}
-            </Button>
-            <Button variant="outline" size="sm" className="gap-1.5 rounded-lg" onClick={() => setReviewDialogOpen(true)}>
-              <Star className="h-3.5 w-3.5" /> Request Review
-            </Button>
-            <Button size="sm" className="gap-1.5 rounded-lg shadow-warm" onClick={() => navigate(`/clients/${id}/edit`)}>
-              <Edit className="h-3.5 w-3.5" /> Edit
-            </Button>
-          </div>
-        </div>
+          }
+          description={client.company_name || undefined}
+          actions={
+            <div className="flex w-full items-center gap-2 sm:w-auto">
+              {/* Primary: create something for this client */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="flex-1 gap-1.5 rounded-lg shadow-warm sm:flex-none">
+                    <Plus className="h-4 w-4" /> Create
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem onClick={() => navigate(`/quotes/new?client=${id}`)}>
+                    <FileText className="h-4 w-4 mr-2" /> New Quote
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate(`/invoices/new?client=${id}`)}>
+                    <Receipt className="h-4 w-4 mr-2" /> New Invoice
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate(`/jobs/new?client=${id}`)}>
+                    <Briefcase className="h-4 w-4 mr-2" /> New Job
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Secondary actions */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="shrink-0 rounded-lg" aria-label="More actions">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem onClick={() => navigate(`/clients/${id}/edit`)}>
+                    <Edit className="h-4 w-4 mr-2" /> Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setReviewDialogOpen(true)}>
+                    <Star className="h-4 w-4 mr-2" /> Request Review
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleArchiveToggle} disabled={updateClient.isPending}>
+                    {client.status === "archived" ? (
+                      <><RotateCcw className="h-4 w-4 mr-2" /> Restore</>
+                    ) : (
+                      <><Archive className="h-4 w-4 mr-2" /> Archive</>
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          }
+        />
+
 
         <Tabs defaultValue="overview">
           <TabsList className="rounded-lg">

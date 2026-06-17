@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -54,16 +55,16 @@ const Pipeline = () => {
   return (
     <DashboardLayout>
       <div className="space-y-4 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-display font-bold tracking-tight">Pipeline</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">{jobs?.length ?? 0} total jobs</p>
-          </div>
-          <Button className="gap-1.5 rounded-lg shadow-warm" onClick={() => navigate("/jobs/new")}>
-            <Plus className="h-4 w-4" />
-            New Job
-          </Button>
-        </div>
+        <PageHeader
+          title="Pipeline"
+          description={`${jobs?.length ?? 0} total jobs`}
+          actions={
+            <Button className="gap-1.5 rounded-lg shadow-warm" onClick={() => navigate("/jobs/new")}>
+              <Plus className="h-4 w-4" />
+              New Job
+            </Button>
+          }
+        />
 
         <div className="flex items-center justify-end">
           <AssigneeFilter value={assigneeFilter} onChange={setAssigneeFilter} />

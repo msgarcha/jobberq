@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,8 @@ const InvoiceForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = !!id;
+  const [searchParams] = useSearchParams();
+  const prefillClient = searchParams.get("client");
 
   const { data: existingInvoice, isLoading } = useInvoice(id);
   const { data: existingLineItems } = useInvoiceLineItems(id);
@@ -58,6 +60,12 @@ const InvoiceForm = () => {
   const [internalNotes, setInternalNotes] = useState("");
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [saving, setSaving] = useState(false);
+
+  // Prefill client when creating from a client page (?client=<id>)
+  useEffect(() => {
+    if (!isEdit && prefillClient) setClientId(prefillClient);
+  }, [isEdit, prefillClient]);
+
 
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringFrequency, setRecurringFrequency] = useState("monthly");

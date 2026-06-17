@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClientSelector } from "@/components/ClientSelector";
 import { AssigneeSelect } from "@/components/AssigneeSelect";
-import { ArrowLeft, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { useJob, useCreateJob, useUpdateJob, useNextJobNumber, useIncrementJobNumber } from "@/hooks/useJobs";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -17,6 +18,8 @@ const JobForm = () => {
   const navigate = useNavigate();
   const isEdit = !!id;
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const prefillClient = searchParams.get("client");
 
   const { data: existingJob, isLoading: loadingJob } = useJob(isEdit ? id : undefined);
   const { data: nextNum } = useNextJobNumber();
@@ -45,6 +48,13 @@ const JobForm = () => {
       setInternalNotes(existingJob.internal_notes || "");
     }
   }, [existingJob]);
+
+  // Prefill client when creating from a client page (?client=<id>)
+  useEffect(() => {
+    if (!isEdit && prefillClient) setClientId(prefillClient);
+  }, [isEdit, prefillClient]);
+
+
 
   const handleSave = async () => {
     if (!title.trim()) return;
@@ -91,44 +101,36 @@ const JobForm = () => {
   return (
     <DashboardLayout>
       <div className="space-y-5 animate-fade-in max-w-2xl mx-auto md:mx-0">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(isEdit ? `/jobs/${id}` : "/jobs")}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-display font-bold tracking-tight">
-              {isEdit ? "Edit Job" : "New Job"}
-            </h1>
-            {!isEdit && nextNum && (
-              <p className="text-muted-foreground text-sm mt-0.5">{nextNum.formatted}</p>
-            )}
-          </div>
-        </div>
+        <PageHeader
+          onBack={() => navigate(isEdit ? `/jobs/${id}` : "/jobs")}
+          title={isEdit ? "Edit Job" : "New Job"}
+          description={!isEdit && nextNum ? nextNum.formatted : undefined}
+        />
 
         <Card className="shadow-warm">
           <CardHeader>
             <CardTitle className="text-base">Job Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
+            <div className="space-y-1.5">
               <Label>Title *</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Weekly Lawn Maintenance" className="md:h-10" />
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Weekly Lawn Maintenance" className="h-11 rounded-lg md:h-10" />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label>Client</Label>
               <ClientSelector value={clientId} onChange={setClientId} />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label>Assigned To</Label>
               <AssigneeSelect value={assignedTo} onChange={setAssignedTo} />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label>Description</Label>
-              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Job description…" rows={3} />
+              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Job description…" rows={3} className="rounded-lg resize-none" />
             </div>
-            <div>
+            <div className="space-y-1.5">
               <Label>Address</Label>
-              <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Job site address" className="md:h-10" />
+              <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Job site address" className="h-11 rounded-lg md:h-10" />
             </div>
           </CardContent>
         </Card>
@@ -139,13 +141,23 @@ const JobForm = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="space-y-1.5">
                 <Label>Start</Label>
-                <Input type="datetime-local" value={scheduledStart} onChange={(e) => setScheduledStart(e.target.value)} className="md:h-10" />
+                <Input
+                  type="datetime-local"
+                  value={scheduledStart}
+                  onChange={(e) => setScheduledStart(e.target.value)}
+                  className="h-11 rounded-lg text-left [&::-webkit-date-and-time-value]:text-left md:h-10"
+                />
               </div>
-              <div>
+              <div className="space-y-1.5">
                 <Label>End</Label>
-                <Input type="datetime-local" value={scheduledEnd} onChange={(e) => setScheduledEnd(e.target.value)} className="md:h-10" />
+                <Input
+                  type="datetime-local"
+                  value={scheduledEnd}
+                  onChange={(e) => setScheduledEnd(e.target.value)}
+                  className="h-11 rounded-lg text-left [&::-webkit-date-and-time-value]:text-left md:h-10"
+                />
               </div>
             </div>
           </CardContent>
