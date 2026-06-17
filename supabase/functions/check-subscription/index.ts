@@ -74,13 +74,37 @@ serve(async (req) => {
       }
     }
 
-    // App-trial logic (no Stripe sub): isTrialing if trial in future
+    // Apple In-App Purchase entitlement (native iOS). Merged with Stripe:
+    // Stripe wins if present, otherwise an active Apple entitlement subscribes the user.
+    if (!subscribed) {
+      const { data: iap } = await supabaseClient
+        .from("iap_entitlements")
+        .select("product_id, tier, is_active, expires_at")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      const iapActive =
+        !!iap?.is_active &&
+        (!iap?.expires_at || new Date(iap.expires_at) > new Date());
+
+      if (iapActive) {
+        subscribed = true;
+        isTrialing = false;
+        subscriptionEnd = iap?.expires_at || null;
+        // Surface the Apple product id so the client tier resolver can map it.
+        productId = iap?.product_id || null;
+        logStep("Active Apple IAP entitlement", { productId, end: subscriptionEnd });
+      }
+    }
+
+    // App-trial logic (no Stripe sub, no Apple IAP): isTrialing if trial in future
     if (!subscribed) {
       isTrialing = trialEndsAt ? new Date(trialEndsAt) > new Date() : false;
     }
 
     // Trial considered expired only when not subscribed, not trialing, and not super admin
     const trialExpired = !subscribed && !isTrialing && !isSuperAdmin;
+
 
     return new Response(JSON.stringify({
       subscribed,

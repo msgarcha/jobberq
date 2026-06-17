@@ -58,6 +58,31 @@ export const SUBSCRIPTION_TIERS = {
 
 export type TierKey = keyof typeof SUBSCRIPTION_TIERS;
 
+// Apple App Store product identifiers for the auto-renewable subscriptions.
+// These MUST match the product IDs created in App Store Connect / RevenueCat.
+// Update the right-hand strings once the products are created.
+export const APPLE_PRODUCT_IDS: Record<TierKey, string> = {
+  starter: "com.quicklinq.sub.starter.monthly",
+  pro: "com.quicklinq.sub.pro.monthly",
+  business: "com.quicklinq.sub.business.monthly",
+};
+
+// RevenueCat entitlement identifier that all three subscriptions grant.
+export const RC_ENTITLEMENT_ID = "pro_access";
+
+export function getTierByAppleProductId(productId: string | null): TierKey | null {
+  if (!productId) return null;
+  for (const [key, id] of Object.entries(APPLE_PRODUCT_IDS)) {
+    if (id === productId) return key as TierKey;
+  }
+  // Tolerate IDs that merely contain the tier name (e.g. "...starter...").
+  const lower = productId.toLowerCase();
+  if (lower.includes("business")) return "business";
+  if (lower.includes("pro")) return "pro";
+  if (lower.includes("starter")) return "starter";
+  return null;
+}
+
 // Legacy product IDs from the previous $29/$79/$149 pricing — kept so
 // existing subscribers on old products still resolve to the right tier.
 const LEGACY_PRODUCT_IDS: Record<string, TierKey> = {
@@ -71,5 +96,6 @@ export function getTierByProductId(productId: string | null): TierKey | null {
   for (const [key, tier] of Object.entries(SUBSCRIPTION_TIERS)) {
     if (tier.productId === productId) return key as TierKey;
   }
-  return LEGACY_PRODUCT_IDS[productId] ?? null;
+  // Fall back to Apple App Store product ids (native iOS subscribers).
+  return LEGACY_PRODUCT_IDS[productId] ?? getTierByAppleProductId(productId);
 }
