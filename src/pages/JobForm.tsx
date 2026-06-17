@@ -141,13 +141,23 @@ const JobForm = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="space-y-1.5">
                 <Label>Start</Label>
-                <Input type="datetime-local" value={scheduledStart} onChange={(e) => setScheduledStart(e.target.value)} className="md:h-10" />
+                <Input
+                  type="datetime-local"
+                  value={scheduledStart}
+                  onChange={(e) => setScheduledStart(e.target.value)}
+                  className="h-11 rounded-lg text-left [&::-webkit-date-and-time-value]:text-left md:h-10"
+                />
               </div>
-              <div>
+              <div className="space-y-1.5">
                 <Label>End</Label>
-                <Input type="datetime-local" value={scheduledEnd} onChange={(e) => setScheduledEnd(e.target.value)} className="md:h-10" />
+                <Input
+                  type="datetime-local"
+                  value={scheduledEnd}
+                  onChange={(e) => setScheduledEnd(e.target.value)}
+                  className="h-11 rounded-lg text-left [&::-webkit-date-and-time-value]:text-left md:h-10"
+                />
               </div>
             </div>
           </CardContent>
