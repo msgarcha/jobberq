@@ -96,5 +96,6 @@ export function getTierByProductId(productId: string | null): TierKey | null {
   for (const [key, tier] of Object.entries(SUBSCRIPTION_TIERS)) {
     if (tier.productId === productId) return key as TierKey;
   }
-  return LEGACY_PRODUCT_IDS[productId] ?? null;
+  // Fall back to Apple App Store product ids (native iOS subscribers).
+  return LEGACY_PRODUCT_IDS[productId] ?? getTierByAppleProductId(productId);
 }
