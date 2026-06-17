@@ -1,26 +1,26 @@
-# UI Polish: Toggles, Radio Buttons & FAB Close Button
+# Gate Stripe Connect onboarding off the native iOS app
 
-Two surgical fixes, both addressing the issues in the screenshots without touching any business logic.
+On native, the Stripe Connect actions ("Connect with Stripe", "Complete Setup", "View Stripe Dashboard") call the `connect-stripe-account` edge function and then `window.location.href` to a Stripe-hosted onboarding/login URL. Inside the iOS WebView this redirect fails and surfaces the "Edge Function returned a non-2xx status code" error toast. We will stop offering Stripe onboarding on native and tell the user to finish it from a web browser, while keeping everything unchanged on web.
 
-## 1. Toggles & radio buttons get squished into circles/tall ovals
+## Changes — `src/pages/Settings.tsx`, Payment Setup card (lines ~496–600)
 
-**Cause:** The `Switch` track (`h-6 w-11`) and `RadioGroupItem` (`h-4 w-4`) have no `shrink-0`. Inside flex rows (e.g. "Deposit Required" header, "Percentage / Fixed Amount" row, PDF Style cards), flexbox compresses their width on narrow phone screens. The switch collapses toward a circle/sphere and the radio collapses into a tall vertical oval — exactly what the screenshots show.
+All edits gate on the existing `isNative()` helper (already imported). Status checking (`checkStripeStatus` / Refresh Status) stays available everywhere — it's read-only and doesn't redirect.
 
-**Fix (global, covers the whole app):**
-- `src/components/ui/switch.tsx` — add `shrink-0` to the `Switch` root so the 44×24 pill keeps its shape everywhere.
-- `src/components/ui/radio-group.tsx` — add `shrink-0` to `RadioGroupItem` so every radio stays a perfect 16×16 circle (Deposit type, PDF Style, and any other radios).
+1. **Not connected (web unchanged):**
+   - Web: keep the "Connect with Stripe" button and description as-is.
+   - Native: hide the "Connect with Stripe" button. Show a neutral, URL-free message instead, e.g. *"To set up payments, log into your account from a web browser and connect Stripe under Settings → Payment Setup."*
 
-This automatically fixes every switch (Deposit Required, Automatic Reminders, recurring invoices, review settings) and every radio across the app — no per-page edits needed.
+2. **Connected but onboarding incomplete (the screenshot case):**
+   - Web: keep the "Complete Setup" button as-is.
+   - Native: hide the "Complete Setup" button. Keep the existing "Setup Incomplete / Pending" status row. Replace the action with a message, e.g. *"Your payment setup isn't finished yet. Log into your account from a web browser to complete Stripe setup."* Keep "Refresh Status" so they can re-check after finishing on web.
 
-## 2. FAB "X" close button looks like it disappears
+3. **Connected & active:**
+   - Web: unchanged ("View Stripe Dashboard", Refresh Status, Disconnect).
+   - Native: hide the "View Stripe Dashboard" button (it also redirects to a Stripe URL). Keep Refresh Status and Disconnect (no external redirect). Optionally add small text: *"Manage your Stripe account from a web browser."*
 
-**Cause:** When the create menu opens, the FAB turns into a red ✕, but it lives in the bottom nav at `z-40`, while the menu overlay/backdrop sits at `z-50`. The backdrop is painted on top of the FAB, dimming it so it appears gone, and it reads as un-tappable.
-
-**Fix:** In `src/components/layout/MobileBottomNav.tsx`, raise the bottom nav above the backdrop while the create menu is open (e.g. switch the nav's `z-40` to a higher z, such as `z-[60]`, when `fabOpen || fabClosing`). The red ✕ then renders bright and fully tappable alongside the New Client / Quote / Invoice / Job options, and tapping it closes the menu (existing `handleTab` already toggles it closed). Clicking outside still closes it too.
+No edge function, backend, or data changes — purely presentation gating. The `connect-stripe-account` function is untouched.
 
 ## Verification
 - Confirm the web build compiles.
-- Visually check (preview): switch is a clear horizontal pill, radios are clean circles, and the create menu shows a bright, tappable red ✕.
-
-## Notes
-These are presentation-only CSS/z-index changes. No data, auth, or backend changes.
+- Logic check: on native, no code path calls `handleConnectStripe` or the `create` / `login-link` actions, so the non-2xx redirect error can no longer be triggered from the app.
+- Web behavior is byte-for-byte unchanged (all new branches are inside `isNative()` guards).
