@@ -142,8 +142,15 @@ export async function manageIapSubscription(): Promise<void> {
     };
     if (typeof api.showManageSubscriptions === "function") {
       await api.showManageSubscriptions();
+      return;
     }
   } catch (err) {
-    console.warn('[IAP] manage subscription failed', err);
+    console.warn('[IAP] showManageSubscriptions failed, falling back', err);
+  }
+  // Fallback: open the App Store subscriptions page directly.
+  try {
+    window.open('itms-apps://apps.apple.com/account/subscriptions', '_system');
+  } catch {
+    /* ignore */
   }
 }
