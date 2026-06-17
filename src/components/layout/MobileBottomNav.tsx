@@ -37,6 +37,7 @@ const fabActions = [
   { label: "New Quote", icon: FileText, path: "/quotes/new" },
   { label: "New Invoice", icon: Receipt, path: "/invoices/new" },
   { label: "New Job", icon: Briefcase, path: "/jobs/new" },
+  { label: "New Service", icon: Wrench, path: "/services/new" },
 ];
 
 const moreItems = [
