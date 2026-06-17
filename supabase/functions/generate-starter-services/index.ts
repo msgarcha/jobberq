@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
     let services: Array<{ name: string; description: string; default_price: number; category?: string }> = [];
     try {
       const parsed = JSON.parse(toolCall?.function?.arguments || "{}");
-      services = Array.isArray(parsed.services) ? parsed.services.slice(0, 5) : [];
+      services = Array.isArray(parsed.services) ? parsed.services.slice(0, 6) : [];
     } catch (e) {
       console.error("Failed to parse AI response:", e);
     }
@@ -169,13 +169,24 @@ Deno.serve(async (req) => {
       });
     }
 
-    const rows = services.map((s) => ({
-      user_id: user.id,
-      team_id: teamId,
+    const cleaned = services.map((s) => ({
       name: String(s.name).slice(0, 200),
       description: s.description ? String(s.description).slice(0, 1000) : null,
       default_price: Number.isFinite(s.default_price) ? Math.max(0, Number(s.default_price)) : 0,
       category: s.category ? String(s.category).slice(0, 100) : null,
+    }));
+
+    // Suggest mode: return suggestions without persisting.
+    if (mode === "suggest") {
+      return new Response(JSON.stringify({ suggestions: cleaned, trade }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const rows = cleaned.map((s) => ({
+      ...s,
+      user_id: user.id,
+      team_id: teamId,
       is_active: true,
     }));
 
