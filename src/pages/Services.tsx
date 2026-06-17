@@ -1,40 +1,14 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Plus, Wrench, ChevronRight, Search, Package } from "lucide-react";
-import { useServices, useCreateService, useUpdateService, useDeleteService, type Service } from "@/hooks/useServices";
-import { useCompanySettings } from "@/hooks/useCompanySettings";
+import { useServices, type Service } from "@/hooks/useServices";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
-} from "@/components/ui/form";
-
-const serviceSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(100),
-  description: z.string().trim().max(500).optional().or(z.literal("")),
-  category: z.string().trim().max(50).optional().or(z.literal("")),
-  default_price: z.coerce.number().min(0, "Price must be 0 or more"),
-  tax_rate: z.coerce.number().min(0).max(100).nullable().optional(),
-  is_active: z.boolean(),
-});
-
-type ServiceFormValues = z.infer<typeof serviceSchema>;
 
 const STATUS_FILTERS = [
   { label: "All", value: "all" },
@@ -43,11 +17,9 @@ const STATUS_FILTERS = [
 ];
 
 const Services = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Service | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Service | null>(null);
 
   const debouncedSearch = useDebouncedValue(search, 300);
   const { data: services, isLoading } = useServices({
@@ -55,75 +27,19 @@ const Services = () => {
     status: statusFilter === "all" ? undefined : statusFilter,
   });
 
-  const createService = useCreateService();
-  const updateService = useUpdateService();
-  const deleteService = useDeleteService();
-  const { data: companySettings } = useCompanySettings();
-  const defaultTaxRate = companySettings?.default_tax_rate != null ? Number(companySettings.default_tax_rate) : 0;
-
-  const form = useForm<ServiceFormValues>({
-    resolver: zodResolver(serviceSchema),
-    defaultValues: { name: "", description: "", category: "", default_price: 0, tax_rate: defaultTaxRate, is_active: true },
-  });
-
-  const openCreate = () => {
-    setEditing(null);
-    form.reset({ name: "", description: "", category: "", default_price: 0, tax_rate: defaultTaxRate, is_active: true });
-    setDialogOpen(true);
-  };
-
-  const openEdit = (s: Service) => {
-    setEditing(s);
-    form.reset({
-      name: s.name,
-      description: s.description || "",
-      category: s.category || "",
-      default_price: s.default_price,
-      tax_rate: s.tax_rate ?? defaultTaxRate,
-      is_active: s.is_active,
-    });
-    setDialogOpen(true);
-  };
-
-  const onSubmit = async (values: ServiceFormValues) => {
-    const shared = {
-      description: values.description || null,
-      category: values.category || null,
-      tax_rate: values.tax_rate ?? null,
-      default_price: values.default_price,
-      is_active: values.is_active,
-    };
-    if (editing) {
-      await updateService.mutateAsync({ id: editing.id, name: values.name, ...shared });
-    } else {
-      await createService.mutateAsync({ name: values.name, ...shared });
-    }
-    setDialogOpen(false);
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    await deleteService.mutateAsync(deleteTarget.id);
-    setDeleteTarget(null);
-    setDialogOpen(false);
-  };
-
-  const isSaving = createService.isPending || updateService.isPending;
-
   return (
     <DashboardLayout>
       <div className="space-y-5 animate-fade-in">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-display font-bold tracking-tight">Service Catalog</h1>
-            <p className="text-muted-foreground text-sm mt-1">Manage your reusable products and services.</p>
-          </div>
-          <Button className="gap-1.5 rounded-lg shadow-warm" onClick={openCreate}>
-            <Plus className="h-4 w-4" />
-            Add Service
-          </Button>
-        </div>
+        <PageHeader
+          title="Service Catalog"
+          description="Manage your reusable products and services."
+          actions={
+            <Button className="gap-1.5 rounded-lg shadow-warm" onClick={() => navigate("/services/new")}>
+              <Plus className="h-4 w-4" />
+              Add Service
+            </Button>
+          }
+        />
 
         {/* Search & Filters */}
         <div className="flex flex-col sm:flex-row gap-3">
@@ -136,13 +52,13 @@ const Services = () => {
               className="pl-9"
             />
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
             {STATUS_FILTERS.map((f) => (
               <Button
                 key={f.value}
                 size="sm"
                 variant={statusFilter === f.value ? "default" : "outline"}
-                className="rounded-full text-xs"
+                className="rounded-full text-xs shrink-0"
                 onClick={() => setStatusFilter(f.value)}
               >
                 {f.label}
@@ -166,18 +82,18 @@ const Services = () => {
               </div>
               <p className="text-sm font-medium">No services found</p>
               <p className="text-xs text-muted-foreground">Add your first service to get started.</p>
-              <Button size="sm" onClick={openCreate} className="gap-1.5 mt-1">
+              <Button size="sm" onClick={() => navigate("/services/new")} className="gap-1.5 mt-1">
                 <Plus className="h-4 w-4" /> Add Service
               </Button>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-2">
-            {services.map((s) => (
+            {services.map((s: Service) => (
               <Card
                 key={s.id}
                 className="shadow-warm hover:shadow-warm-md transition-all cursor-pointer group"
-                onClick={() => openEdit(s)}
+                onClick={() => navigate(`/services/${s.id}/edit`)}
               >
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
@@ -207,121 +123,6 @@ const Services = () => {
           </div>
         )}
       </div>
-
-      {/* Create / Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editing ? "Edit Service" : "New Service"}</DialogTitle>
-            <DialogDescription>
-              {editing ? "Update the service details below." : "Fill in the details to create a new service."}
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField control={form.control} name="name" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name *</FormLabel>
-                  <FormControl><Input placeholder="e.g. Lawn Mowing" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-
-              <FormField control={form.control} name="description" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl><Textarea placeholder="Optional description" rows={2} {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-
-              <FormField control={form.control} name="category" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <FormControl><Input placeholder="e.g. Landscaping" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="default_price" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Default Price ($)</FormLabel>
-                    <FormControl><Input type="number" step="0.01" min="0" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-
-                <FormField control={form.control} name="tax_rate" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tax Rate (%)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        value={field.value ?? ""}
-                        onChange={(e) => field.onChange(e.target.value === "" ? null : Number(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-              </div>
-
-              <FormField control={form.control} name="is_active" render={({ field }) => (
-                <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                  <div>
-                    <FormLabel className="text-sm font-medium">Active</FormLabel>
-                    <p className="text-xs text-muted-foreground">Available for use in quotes and invoices</p>
-                  </div>
-                  <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                </FormItem>
-              )} />
-
-              <DialogFooter className="flex-row gap-2 sm:justify-between">
-                {editing && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    onClick={(e) => { e.preventDefault(); setDeleteTarget(editing); }}
-                  >
-                    Delete
-                  </Button>
-                )}
-                <div className="flex gap-2 ml-auto">
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                  <Button type="submit" disabled={isSaving}>
-                    {isSaving ? "Saving..." : editing ? "Save Changes" : "Create Service"}
-                  </Button>
-                </div>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete "{deleteTarget?.name}"?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. The service will be permanently removed.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {deleteService.isPending ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </DashboardLayout>
   );
 };
