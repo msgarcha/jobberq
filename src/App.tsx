@@ -27,6 +27,7 @@ import Projects from "./pages/Projects";
 import Schedule from "./pages/Schedule";
 import Reports from "./pages/Reports";
 import Services from "./pages/Services";
+import ServiceForm from "./pages/ServiceForm";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import ResetPassword from "./pages/ResetPassword";
