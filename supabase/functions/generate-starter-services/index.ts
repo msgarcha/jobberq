@@ -41,13 +41,8 @@ Deno.serve(async (req) => {
     if (!quota.ok) return quotaResponse(quota, corsHeaders);
 
     const body = await req.json().catch(() => ({}));
-    const trade = typeof body.trade === "string" ? body.trade.trim() : "";
-    if (!trade) {
-      return new Response(JSON.stringify({ error: "trade required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // "suggest" mode returns AI suggestions WITHOUT inserting (used by the Add Service screen).
+    const mode = body.mode === "suggest" ? "suggest" : "seed";
 
     // Find team_id
     const { data: membership } = await admin
@@ -63,15 +58,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Skip if the team already has services
-    const { count } = await admin
-      .from("services_catalog")
-      .select("id", { count: "exact", head: true })
-      .eq("team_id", teamId);
-    if ((count ?? 0) > 0) {
-      return new Response(JSON.stringify({ created: 0, skipped: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Resolve the trade: prefer the request body, fall back to company settings.
+    let trade = typeof body.trade === "string" ? body.trade.trim() : "";
+    if (!trade) {
+      const { data: settings } = await admin
+        .from("company_settings")
+        .select("trade, industry, company_name")
+        .eq("team_id", teamId)
+        .maybeSingle();
+      trade = (settings?.trade || settings?.industry || "general service contractor").toString().trim();
+    }
+    if (!trade) trade = "general service contractor";
+
+    if (mode === "seed") {
+      // Seed mode: skip if the team already has services
+      const { count } = await admin
+        .from("services_catalog")
+        .select("id", { count: "exact", head: true })
+        .eq("team_id", teamId);
+      if ((count ?? 0) > 0) {
+        return new Response(JSON.stringify({ created: 0, skipped: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Ask AI for 5 services via tool calling
