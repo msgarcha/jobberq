@@ -54,6 +54,13 @@ const QuoteForm = () => {
   const [reminderLimit, setReminderLimit] = useState(3);
   const [remindersInit, setRemindersInit] = useState(false);
 
+  // Prefill client when creating from a client page (?client=<id>)
+  useEffect(() => {
+    if (!isEdit && prefillClient) setClientId(prefillClient);
+  }, [isEdit, prefillClient]);
+
+
+
   useEffect(() => {
     if (existingQuote) {
       setClientId(existingQuote.client_id);
