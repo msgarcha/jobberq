@@ -174,10 +174,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loadSuperAdmin(session.user.id);
       // Register for native push notifications (no-op on web)
       registerPushNotifications(session.user.id, team.teamId).catch(() => {});
+      // Associate native In-App Purchases with this user (no-op on web)
+      logInIap(session.user.id).catch(() => {});
     } else {
       setSubscription({ ...defaultSubscription, loading: false });
       setTeam({ ...defaultTeam, loading: false });
       setIsSuperAdmin(false);
+      logOutIap().catch(() => {});
     }
   }, [session, checkSubscription, loadTeam, loadSuperAdmin]);
 
