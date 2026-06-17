@@ -20,7 +20,7 @@ export default function TrialExpired() {
             <h1 className="text-2xl font-semibold tracking-tight">Your free trial has ended</h1>
             <p className="text-sm text-muted-foreground">
               {isNative()
-                ? "Your data is safe and waiting. To continue, sign in to QuickLinq at quicklinq.app from your web browser to choose a plan."
+                ? "Your data is safe and waiting. To continue using QuickLinq, log into your account from a web browser."
                 : "Upgrade to keep sending quotes, invoices, and collecting payments. Your data is safe and waiting."}
             </p>
           </div>
