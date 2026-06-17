@@ -17,6 +17,8 @@ const JobForm = () => {
   const navigate = useNavigate();
   const isEdit = !!id;
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const prefillClient = searchParams.get("client");
 
   const { data: existingJob, isLoading: loadingJob } = useJob(isEdit ? id : undefined);
   const { data: nextNum } = useNextJobNumber();
