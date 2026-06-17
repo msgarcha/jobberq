@@ -32,6 +32,8 @@ import {
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { isNative } from "@/lib/native/platform";
+import { manageIapSubscription } from "@/lib/native/iap";
+import { IapPurchasePanel } from "@/components/IapPurchasePanel";
 
 const paymentTermOptions = [
   { value: "due_on_receipt", label: "Due on Receipt" },
