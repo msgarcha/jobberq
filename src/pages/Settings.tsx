@@ -1135,9 +1135,7 @@ const Settings = () => {
                         : isTrialing && trialEnd
                         ? `Trial ends ${format(new Date(trialEnd), "MMM d, yyyy")}`
                         : trialExpired
-                        ? isNative()
-                          ? "Your trial has ended."
-                          : "Choose a plan below to continue using QuickLinq."
+                        ? "Choose a plan below to continue using QuickLinq."
                         : "No active subscription"}
                     </p>
                   </div>
