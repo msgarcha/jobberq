@@ -98,7 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         trialEndsAt: data.trial_ends_at || null,
         trialExpired: data.trial_expired || false,
         accessRevoked: data.access_revoked || false,
-        tier: getTierByProductId(data.product_id),
+        // Prefer the tier the backend resolved; fall back to product-id mapping.
+        tier: (data.tier as TierKey | null) ?? getTierByProductId(data.product_id),
         subscriptionEnd: data.subscription_end || null,
         source: data.source || null,
         loading: false,

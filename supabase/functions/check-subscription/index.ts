@@ -49,11 +49,32 @@ serve(async (req) => {
     const accessRevoked = !!profile?.access_revoked;
     const isSuperAdmin = !!profile?.is_super_admin;
 
+    // Map Stripe product IDs (current + legacy) to tier keys so the backend
+    // can return a definitive tier the client doesn't have to re-derive.
+    const STRIPE_PRODUCT_TIER: Record<string, "starter" | "pro" | "business"> = {
+      // current pricing
+      prod_UZB5bIhMsXcmZa: "starter",
+      prod_UZB5c821ACqF2q: "pro",
+      prod_UZB5tos0Dglji1: "business",
+      // legacy pricing
+      prod_U6yyGorJZoTTuw: "starter",
+      prod_U6z3Y8rbHA1uhQ: "pro",
+      prod_U6z4mV3LY4CeeP: "business",
+    };
+    // Map Apple product IDs back to a representative Stripe product id so the
+    // client's getTierByProductId() resolves the same tier across platforms.
+    const APPLE_TIER_TO_STRIPE: Record<string, string> = {
+      starter: "prod_UZB5bIhMsXcmZa",
+      pro: "prod_UZB5c821ACqF2q",
+      business: "prod_UZB5tos0Dglji1",
+    };
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email, limit: 1 });
 
     let subscribed = false;
     let productId: string | null = null;
+    let tier: "starter" | "pro" | "business" | null = null;
     let subscriptionEnd: string | null = null;
     let isTrialing = false;
     let source: "stripe" | "apple" | null = null;
@@ -71,8 +92,9 @@ serve(async (req) => {
         source = "stripe";
         subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
         productId = sub.items.data[0].price.product as string;
+        tier = (productId && STRIPE_PRODUCT_TIER[productId]) || null;
         isTrialing = sub.status === "trialing";
-        logStep("Active Stripe subscription", { productId, isTrialing, end: subscriptionEnd });
+        logStep("Active Stripe subscription", { productId, tier, isTrialing, end: subscriptionEnd });
       }
     }
 
@@ -93,15 +115,9 @@ serve(async (req) => {
         subscribed = true;
         source = "apple";
         subscriptionEnd = ent?.expires_at ?? null;
-        // Map the Apple product back to a Stripe product id so the client's
-        // getTierByProductId() resolves the same tier across platforms.
-        const appleTierToStripe: Record<string, string> = {
-          starter: "prod_UZB5bIhMsXcmZa",
-          pro: "prod_UZB5c821ACqF2q",
-          business: "prod_UZB5tos0Dglji1",
-        };
-        productId = ent?.tier ? appleTierToStripe[ent.tier] ?? null : null;
-        logStep("Active Apple entitlement", { tier: ent?.tier, end: subscriptionEnd });
+        tier = (ent?.tier as "starter" | "pro" | "business" | null) ?? null;
+        productId = ent?.tier ? APPLE_TIER_TO_STRIPE[ent.tier] ?? null : null;
+        logStep("Active Apple entitlement", { tier, end: subscriptionEnd });
       }
     }
 
@@ -121,6 +137,7 @@ serve(async (req) => {
       access_revoked: accessRevoked,
       is_super_admin: isSuperAdmin,
       product_id: productId,
+      tier,
       subscription_end: subscriptionEnd,
       source,
     }), {

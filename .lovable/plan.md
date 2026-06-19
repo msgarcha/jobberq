@@ -1,63 +1,50 @@
-# IAP Verification & Fixes
+## What I verified
 
-I reviewed the whole RevenueCat/IAP implementation. The code is **95% correct** — but there is **one critical bug** that would silently break purchases, plus a few smaller things to harden. Your App Store Connect (Part 1) and RevenueCat (Part 2) setup can't be fully verified from here, so I've also listed exactly what to check on those dashboards.
+- The current repo now has RevenueCat installed and IAP files, but your screenshot is showing the older billing UI (`Manage your subscription on the web`). That means the TestFlight build you are viewing is not running the latest IAP billing component, or the native billing branch is falling back before cards render.
+- Backend secrets exist: `REVENUECAT_IOS_PUBLIC_SDK_KEY` and `REVENUECAT_WEBHOOK_SECRET` are configured.
+- Function config now includes `verify_jwt = false` for `get-iap-config` and `revenuecat-webhook`.
+- The database currently has profiles and every profile has `trial_ends_at` populated.
+- There are currently no Apple/RevenueCat entitlement rows yet, so no real iOS purchase has successfully reached the webhook/database.
+- No recent logs exist for `get-iap-config` or `revenuecat-webhook`, which strongly suggests this TestFlight build has not called the new IAP path yet.
 
-## What is already correct (verified)
+## Fix plan
 
-- `subscriptionTiers.ts` Apple product IDs (`quicklinq_starter_monthly`, `_pro_`, `_business_monthly`) match the webhook's tier mapping exactly.
-- `iap.ts` configures RevenueCat with the **Supabase user id** as `appUserID` — so web (Stripe) and iOS (Apple) converge on one account.
-- `check-subscription` correctly merges the Apple entitlement (`iap_entitlements`, `provider='apple'`) with Stripe and returns a `source` field.
-- `AuthContext` initializes RevenueCat on login and logs out on sign-out (prevents entitlement leakage).
-- `Settings.tsx` (Billing tab) and `TrialExpired.tsx` both render `<NativePlanCards />` on native, and the cards render for not-subscribed users.
-- Migration is correct: unique `(user_id, provider)`, grants, `updated_at` trigger.
-- `@revenuecat/purchases-capacitor` is installed; App Store icon (1024×1024) is present.
+1. **Make trial tracking explicit and reliable**
+   - Update the signup profile trigger so every new user explicitly receives `trial_ends_at = now() + 14 days` instead of depending only on the column default.
+   - Backfill any profile where the trial date is ever missing.
+   - Keep Billing status based on `profiles.trial_ends_at` as the source of truth for app trial display.
 
-## Critical bug to fix
+2. **Return a clear subscription tier from the backend**
+   - Update `check-subscription` to return `tier` directly for both Stripe/web subscriptions and Apple/RevenueCat subscriptions.
+   - Keep returning `source` as `stripe`, `apple`, or `null` so the app knows where the subscription was purchased.
+   - This avoids fragile mapping where Apple products are converted into Stripe product IDs just so the UI can infer the tier.
 
-`supabase/config.toml` is **missing entries** for the two new functions. Every other function is listed there with `verify_jwt = false`, but `revenuecat-webhook` and `get-iap-config` are not.
+3. **Fix Settings → Billing to always show plan choices**
+   - Under the current trial/subscription status, always show all three plan cards: Starter, Pro, Business.
+   - On iOS native, those cards will use RevenueCat/App Store products and purchase through Apple IAP.
+   - On web, those same cards will continue using Stripe checkout.
+   - If the user is still in trial, they will still see the trial end date plus all three subscription choices.
+   - If trial is expired or no paid subscription exists, the cards stay visible and actionable.
 
-- `revenuecat-webhook` **must** be `verify_jwt = false` — RevenueCat sends its own `Authorization` secret, not a Supabase JWT. Without this the webhook can be rejected at the gateway, so **entitlements never get written** and a user who pays would still show as "not subscribed."
-- `get-iap-config` must be `verify_jwt = false` (it validates the JWT in code).
+4. **Make native IAP cards impossible to disappear silently**
+   - Change `NativePlanCards` to render all three cards from `SUBSCRIPTION_TIERS` even while App Store offers are loading.
+   - Once RevenueCat returns offerings, replace static prices with localized App Store prices.
+   - If a tier’s App Store product is missing from RevenueCat, keep the card visible but disable that one purchase button and show a concise unavailable state.
+   - Remove the old “manage your subscription on the web” replacement screen from the trial/no-subscription iOS path.
 
-**Fix:** add both blocks to `supabase/config.toml`:
+5. **Prevent double billing while still showing correct UI**
+   - If a user already has an active web/Stripe subscription, show their active plan and disable iOS purchase buttons with a clear “active on web” state.
+   - If the user has no active subscription or is only on app trial, show iOS “Start 14-day Free Trial” buttons.
 
-```text
-[functions.revenuecat-webhook]
-  verify_jwt = false
-[functions.get-iap-config]
-  verify_jwt = false
-```
+6. **Deploy and verify the functions**
+   - Deploy `check-subscription`, `get-iap-config`, and `revenuecat-webhook` after changes.
+   - Test `check-subscription` from the current logged-in session to confirm it returns trial date, trial state, source, and tier correctly.
+   - Check edge logs after an iOS launch to confirm `get-iap-config` is actually being called.
 
-## Robustness fix (recommended)
-
-After a successful StoreKit purchase, `NativePlanCards` calls `checkSubscription()` immediately, but the entitlement row is written by the **webhook** (a second or two later). So the card can briefly still say "Start trial" instead of "Your Plan."
-
-**Fix:** in `handleBuy` (and `handleRestore`), after `purchaseTier` succeeds, poll `checkSubscription()` a few times (e.g. every ~1.5s, up to ~4 attempts) until `subscription.subscribed` flips true, then stop. This makes the UI feel instant without trusting client-only state.
-
-## Why you don't see cards in the web preview (not a bug)
-
-`NativePlanCards` only fetches StoreKit offers when `isNative()` is true. In the Lovable web preview `isNative()` is false, so the iOS cards never load — you'll see the Stripe web pricing instead. The cards only appear in the **real iOS build** (simulator or device) after `git pull` → `npx cap sync`.
-
-## App Store Connect metadata, screenshot & icon (your open item)
-
-You don't need new art for most of this:
-
-1. **App Store icon** — already done. The 1024×1024 icon ships in the build; App Store Connect pulls it automatically.
-2. **Subscription localization (per product)** — each of the 3 subscriptions needs a *Display Name* and *Description*. I'll generate ready-to-paste copy for Starter/Pro/Business so you can paste it into App Store Connect.
-3. **Subscription review screenshot (the blocker)** — Apple requires **one screenshot per subscription** showing the purchase UI. This must come from the running app, so once the config fix is in:
-   - `git pull`, `npx cap sync`, run on the iOS simulator, log in, open **Settings → Billing** (or let the trial expire) so the plan cards render.
-   - Screenshot that screen (⌘S in Simulator) and upload the **same** screenshot to all three subscription products' "Review Information" field. That satisfies the requirement.
-4. **App preview/marketing screenshots** — optional for IAP approval; if you want polished store screenshots later I can generate framed marketing images, but they aren't required to clear the 3.1.1 rejection.
-
-## Things to confirm on the dashboards (I can't see them)
-
-- **App Store Connect:** one Subscription Group, 3 auto-renewable products with IDs exactly `quicklinq_starter_monthly`, `quicklinq_pro_monthly`, `quicklinq_business_monthly`, each with a 14-day free-trial introductory offer, all in "Ready to Submit."
-- **RevenueCat:** App uses bundle `app.quicklinq`; one **Offering** marked *current/default* with 3 **packages**, each package's attached product = the matching App Store product ID (RevenueCat `getOfferings().current` is what the app reads). One entitlement (e.g. `pro`).
-- **RevenueCat → Webhook:** URL points to the `revenuecat-webhook` function, and the **Authorization header value equals `REVENUECAT_WEBHOOK_SECRET` exactly** (no `Bearer ` prefix — the code compares the raw header).
-
-## Files to change
-
-- `supabase/config.toml` — add the two `verify_jwt = false` blocks (critical).
-- `src/components/billing/NativePlanCards.tsx` — add short post-purchase/restore polling of `checkSubscription()`.
-
-After these, I'll also paste the subscription display-name/description copy for App Store Connect.
+7. **Final native build verification steps**
+   - After implementation, you must pull the latest code locally and run:
+     - `npm install` if dependencies changed
+     - `npx cap sync ios`
+     - rebuild/archive in Xcode
+   - The App Store review screenshot should be captured from iOS Settings → Billing after the three cards appear.
+   - Read the Capacitor mobile development blog post before rebuilding/publishing the native app.
