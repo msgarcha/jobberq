@@ -42,6 +42,9 @@ const paymentTermOptions = [
   { value: "net_60", label: "Net 60" },
 ];
 
+const settingsTabs = ["company", "invoicing", "team", "reviews", "billing", "notifications", "import"] as const;
+const TIER_ORDER: TierKey[] = ["starter", "pro", "business"];
+
 const Settings = () => {
   const { data: settings, isLoading } = useCompanySettings();
   const upsert = useUpsertCompanySettings();
@@ -49,7 +52,9 @@ const Settings = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const defaultTab = searchParams.get("tab") || "company";
+  const requestedTab = searchParams.get("tab") || "company";
+  const defaultTab = settingsTabs.includes(requestedTab as typeof settingsTabs[number]) ? requestedTab : "company";
+  const [activeTab, setActiveTab] = useState(defaultTab);
 
   // Team hooks
   const { data: teamData } = useTeam();
@@ -190,6 +195,10 @@ const Settings = () => {
   }, [searchParams]);
 
   useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
+
+  useEffect(() => {
     if (settings) {
       setCompanyName(settings.company_name || "");
       setEmail(settings.email || "");
@@ -300,6 +309,15 @@ const Settings = () => {
     }
   };
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const params = new URLSearchParams(searchParams);
+    if (value === "company") params.delete("tab");
+    else params.set("tab", value);
+    const query = params.toString();
+    navigate(`/settings${query ? `?${query}` : ""}`, { replace: true });
+  };
+
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== "DELETE") return;
     setDeletingAccount(true);
@@ -338,7 +356,7 @@ const Settings = () => {
           <p className="text-muted-foreground text-sm mt-1">Manage your company and subscription.</p>
         </div>
 
-        <Tabs defaultValue={defaultTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <div className="rounded-xl border bg-muted/40 p-1">
             <div
               className="overflow-x-auto overflow-y-hidden scrollbar-hide"
@@ -1131,13 +1149,15 @@ const Settings = () => {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {subscription.subscribed && subscription.subscriptionEnd
+                      {subscription.loading
+                        ? "Checking your subscription…"
+                        : subscription.subscribed && subscription.subscriptionEnd
                         ? `Renews ${format(new Date(subscription.subscriptionEnd), "MMM d, yyyy")}`
-                        : isTrialing && trialEnd
+                        : trialEnd
                         ? `Trial ends ${format(new Date(trialEnd), "MMM d, yyyy")}`
                         : trialExpired
                         ? "Choose a plan below to continue using QuickLinq."
-                        : "No active subscription"}
+                        : "Choose a plan below to start your subscription."}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -1159,8 +1179,9 @@ const Settings = () => {
               <NativePlanCards />
             ) : (
             <div className="grid gap-5 grid-cols-1 sm:grid-cols-3">
-              {(Object.entries(SUBSCRIPTION_TIERS) as [TierKey, typeof SUBSCRIPTION_TIERS[TierKey]][]).map(([key, tier]) => {
-                const isCurrentPlan = currentTier === key;
+              {TIER_ORDER.map((key) => {
+                const tier = SUBSCRIPTION_TIERS[key];
+                const isCurrentPlan = currentTier === key && subscription.subscribed;
                 const isPopular = "popular" in tier && tier.popular;
                 return (
                   <Card
