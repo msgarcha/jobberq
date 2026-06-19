@@ -43,6 +43,7 @@ const defaultSubscription: SubscriptionState = {
   accessRevoked: false,
   tier: null,
   subscriptionEnd: null,
+  source: null,
   loading: true,
 };
 
