@@ -65,3 +65,7 @@ project_id = "bfnlvdbswhjlpzdfwznz"
     verify_jwt = false
   [functions.stripe-connect-webhook-v2]
     verify_jwt = false
+  [functions.revenuecat-webhook]
+    verify_jwt = false
+  [functions.get-iap-config]
+    verify_jwt = false
