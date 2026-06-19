@@ -1153,42 +1153,9 @@ const Settings = () => {
               </CardContent>
             </Card>
 
-            {/* Read-only subscription info on native iOS (App Store guideline 3.1.1) */}
+            {/* Native iOS: real In-App Purchase plan cards (App Store guideline 3.1.1) */}
             {isNative() ? (
-              <Card className="shadow-warm border-border/50">
-                <CardContent className="p-6 space-y-4">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">
-                      {subscription.subscribed
-                        ? "You subscribed through QuickLinq's online platform"
-                        : "Manage your subscription on the web"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      To manage your subscription, log into your account from a web browser.
-                    </p>
-                  </div>
-                  {subscription.subscribed && (
-                    <div className="space-y-3 pt-1">
-                      {currentTier && (
-                        <div>
-                          <p className="text-sm font-semibold">Plan</p>
-                          <p className="text-sm text-muted-foreground">
-                            {SUBSCRIPTION_TIERS[currentTier].name}
-                          </p>
-                        </div>
-                      )}
-                      {subscription.subscriptionEnd && (
-                        <div>
-                          <p className="text-sm font-semibold">Next payment</p>
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(subscription.subscriptionEnd), "MMM d, yyyy")}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <NativePlanCards />
             ) : (
             <div className="grid gap-5 grid-cols-1 sm:grid-cols-3">
               {(Object.entries(SUBSCRIPTION_TIERS) as [TierKey, typeof SUBSCRIPTION_TIERS[TierKey]][]).map(([key, tier]) => {
