@@ -1,26 +1,44 @@
-I found the account `info@garchadesignbuild.ca` has a valid trial date in the backend (`trial_ends_at: Oct 20, 2027`) and no Apple entitlement yet. The likely frontend issue is that Settings currently shows native IAP cards only when `Capacitor.isNativePlatform()` returns true; in browser/published web it shows Stripe cards, and the native card component can still render disabled/loading if RevenueCat products are unavailable.
+## What I found
 
-Plan:
+All plan cards become **Unavailable** only when `getTierOffers()` returns no matching RevenueCat/App Store offers. In this codebase that can happen for three likely reasons:
 
-1. Make Billing cards always visible
-- Refactor the Billing tab so the three plan cards are rendered from one shared list for Starter, Pro, and Business.
-- On iOS native, buttons use RevenueCat/App Store purchases.
-- On web/browser, buttons use the existing Stripe checkout.
-- The cards will appear regardless of trial state, subscription state, or RevenueCat loading state.
+1. **The current TestFlight app still has old native code/assets** and is not loading the latest IAP flow correctly.
+2. **RevenueCat offerings are empty or not attached to the current offering** for the production iOS app key.
+3. **The returned StoreKit product IDs do not exactly match the app mapping:**
+   - `quicklinq_starter_monthly`
+   - `quicklinq_pro_monthly`
+   - `quicklinq_business_monthly`
 
-2. Show clear trial/subscription state for this user
-- Keep the current plan status card at the top.
-- Show `Free Trial` and `Trial ends Oct 20, 2027` for this account when no paid subscription exists.
-- Only show `Trial expired` if the backend says the trial is actually expired.
+The backend secret `REVENUECAT_IOS_PUBLIC_SDK_KEY` exists, but when I tested `get-iap-config` without an authenticated app session it correctly rejected the request with `No authorization header`. So the secret is present; this symptom points more to RevenueCat/App Store offerings/products not being returned or not matching, rather than the key being missing.
 
-3. Prevent hidden IAP failure states
-- If RevenueCat offerings are not loaded or App Store products are missing, still show all three cards and features.
-- The native subscribe button will show a clear unavailable/loading state instead of removing the cards.
+## Plan
 
-4. Verify the backend response path
-- Test `check-subscription` for the logged-in session and confirm it returns the expected trial fields.
-- Confirm no RevenueCat webhook events exist yet for this account, which explains why it has no Apple subscription record.
+1. Add temporary, safe IAP diagnostics in the app:
+   - Log whether `get-iap-config` succeeds.
+   - Log the RevenueCat current offering identifier.
+   - Log every package/product ID returned by RevenueCat.
+   - Log which IDs fail to map to QuickLinq tiers.
 
-5. Final verification steps
-- Verify Settings → Billing renders all three cards in the Lovable preview.
-- For iOS/TestFlight, you will still need to pull the latest code and run `npx cap sync ios`, then build a new TestFlight version; old TestFlight builds will not show these UI fixes.
+2. Improve the Settings billing UI error state:
+   - Instead of silently showing every package as `Unavailable`, show a small diagnostic message when no iOS packages load.
+   - Keep the plan cards visible, but make the reason clearer for TestFlight debugging.
+
+3. Preserve production behavior:
+   - Do not expose secret values.
+   - Do not change Stripe/web billing.
+   - Do not change product IDs unless the diagnostics prove the App Store/RevenueCat IDs differ.
+
+4. After you run the TestFlight app once with this diagnostic build, use the logs to identify the exact cause:
+   - No packages returned → fix RevenueCat offering/App Store product attachment.
+   - Package IDs returned but names differ → update `appleProductId` mapping in `subscriptionTiers.ts`.
+   - Config fetch/auth failure → fix app session/function auth path.
+
+## What you should also check in RevenueCat/App Store Connect now
+
+- The production iOS RevenueCat app uses the `appl_...` key you stored.
+- The RevenueCat offering marked **Current** contains three packages.
+- Each package points to App Store products with exactly these IDs:
+  - `quicklinq_starter_monthly`
+  - `quicklinq_pro_monthly`
+  - `quicklinq_business_monthly`
+- The App Store products are approved/ready for TestFlight and available for the app bundle ID.
