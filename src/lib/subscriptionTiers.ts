@@ -1,4 +1,6 @@
-// Stripe product & price IDs for QuickLinq subscription tiers
+// Stripe product & price IDs + Apple App Store product IDs for QuickLinq tiers.
+// `appleProductId` must match the auto-renewable subscription product IDs created
+// in App Store Connect and mapped in RevenueCat.
 export const SUBSCRIPTION_TIERS = {
   starter: {
     name: "Starter",
@@ -6,6 +8,7 @@ export const SUBSCRIPTION_TIERS = {
     priceAmount: 14,
     priceId: "price_1Ta2j8KFLt6KnglEa0EVNat8",
     productId: "prod_UZB5bIhMsXcmZa",
+    appleProductId: "quicklinq_starter_monthly",
     description: "For solo operators getting started.",
     features: [
       "Up to 50 clients",
@@ -23,6 +26,7 @@ export const SUBSCRIPTION_TIERS = {
     priceAmount: 29,
     priceId: "price_1Ta2j9KFLt6KnglEof9oZLDj",
     productId: "prod_UZB5c821ACqF2q",
+    appleProductId: "quicklinq_pro_monthly",
     description: "For growing service businesses.",
     features: [
       "Unlimited clients",
@@ -42,6 +46,7 @@ export const SUBSCRIPTION_TIERS = {
     priceAmount: 49,
     priceId: "price_1Ta2jAKFLt6KnglEvHUjVzvP",
     productId: "prod_UZB5tos0Dglji1",
+    appleProductId: "quicklinq_business_monthly",
     description: "For agencies managing multiple crews.",
     features: [
       "Everything in Pro",
