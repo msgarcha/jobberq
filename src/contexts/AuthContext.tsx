@@ -13,6 +13,7 @@ interface SubscriptionState {
   accessRevoked: boolean;
   tier: TierKey | null;
   subscriptionEnd: string | null;
+  source: "stripe" | "apple" | null;
   loading: boolean;
 }
 
