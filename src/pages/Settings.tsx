@@ -32,6 +32,7 @@ import {
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { isNative, getPublicAppUrl } from "@/lib/native/platform";
+import { NativePlanCards } from "@/components/billing/NativePlanCards";
 
 const paymentTermOptions = [
   { value: "due_on_receipt", label: "Due on Receipt" },
