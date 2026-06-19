@@ -174,6 +174,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loadSuperAdmin(session.user.id);
       // Register for native push notifications (no-op on web)
       registerPushNotifications(session.user.id, team.teamId).catch(() => {});
+      // Initialise native In-App Purchases & bind the user (no-op on web).
+      // Refresh subscription state whenever StoreKit entitlements change.
+      initIap(session.user.id, () => { checkSubscription(); }).catch(() => {});
     } else {
       setSubscription({ ...defaultSubscription, loading: false });
       setTeam({ ...defaultTeam, loading: false });
