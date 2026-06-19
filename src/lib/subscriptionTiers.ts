@@ -78,3 +78,11 @@ export function getTierByProductId(productId: string | null): TierKey | null {
   }
   return LEGACY_PRODUCT_IDS[productId] ?? null;
 }
+
+export function getTierByAppleProductId(productId: string | null): TierKey | null {
+  if (!productId) return null;
+  for (const [key, tier] of Object.entries(SUBSCRIPTION_TIERS)) {
+    if (tier.appleProductId === productId) return key as TierKey;
+  }
+  return null;
+}
