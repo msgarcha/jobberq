@@ -100,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accessRevoked: data.access_revoked || false,
         tier: getTierByProductId(data.product_id),
         subscriptionEnd: data.subscription_end || null,
+        source: data.source || null,
         loading: false,
       });
 
