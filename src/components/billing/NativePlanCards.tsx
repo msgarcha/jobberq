@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { SUBSCRIPTION_TIERS, type TierKey } from "@/lib/subscriptionTiers";
 import {
+  initIap,
   getTierOffers,
   purchaseTier,
   restorePurchases,
@@ -26,7 +27,7 @@ const TIER_ORDER: TierKey[] = ["starter", "pro", "business"];
  */
 export function NativePlanCards() {
   const { toast } = useToast();
-  const { subscription, checkSubscription } = useAuth();
+  const { subscription, checkSubscription, user } = useAuth();
   const [offers, setOffers] = useState<TierOffer[]>([]);
   const [offersLoaded, setOffersLoaded] = useState(false);
   const [busy, setBusy] = useState<TierKey | null>(null);
@@ -39,6 +40,9 @@ export function NativePlanCards() {
   useEffect(() => {
     let active = true;
     (async () => {
+      if (user?.id) {
+        await initIap(user.id, () => { checkSubscription(); });
+      }
       const o = await getTierOffers();
       if (active) {
         setOffers(o);
@@ -48,7 +52,7 @@ export function NativePlanCards() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [checkSubscription, user?.id]);
 
   const offerByTier = (tier: TierKey) => offers.find((o) => o.tier === tier);
 
