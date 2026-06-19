@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, RotateCcw, Loader2 } from "lucide-react";
+import { CheckCircle2, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { SUBSCRIPTION_TIERS, type TierKey } from "@/lib/subscriptionTiers";
@@ -14,16 +14,21 @@ import {
   type TierOffer,
 } from "@/lib/native/iap";
 
+const TIER_ORDER: TierKey[] = ["starter", "pro", "business"];
+
 /**
  * Native iOS In-App Purchase plan cards (StoreKit via RevenueCat).
- * Renders the real, localized App Store prices and handles purchase/restore.
- * Only used inside `isNative()` branches.
+ *
+ * Always renders all three plans. Static prices show immediately; once
+ * RevenueCat returns offerings the localized App Store prices replace them.
+ * If a tier's App Store product isn't available, the card stays visible but
+ * its purchase button is disabled. Only used inside `isNative()` branches.
  */
 export function NativePlanCards() {
   const { toast } = useToast();
   const { subscription, checkSubscription } = useAuth();
   const [offers, setOffers] = useState<TierOffer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [offersLoaded, setOffersLoaded] = useState(false);
   const [busy, setBusy] = useState<TierKey | null>(null);
   const [restoring, setRestoring] = useState(false);
 
@@ -37,7 +42,7 @@ export function NativePlanCards() {
       const o = await getTierOffers();
       if (active) {
         setOffers(o);
-        setLoading(false);
+        setOffersLoaded(true);
       }
     })();
     return () => {
@@ -45,15 +50,15 @@ export function NativePlanCards() {
     };
   }, []);
 
+  const offerByTier = (tier: TierKey) => offers.find((o) => o.tier === tier);
+
   // The entitlement row is written by the RevenueCat webhook a moment after the
   // StoreKit transaction completes, so poll check-subscription a few times until
   // the backend reflects the new active subscription.
   const pollUntilSubscribed = async (attempts = 5, delayMs = 1500) => {
     for (let i = 0; i < attempts; i++) {
-      const result = await checkSubscription();
-      // checkSubscription updates context async; give it a tick then re-check.
+      await checkSubscription();
       await new Promise((r) => setTimeout(r, delayMs));
-      void result;
     }
   };
 
@@ -87,53 +92,45 @@ export function NativePlanCards() {
     }
   };
 
-  if (managedOnWeb) {
-    return (
-      <Card className="shadow-warm border-border/50">
-        <CardContent className="p-6 space-y-2">
-          <p className="text-sm font-medium">You subscribed on the web</p>
-          <p className="text-sm text-muted-foreground">
-            Your plan was purchased through QuickLinq's website. To change or cancel it,
-            log into your account from a web browser.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-10 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading plans…
-      </div>
-    );
-  }
-
-  if (offers.length === 0) {
-    return (
-      <Card className="shadow-warm border-border/50">
-        <CardContent className="p-6 space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Plans are temporarily unavailable. Please try again in a moment.
-          </p>
-          <Button variant="outline" size="sm" onClick={handleRestore} disabled={restoring}>
-            {restoring ? "Restoring…" : "Restore Purchases"}
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <div className="space-y-4">
+      {managedOnWeb && (
+        <Card className="shadow-warm border-border/50">
+          <CardContent className="p-4 space-y-1">
+            <p className="text-sm font-medium">You subscribed on the web</p>
+            <p className="text-sm text-muted-foreground">
+              Your plan was purchased through QuickLinq's website. To change or cancel it,
+              log into your account from a web browser.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-4 grid-cols-1">
-        {offers.map((offer) => {
-          const tier = SUBSCRIPTION_TIERS[offer.tier];
+        {TIER_ORDER.map((tierKey) => {
+          const tier = SUBSCRIPTION_TIERS[tierKey];
           const isPopular = "popular" in tier && tier.popular;
-          const isCurrent = currentTier === offer.tier && subscription.subscribed;
+          const isCurrent = currentTier === tierKey && subscription.subscribed;
+          const offer = offerByTier(tierKey);
+          // Show App Store localized price once loaded; otherwise the static price.
+          const priceString = offer?.priceString ?? tier.price;
+          // A tier is purchasable only when its App Store product is available
+          // and the user isn't already managed on the web.
+          const unavailable = offersLoaded && !offer;
+          const canBuy = !!offer && !managedOnWeb && !isCurrent;
+
+          let label: string;
+          if (isCurrent) label = "Current Plan";
+          else if (busy === tierKey) label = "Processing…";
+          else if (managedOnWeb) label = "Managed on web";
+          else if (unavailable) label = "Unavailable";
+          else if (!offersLoaded) label = "Loading…";
+          else if (subscription.subscribed) label = "Switch Plan";
+          else label = "Start 14-day Free Trial";
+
           return (
             <Card
-              key={offer.tier}
+              key={tierKey}
               className={`relative shadow-warm ${
                 isCurrent ? "border-primary ring-2 ring-primary/20" : isPopular ? "border-primary/50" : "border-border/50"
               }`}
@@ -154,7 +151,7 @@ export function NativePlanCards() {
                   <CardDescription className="text-xs">{tier.description}</CardDescription>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-display font-bold">{offer.priceString}</span>
+                  <span className="text-3xl font-display font-bold">{priceString}</span>
                   <span className="text-muted-foreground text-sm">/mo</span>
                 </div>
                 <ul className="space-y-2">
@@ -168,16 +165,10 @@ export function NativePlanCards() {
                 <Button
                   className="w-full"
                   variant={isCurrent ? "outline" : isPopular ? "default" : "outline"}
-                  disabled={isCurrent || busy !== null}
-                  onClick={() => handleBuy(offer)}
+                  disabled={!canBuy || busy !== null}
+                  onClick={() => offer && handleBuy(offer)}
                 >
-                  {isCurrent
-                    ? "Current Plan"
-                    : busy === offer.tier
-                    ? "Processing…"
-                    : subscription.subscribed
-                    ? "Switch Plan"
-                    : "Start 14-day Free Trial"}
+                  {label}
                 </Button>
               </CardContent>
             </Card>
