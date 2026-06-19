@@ -45,27 +45,45 @@ export function NativePlanCards() {
     };
   }, []);
 
+  // The entitlement row is written by the RevenueCat webhook a moment after the
+  // StoreKit transaction completes, so poll check-subscription a few times until
+  // the backend reflects the new active subscription.
+  const pollUntilSubscribed = async (attempts = 5, delayMs = 1500) => {
+    for (let i = 0; i < attempts; i++) {
+      const result = await checkSubscription();
+      // checkSubscription updates context async; give it a tick then re-check.
+      await new Promise((r) => setTimeout(r, delayMs));
+      void result;
+    }
+  };
+
   const handleBuy = async (offer: TierOffer) => {
     setBusy(offer.tier);
     const res = await purchaseTier(offer);
-    setBusy(null);
     if (res.status === "success") {
-      toast({ title: "You're subscribed!", description: "Your plan is now active." });
-      await checkSubscription();
-    } else if (res.status === "error") {
-      toast({ title: "Purchase failed", description: res.message, variant: "destructive" });
+      toast({ title: "You're subscribed!", description: "Activating your plan…" });
+      await pollUntilSubscribed();
+      setBusy(null);
+    } else {
+      setBusy(null);
+      if (res.status === "error") {
+        toast({ title: "Purchase failed", description: res.message, variant: "destructive" });
+      }
     }
   };
 
   const handleRestore = async () => {
     setRestoring(true);
     const res = await restorePurchases();
-    setRestoring(false);
     if (res.status === "success") {
-      await checkSubscription();
+      await pollUntilSubscribed(3, 1500);
+      setRestoring(false);
       toast({ title: "Purchases restored", description: "Your subscription has been restored." });
-    } else if (res.status === "error") {
-      toast({ title: "Restore failed", description: res.message, variant: "destructive" });
+    } else {
+      setRestoring(false);
+      if (res.status === "error") {
+        toast({ title: "Restore failed", description: res.message, variant: "destructive" });
+      }
     }
   };
 
