@@ -56,6 +56,7 @@ serve(async (req) => {
     let productId: string | null = null;
     let subscriptionEnd: string | null = null;
     let isTrialing = false;
+    let source: "stripe" | "apple" | null = null;
 
     if (customers.data.length > 0) {
       const customerId = customers.data[0].id;
@@ -67,14 +68,44 @@ serve(async (req) => {
       if (allSubs.length > 0) {
         const sub = allSubs[0];
         subscribed = true;
+        source = "stripe";
         subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
         productId = sub.items.data[0].price.product as string;
         isTrialing = sub.status === "trialing";
-        logStep("Active subscription", { productId, isTrialing, end: subscriptionEnd });
+        logStep("Active Stripe subscription", { productId, isTrialing, end: subscriptionEnd });
       }
     }
 
-    // App-trial logic (no Stripe sub): isTrialing if trial in future
+    // Merge Apple (RevenueCat) entitlement — recognised on web too.
+    if (!subscribed) {
+      const { data: ent } = await supabaseClient
+        .from("iap_entitlements")
+        .select("is_active, tier, product_id, expires_at, provider")
+        .eq("user_id", userId)
+        .eq("provider", "apple")
+        .maybeSingle();
+
+      const appleActive =
+        !!ent?.is_active &&
+        (!ent.expires_at || new Date(ent.expires_at) > new Date());
+
+      if (appleActive) {
+        subscribed = true;
+        source = "apple";
+        subscriptionEnd = ent?.expires_at ?? null;
+        // Map the Apple product back to a Stripe product id so the client's
+        // getTierByProductId() resolves the same tier across platforms.
+        const appleTierToStripe: Record<string, string> = {
+          starter: "prod_UZB5bIhMsXcmZa",
+          pro: "prod_UZB5c821ACqF2q",
+          business: "prod_UZB5tos0Dglji1",
+        };
+        productId = ent?.tier ? appleTierToStripe[ent.tier] ?? null : null;
+        logStep("Active Apple entitlement", { tier: ent?.tier, end: subscriptionEnd });
+      }
+    }
+
+    // App-trial logic (no paid sub): isTrialing if trial in future
     if (!subscribed) {
       isTrialing = trialEndsAt ? new Date(trialEndsAt) > new Date() : false;
     }
@@ -91,6 +122,7 @@ serve(async (req) => {
       is_super_admin: isSuperAdmin,
       product_id: productId,
       subscription_end: subscriptionEnd,
+      source,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

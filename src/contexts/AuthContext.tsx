@@ -3,6 +3,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { getTierByProductId, type TierKey } from '@/lib/subscriptionTiers';
 import { registerPushNotifications } from '@/lib/native/pushNotifications';
+import { initIap, logoutIap } from '@/lib/native/iap';
 
 interface SubscriptionState {
   subscribed: boolean;
@@ -12,6 +13,7 @@ interface SubscriptionState {
   accessRevoked: boolean;
   tier: TierKey | null;
   subscriptionEnd: string | null;
+  source: "stripe" | "apple" | null;
   loading: boolean;
 }
 
@@ -41,6 +43,7 @@ const defaultSubscription: SubscriptionState = {
   accessRevoked: false,
   tier: null,
   subscriptionEnd: null,
+  source: null,
   loading: true,
 };
 
@@ -97,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         accessRevoked: data.access_revoked || false,
         tier: getTierByProductId(data.product_id),
         subscriptionEnd: data.subscription_end || null,
+        source: data.source || null,
         loading: false,
       });
 
@@ -173,6 +177,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loadSuperAdmin(session.user.id);
       // Register for native push notifications (no-op on web)
       registerPushNotifications(session.user.id, team.teamId).catch(() => {});
+      // Initialise native In-App Purchases & bind the user (no-op on web).
+      // Refresh subscription state whenever StoreKit entitlements change.
+      initIap(session.user.id, () => { checkSubscription(); }).catch(() => {});
     } else {
       setSubscription({ ...defaultSubscription, loading: false });
       setTeam({ ...defaultTeam, loading: false });
@@ -188,6 +195,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session, checkSubscription]);
 
   const signOut = async () => {
+    await logoutIap().catch(() => {});
     await supabase.auth.signOut();
   };
 
