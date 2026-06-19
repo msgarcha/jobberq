@@ -42,6 +42,9 @@ const paymentTermOptions = [
   { value: "net_60", label: "Net 60" },
 ];
 
+const settingsTabs = ["company", "invoicing", "team", "reviews", "billing", "notifications", "import"] as const;
+const TIER_ORDER: TierKey[] = ["starter", "pro", "business"];
+
 const Settings = () => {
   const { data: settings, isLoading } = useCompanySettings();
   const upsert = useUpsertCompanySettings();
@@ -49,7 +52,9 @@ const Settings = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const defaultTab = searchParams.get("tab") || "company";
+  const requestedTab = searchParams.get("tab") || "company";
+  const defaultTab = settingsTabs.includes(requestedTab as typeof settingsTabs[number]) ? requestedTab : "company";
+  const [activeTab, setActiveTab] = useState(defaultTab);
 
   // Team hooks
   const { data: teamData } = useTeam();
@@ -190,6 +195,10 @@ const Settings = () => {
   }, [searchParams]);
 
   useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
+
+  useEffect(() => {
     if (settings) {
       setCompanyName(settings.company_name || "");
       setEmail(settings.email || "");
@@ -298,6 +307,15 @@ const Settings = () => {
     } finally {
       setPortalLoading(false);
     }
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const params = new URLSearchParams(searchParams);
+    if (value === "company") params.delete("tab");
+    else params.set("tab", value);
+    const query = params.toString();
+    navigate(`/settings${query ? `?${query}` : ""}`, { replace: true });
   };
 
   const handleDeleteAccount = async () => {
