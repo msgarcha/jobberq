@@ -3,6 +3,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { getTierByProductId, type TierKey } from '@/lib/subscriptionTiers';
 import { registerPushNotifications } from '@/lib/native/pushNotifications';
+import { initIap, logoutIap } from '@/lib/native/iap';
 
 interface SubscriptionState {
   subscribed: boolean;
