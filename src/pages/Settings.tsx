@@ -356,7 +356,7 @@ const Settings = () => {
           <p className="text-muted-foreground text-sm mt-1">Manage your company and subscription.</p>
         </div>
 
-        <Tabs defaultValue={defaultTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <div className="rounded-xl border bg-muted/40 p-1">
             <div
               className="overflow-x-auto overflow-y-hidden scrollbar-hide"
