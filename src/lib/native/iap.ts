@@ -91,8 +91,17 @@ export async function getTierOffers(): Promise<TierOffer[]> {
   try {
     const { Purchases } = await getPurchases();
     const offerings = await Purchases.getOfferings();
+
+    const currentId = offerings.current?.identifier ?? null;
+    const allIds = Object.keys(offerings.all ?? {});
+    console.log("[iap] offerings — current:", currentId, "all:", allIds);
+
     const pkgs: RCPackage[] =
       (offerings.current?.availablePackages as unknown as RCPackage[]) ?? [];
+    console.log(
+      "[iap] current offering packages:",
+      pkgs.map((p) => p.product.identifier),
+    );
 
     const offers: TierOffer[] = [];
     for (const pkg of pkgs) {
@@ -104,8 +113,22 @@ export async function getTierOffers(): Promise<TierOffer[]> {
           productId: pkg.product.identifier,
           pkg,
         });
+      } else {
+        console.warn(
+          "[iap] product did not map to a QuickLinq tier:",
+          pkg.product.identifier,
+        );
       }
     }
+
+    if (offers.length === 0) {
+      console.warn(
+        "[iap] no offers mapped. Either the current offering has no packages, " +
+          "or App Store product IDs don't match the expected: " +
+          "quicklinq_starter_monthly, quicklinq_pro_monthly, quicklinq_business_monthly",
+      );
+    }
+
     // Keep a stable order: starter, pro, business
     const order: TierKey[] = ["starter", "pro", "business"];
     offers.sort((a, b) => order.indexOf(a.tier) - order.indexOf(b.tier));
