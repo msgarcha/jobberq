@@ -1149,13 +1149,15 @@ const Settings = () => {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {subscription.subscribed && subscription.subscriptionEnd
+                      {subscription.loading
+                        ? "Checking your subscription…"
+                        : subscription.subscribed && subscription.subscriptionEnd
                         ? `Renews ${format(new Date(subscription.subscriptionEnd), "MMM d, yyyy")}`
-                        : isTrialing && trialEnd
+                        : trialEnd
                         ? `Trial ends ${format(new Date(trialEnd), "MMM d, yyyy")}`
                         : trialExpired
                         ? "Choose a plan below to continue using QuickLinq."
-                        : "No active subscription"}
+                        : "Choose a plan below to start your subscription."}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -1172,11 +1174,78 @@ const Settings = () => {
               </CardContent>
             </Card>
 
-            {/* Native iOS: real In-App Purchase plan cards (App Store guideline 3.1.1) */}
+            <div className="grid gap-5 grid-cols-1 sm:grid-cols-3">
+              {TIER_ORDER.map((key) => {
+                const tier = SUBSCRIPTION_TIERS[key];
+                const isCurrentPlan = currentTier === key && subscription.subscribed;
+                const isPopular = "popular" in tier && tier.popular;
+                return (
+                  <Card
+                    key={key}
+                    className={`relative shadow-warm transition-shadow ${
+                      isCurrentPlan
+                        ? "border-primary ring-2 ring-primary/20"
+                        : isPopular
+                        ? "border-primary/50"
+                        : "border-border/50"
+                    }`}
+                  >
+                    {isCurrentPlan && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                        <Badge className="bg-primary text-primary-foreground text-xs px-3">Your Plan</Badge>
+                      </div>
+                    )}
+                    {!isCurrentPlan && isPopular && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                        <Badge variant="secondary" className="text-xs px-3">Most Popular</Badge>
+                      </div>
+                    )}
+                    <CardContent className="p-5 pt-7 space-y-4">
+                      <div>
+                        <h4 className="font-display font-semibold text-lg">{tier.name}</h4>
+                        <CardDescription className="text-xs">{tier.description}</CardDescription>
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-display font-bold">{tier.price}</span>
+                        <span className="text-muted-foreground text-sm">/mo</span>
+                      </div>
+                      <ul className="space-y-2">
+                        {tier.features.map((f) => (
+                          <li key={f} className="flex items-start gap-2 text-sm">
+                            <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                            {f}
+                          </li>
+                        ))}
+                      </ul>
+                      {!isNative() && (
+                        <Button
+                          className="w-full"
+                          variant={isCurrentPlan ? "outline" : isPopular || trialExpired ? "default" : "outline"}
+                          disabled={isCurrentPlan || !!checkoutLoading}
+                          onClick={() => handleCheckout(key)}
+                        >
+                          {isCurrentPlan
+                            ? "Current Plan"
+                            : checkoutLoading === key
+                            ? "Loading…"
+                            : subscription.subscribed
+                            ? "Switch Plan"
+                            : trialExpired
+                            ? `Subscribe — ${tier.price}/mo`
+                            : "Start Free Trial"}
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Native iOS: real In-App Purchase buttons (App Store guideline 3.1.1) */}
             {isNative() ? (
               <NativePlanCards />
             ) : (
-            <div className="grid gap-5 grid-cols-1 sm:grid-cols-3">
+            <div className="hidden">
               {(Object.entries(SUBSCRIPTION_TIERS) as [TierKey, typeof SUBSCRIPTION_TIERS[TierKey]][]).map(([key, tier]) => {
                 const isCurrentPlan = currentTier === key;
                 const isPopular = "popular" in tier && tier.popular;
