@@ -45,10 +45,16 @@ export async function initIap(userId: string, onEntitlementChange?: () => void) 
         console.warn("[iap] could not load RC config", error);
         return;
       }
+      // Safe diagnostic: log only key prefix/type, never the full secret.
+      console.log(
+        "[iap] RC config loaded; key prefix:",
+        String(data.iosKey).slice(0, 5),
+      );
 
-      await Purchases.setLogLevel({ level: LOG_LEVEL.ERROR });
+      await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
       await Purchases.configure({ apiKey: data.iosKey, appUserID: userId });
       configured = true;
+      console.log("[iap] RevenueCat configured for user", userId);
 
       // Refresh app subscription state whenever entitlements change.
       await Purchases.addCustomerInfoUpdateListener(() => {
