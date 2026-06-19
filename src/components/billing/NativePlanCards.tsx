@@ -96,6 +96,8 @@ export function NativePlanCards() {
     }
   };
 
+  const noOffersLoaded = offersLoaded && offers.length === 0;
+
   return (
     <div className="space-y-4">
       {managedOnWeb && (
@@ -105,6 +107,19 @@ export function NativePlanCards() {
             <p className="text-sm text-muted-foreground">
               Your plan was purchased through QuickLinq's website. To change or cancel it,
               log into your account from a web browser.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {noOffersLoaded && !managedOnWeb && (
+        <Card className="shadow-warm border-destructive/40">
+          <CardContent className="p-4 space-y-1">
+            <p className="text-sm font-medium">Plans couldn't be loaded from the App Store</p>
+            <p className="text-sm text-muted-foreground">
+              We couldn't reach the App Store subscription products right now. This usually
+              clears up in a moment — pull down to refresh or try again shortly. If it keeps
+              happening, make sure you're signed in to the App Store on this device.
             </p>
           </CardContent>
         </Card>
